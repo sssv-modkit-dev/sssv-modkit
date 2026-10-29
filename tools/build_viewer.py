@@ -1,12 +1,26 @@
 #!/usr/bin/env python3
 """Build a portable single-file viewer from modular sources and the ROM-derived table."""
-import base64,json,os,sys
+import argparse,base64,json,subprocess,sys
 from urllib.parse import quote
 from pathlib import Path
 here=Path(__file__).resolve().parent
-src=Path(sys.argv[1]) if len(sys.argv)>1 else next((p for p in [Path('animal_table.json'),Path('notes/animal_table.json'),here/'animal_table.json'] if p.is_file()),None)
-if src is None: raise SystemExit('animal_table.json not found; pass its path as first argument')
-out=Path(sys.argv[2]) if len(sys.argv)>2 else here.parent/'viewers'/'rom_viewer.html'
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('table',nargs='?',type=Path,help='animal table JSON (default: search locally, then tools/animal_table.json)')
+parser.add_argument('output',nargs='?',type=Path,default=here.parent/'viewers'/'rom_viewer.html',help='output HTML (default: viewers/rom_viewer.html)')
+parser.add_argument('--animals-dir',type=Path,help='generate the table first from a decomp src.us/sssv/animals directory; requires a ROM in rom/ or SSSV_ROM')
+args=parser.parse_args()
+if args.animals_dir:
+    if not args.animals_dir.is_dir(): parser.error('animals directory not found: '+str(args.animals_dir))
+    src=args.table or here/'animal_table.json'
+    if src.suffix!='.json': parser.error('generated table path must end in .json')
+    src.parent.mkdir(parents=True,exist_ok=True)
+    result=subprocess.run([sys.executable,str(here/'animal_table.py'),str(args.animals_dir),str(src.with_suffix(''))])
+    if result.returncode: raise SystemExit(result.returncode)
+else:
+    src=args.table or next((p for p in [Path('animal_table.json'),Path('notes/animal_table.json'),here/'animal_table.json'] if p.is_file()),None)
+if src is None: parser.error('animal_table.json not found; pass its path or use --animals-dir')
+if not src.is_file(): parser.error('animal table not found: '+str(src))
+out=args.output
 t=json.loads(src.read_text(encoding='utf-8'))
 T={}
 for a,d in t.items():

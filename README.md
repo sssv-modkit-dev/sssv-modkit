@@ -79,11 +79,19 @@ or the `SSSV_ROM` environment variable.
 
 ## Part viewer
 
-Generate the viewer locally after generating the table:
+To generate the table and viewer in one command (ROM in `rom/` or set via `SSSV_ROM`):
+
+```text
+python tools/build_viewer.py --animals-dir /path/to/sssv/src.us/sssv/animals
+```
+
+If you already generated the table, rebuild just the viewer:
 
 ```text
 python tools/build_viewer.py tools/animal_table.json
 ```
+
+Run `python tools/build_viewer.py --help` for paths and options.
 
 Open the generated `viewers/rom_viewer.html` and load your own ROM to inspect animal parts,
 try scale sliders, and preview deformations. The page runs entirely in your browser; nothing
