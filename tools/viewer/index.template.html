@@ -16,15 +16,21 @@
 <label class="setting-row"><span>Floating labels</span><input id="labels-toggle" type="checkbox"></label>
 <label class="setting-row"><span>Reference grid</span><input id="grid-toggle" type="checkbox"></label>
 <label class="setting-row"><span>Background</span><input id="background-color" type="color" value="#282a36"></label>
-<label class="setting-row" for="move-button"><span>Move sheet parts</span><select id="move-button"><option value="right">Right-drag</option><option value="left">Left-drag</option></select></label>
-<p class="mut">Drag a part to reposition it on the camera-facing plane. Double-click to edit its mesh.</p></section>
+<label class="setting-row" for="move-button"><span>Move sheet parts</span><select id="move-button"><option value="alt">Alt + drag</option><option value="right">Right-drag</option><option value="left">Left-drag</option></select></label>
+<p class="mut">Alt + drag a part to reposition it on the camera-facing plane. Choosing left/right-drag overrides that camera gesture on parts. Double-click to edit its mesh.</p></section>
 <input type="file" id="impf" accept=".json" hidden>
-<details class="help"><summary>Viewing notes &amp; controls</summary><p>Triangles without their own colour word use mesh vertex colours as an approximation. Disable vertex colours to show them grey.</p><p>Exploded sheets are browsing layouts, not assembled animals.</p><p>Left-drag: orbit. Right-drag: reposition a part in sheet mode; Shift+left-drag: pan. Mouse wheel: zoom. Q/E: roll camera (focus viewport first).</p></details>
+<details class="help"><summary>Viewing notes &amp; controls</summary><p>Triangles without their own colour word use mesh vertex colours as an approximation. Disable vertex colours to show them grey.</p><p>Exploded sheets are browsing layouts, not assembled animals.</p><p>Left-drag: orbit. Right-drag or Shift/Ctrl + left-drag: pan. Wheel or middle-drag: zoom. Alt + drag: move a sheet part. Touch: one finger orbits; two fingers pan and pinch to zoom. Focus the viewport for F: frame, Home: reset, 1/3/7: front/right/top, arrows: pan, +/−: zoom, WASD: travel, Space: up, Q/E: roll, Shift: faster.</p></details>
 </div>
 <div class="resize-handle" id="resize-left" role="separator" aria-label="Resize left sidebar" aria-orientation="vertical" tabindex="0"></div>
 <div id="view"><div id="part-inspector" hidden><div id="part-symbol"></div><label>Custom name <input id="part-name" placeholder="e.g. Head, left paw"></label><div class="inspector-actions"><small>Double-click to edit mesh</small><button id="part-name-ok">OK</button></div></div><div id="floating-labels"></div>
-<canvas id="cv"></canvas><div id="hover-part" aria-hidden="true"></div><button id="back-to-sheet" hidden>← BACK</button><div id="nav-hint">WASD move · Q/E roll · Space / Ctrl vertical · Shift faster</div>
-<div id="animal-label" aria-live="polite">Load a ROM to begin<span id="variant-label"></span><button id="camera-reset" title="Reset camera to default view">RESET</button></div>
+<canvas id="cv"></canvas><div id="hover-part" aria-hidden="true"></div><button id="back-to-sheet" hidden>← BACK</button><div id="nav-hint">Drag orbit · Shift-drag pan · Wheel zoom · F frame · Home reset</div>
+<div id="animal-label" aria-live="polite">Load a ROM to begin<span id="variant-label"></span></div>
+<div id="camera-tools" role="toolbar" aria-label="Camera controls">
+<button id="camera-fit" title="Frame visible geometry (F)">Frame</button><button id="camera-reset" title="Reset orientation and frame (Home)">Reset view</button>
+<button id="camera-front" title="Front, looking along −Z (1)">Front</button><button id="camera-right" title="Right, looking along −X (3)">Right</button><button id="camera-top" title="Top, looking along −Y (7)">Top</button>
+<button id="camera-in" aria-label="Zoom in" title="Zoom in (+)">+</button><button id="camera-out" aria-label="Zoom out" title="Zoom out (−)">−</button>
+<button id="camera-roll-left" aria-label="Roll left 15 degrees" title="Roll left 15°">↶</button><button id="camera-roll-right" aria-label="Roll right 15 degrees" title="Roll right 15°">↷</button>
+</div>
 <svg id="axes" viewBox="0 0 94 94" aria-label="World orientation axes">
   <circle cx="47" cy="47" r="3" fill="var(--fg)" />
   <line id="ax-x" class="x" x1="47" y1="47" x2="70" y2="47" />
@@ -35,5 +41,5 @@
   <text id="ax-zl" class="z" x="26" y="68">Z</text>
 </svg>
 </div>
-<div class="resize-handle" id="resize-right" role="separator" aria-label="Resize workbench" aria-orientation="vertical" tabindex="0"></div><aside id="edit-side"><div class="workbench-row"><h3>Workbench</h3><button id="collapse-right" class="collapse-control" title="Toggle workbench">◧</button></div><section id="mesh-panel" class="panel"><h4>Mesh editing</h4><div id="mesh"></div></section><div id="info" class="mut"></div><section id="palette-panel" class="panel"><h4>Palette</h4><div class="mut">Changing a colour changes every word with that colour in this animal, same as the builder config.</div><div id="pal"></div></section><div class="panel"><label><input type="checkbox" id="vc" checked> Use vertex colours for triangles without a prim colour</label></div><div id="actions"><button id="exp">Export config</button> <button id="imp">Import config</button> <button id="rst">Reset</button></div></aside>
+<div class="resize-handle" id="resize-right" role="separator" aria-label="Resize workbench" aria-orientation="vertical" tabindex="0"></div><aside id="edit-side"><div class="workbench-row"><h3>Workbench</h3><button id="collapse-right" class="collapse-control" title="Toggle workbench">◧</button></div><section id="mesh-panel" class="panel"><h4>Mesh editing</h4><div id="mesh"></div></section><div id="info" class="mut"></div><section id="palette-panel" class="panel"><h4>Palette</h4><div class="mut">Changing a colour changes every word with that colour in this animal, same as the builder config.</div><div id="pal"></div></section><div class="panel"><label><input type="checkbox" id="vc" checked> Use vertex colours for triangles without a prim colour</label></div><div id="actions"><button id="save-icon" title="Save current geometry as a transparent 256 × 256 PNG">Save icon PNG</button><button id="exp">Export config</button> <button id="imp">Import config</button> <button id="rst">Reset</button></div></aside>
 <script>/*VIEWER_JS*/</script></body></html>

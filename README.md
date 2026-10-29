@@ -3,7 +3,7 @@
 Tools and patches for modding **Space Station Silicon Valley** (Nintendo 64, US 1.0): recolour the animals,
 reshape their meshes, and build small `.ips` patches you can apply to your own ROM.
 
-> Unofficial fan project. **No game data is included.** You must supply your own legally obtained
+> Unofficial fan project. **No ROM or extracted models are included.** You must supply your own legally obtained
 > US 1.0 ROM. See [NOTICE.md](NOTICE.md).
 
 ## What you need
@@ -89,6 +89,11 @@ Open the generated `viewers/rom_viewer.html` and load your own ROM to inspect an
 try scale sliders, and preview deformations. The page runs entirely in your browser; nothing
 is uploaded. Its embedded animal metadata is derived from local inputs, so keep the generated
 page private. Active sources live in `tools/viewer/` (HTML, CSS, and JavaScript).
+Left-drag orbits, right-drag pans, and the wheel zooms. Alt + drag moves a sheet
+part. Use the camera toolbar or focus the viewport and press `F` to frame,
+`Home` to reset, or `1` / `3` / `7` for front / right / top views.
+See [viewer controls and screenshots](docs/VIEWER-CONTROLS.md) for the full
+reference and a reproducible ROM-free browser fixture.
 Deformations preserve geometry counts and leave normals unchanged, so large bends or twists
 can affect shading.
 

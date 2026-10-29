@@ -22,9 +22,10 @@ base=here/'viewer'
 html=(base/'index.template.html').read_text(encoding='utf-8')
 css=(base/'css'/'app.css').read_text(encoding='utf-8')
 js=(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')))
-icon_path=base/'assets'/'icon.ico'
-if icon_path.is_file():
-    icon='data:image/x-icon;base64,'+base64.b64encode(icon_path.read_bytes()).decode('ascii')
+icon_path=next((base/'assets'/name for name in ('icon.png','icon.ico') if (base/'assets'/name).is_file()),None)
+if icon_path:
+    mime='image/png' if icon_path.suffix=='.png' else 'image/x-icon'
+    icon='data:'+mime+';base64,'+base64.b64encode(icon_path.read_bytes()).decode('ascii')
 else:
     svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#202638"/><text x="32" y="41" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="bold" fill="#edf1fa">SS</text></svg>'
     icon='data:image/svg+xml,'+quote(svg,safe='')

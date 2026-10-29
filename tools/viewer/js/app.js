@@ -9,16 +9,30 @@ if(op==4){const seg=w1>>>24,off=w1&0xFFFFFF,n=((w0&0x3FF)+1)>>4,v0=((w0>>>16)&25
 else if(op==0xFA){cols.push({rgba:w1.toString(16).toUpperCase().padStart(8,'0'),rom:o+4});c=cols.length-1}
 else if(op==0xBF||op==0xB1){const T=op==0xBF?[[(w1>>>16)&255,(w1>>>8)&255,w1&255]]:[[(w0>>>16)&255,(w0>>>8)&255,w0&255],[(w1>>>16)&255,(w1>>>8)&255,w1&255]];
 for(const t of T){const v=t.map(k=>vb[k>>1]);if(v.every(x=>x)&&new Set(t).size==3)tris.push({v,c})}}}
-return{cols,tris,bb}}
+// Keep the full vertex bounds for builder-compatible mesh transforms, but
+// frame/layout only the rendered geometry, excluding unused cache entries.
+const viewBB=[1e9,1e9,1e9,-1e9,-1e9,-1e9];
+for(const t of tris)for(const q of t.v)for(let a=0;a<3;a++){viewBB[a]=Math.min(viewBB[a],q[a]);viewBB[a+3]=Math.max(viewBB[a+3],q[a])}
+return{cols,tris,bb,viewBB}}
 // --- shared op maths: keep every vertex operation here so the deform preview can be added next to it ---
 function applyMesh(v,E,bb){if(!E)return v;const c0=E.o?[0,0,0]:[0,1,2].map(k=>(bb[k]+bb[k+3])/2);return v.map((x,k)=>Math.floor(c0[k]+(x-c0[k])*E.s[k]+E.m[k]+.5))}
 // true if the part has no G_SETPRIMCOLOR, or has triangles drawn before its first one
 function noOwnColour(P){return P.cols.length==0||P.tris.some(t=>t.c<0)}
 // exploded layout: one grid cell per part, offsets move each part's bbox centre onto its cell centre
-function sheetLayout(parts){const ok=parts.map(P=>P.bb[0]<=P.bb[3]);let cell=1;
+function sheetLayout(parts){parts=parts.map(P=>({...P,bb:P.viewBB||P.bb}));const ok=parts.map(P=>P.bb[0]<=P.bb[3]);let cell=1;
 parts.forEach((P,i)=>{if(ok[i])cell=Math.max(cell,P.bb[3]-P.bb[0],P.bb[4]-P.bb[1],P.bb[5]-P.bb[2])});cell=Math.ceil(cell*1.1);
 const cols=Math.max(1,Math.ceil(Math.sqrt(parts.length))),out={};
 parts.forEach((P,i)=>{const c=[0,1,2].map(k=>ok[i]?(P.bb[k]+P.bb[k+3])/2:0);out[P.sym]=[Math.round((i%cols)*cell-c[0]),Math.round(-Math.floor(i/cols)*cell-c[1]),Math.round(-c[2])]});return out}
+// Gallery tiles are thumbnails: normalize each sheet so a large animal cannot
+// force every other animal to a tiny fraction of the viewport.
+function gallerySheet(parts){
+  parts=parts.map(P=>({...P,bb:P.viewBB||P.bb}));
+  const layout=sheetLayout(parts),mn=[Infinity,Infinity,Infinity],mx=[-Infinity,-Infinity,-Infinity];
+  for(const P of parts){if(P.bb[0]>P.bb[3])continue;const of=layout[P.sym];for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],P.bb[k]+of[k]);mx[k]=Math.max(mx[k],P.bb[k+3]+of[k])}}
+  if(!Number.isFinite(mn[0]))return{parts:layout,mn:[0,0,0],mx:[1,1,1],scale:1,offset:[0,0,0]};
+  const scale=1/Math.max(1,...mx.map((v,k)=>v-mn[k]));
+  return{parts:layout,mn:mn.map(v=>v*scale),mx:mx.map(v=>v*scale),scale,offset:[0,0,0]};
+}
 // --- deform preview: JS port of plan_deform() in make_animal_mods.py. Keep the two in step (same op names, same maths, same rounding) ---
 const DEF_AX={x:0,y:1,z:2};
 function axOf(a){const k=DEF_AX[String(a).toLowerCase()];if(k===undefined)throw new Error('deform: bad axis "'+a+'" (use x, y or z)');return k}
@@ -71,6 +85,21 @@ function deformPrepare(P,E,entries){
   for(const en of entries){const[lo,hi]=bboxOf(pts);const f=makeDeform(lo,hi,en.ops,en.about);fs.push(f);pts=pts.map(p=>applyDeform(f,p,st))}
   return{fs,before,after:bboxOf(pts),clip:st.clip};
 }
+// Camera helpers use CSS pixels, independently of display pixel density.
+function cameraPlaneDelta(R,distance,height,dx,dy){
+  const scale=2*distance*Math.tan(.4)/Math.max(1,height);
+  return [0,1,2].map(k=>(R[k*4]*dx-R[k*4+1]*dy)*scale);
+}
+function cameraFit(lo,hi,R,aspect){
+  const center=lo.map((v,k)=>(v+hi[k])/2);
+  let distance=1;
+  for(let i=0;i<8;i++){
+    const p=center.map((v,k)=>((i>>k)&1?hi[k]:lo[k])-v);
+    const q=[0,1,2].map(k=>p.reduce((sum,v,j)=>sum+R[j*4+k]*v,0));
+    distance=Math.max(distance,q[2]+Math.abs(q[0])/(Math.tan(.4)*Math.max(.01,aspect)*.8),q[2]+Math.abs(q[1])/(Math.tan(.4)*.8));
+  }
+  return {center,distance,radius:Math.max(1,Math.hypot(...hi.map((v,k)=>(v-lo[k])/2)))};
+}
 //#PURE-END
 let deform={},deformOn=false;const deformCache=new Map();
 // deform entries per part symbol, prepared (bbox + per-entry fns) and cached; the cache key includes the part's mesh edit
@@ -86,7 +115,8 @@ if(rows.every(r=>r.note))throw new Error('none of those parts belong to the anim
 console.table(rows);deform=nd;deformCache.clear();deformOn=true;ui();rebuild(false);info()
 }catch(e){alert('Deform preview: '+e.message)}};
 const $=id=>document.getElementById(id);
-let pickTris=[],hoverSym=null,returnMode=null,partNames={},partOffsets={},labelOffsets={},selectedSym=null,moveButton="right",showGrid=false,showLabels=false,backgroundOverride=null;let mesh={},dv=null,cur=null,name='',bases={},parsed=[],map={},sel=0,variant='',all=false,sheet=false,SH={},useVC=true,yaw=0,pit=-Math.PI/4,roll=0,dist=1,ctr=[0,0,0],nv=0,dirty=false,gallery=false,galleryData=[],galleryLayout=[];
+let pickTris=[],hoverSym=null,returnMode=null,partNames={},partOffsets={},labelOffsets={},selectedSym=null,moveButton="alt",showGrid=false,showLabels=false,backgroundOverride=null;let mesh={},dv=null,cur=null,name='',bases={},parsed=[],map={},sel=0,variant='',all=false,sheet=false,SH={},useVC=true,yaw=0,pit=-Math.PI/4,roll=0,dist=1,ctr=[0,0,0],nv=0,dirty=false,gallery=false,galleryData=[],galleryLayout=[];
+let sceneBounds=null,sceneRadius=1;
 const cv=$('cv'),gl=cv.getContext('webgl',{alpha:true});
 function sh(t,s){const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);return x}
 const pg=gl.createProgram();
@@ -102,6 +132,10 @@ const rz=a=>{const c=Math.cos(a),s=Math.sin(a);return[c,s,0,0,-s,c,0,0,0,0,1,0,0
 const cameraRotation=()=>mul(rz(roll),mul(rx(pit),ry(yaw)));
 const tr=(x,y,z)=>[1,0,0,0,0,1,0,0,0,0,1,0,x,y,z,1];
 const pr=(a,n,f)=>{const t=1/Math.tan(.4);return[t/a,0,0,0,0,t,0,0,0,0,(f+n)/(n-f),-1,0,0,2*f*n/(n-f),0]};
+const projection=()=>pr(cv.clientWidth/Math.max(1,cv.clientHeight),Math.max(sceneRadius/10000,dist-sceneRadius*2),dist+sceneRadius*2);
+function frameCamera(){if(sceneBounds){const f=cameraFit(...sceneBounds,cameraRotation(),cv.clientWidth/Math.max(1,cv.clientHeight));ctr=f.center;dist=f.distance;sceneRadius=f.radius}need()}
+function panCamera(dx,dy){const delta=cameraPlaneDelta(cameraRotation(),dist,cv.clientHeight,dx,dy);ctr=ctr.map((v,k)=>v-delta[k]);need()}
+function zoomCamera(delta){dist=Math.max(sceneRadius*.02,Math.min(sceneRadius*100,dist*Math.exp(Math.max(-2,Math.min(2,delta)))));need()}
 function updateAxes(R){
   const axes=[['x',R[0],R[1]],['y',R[4],R[5]],['z',R[8],R[9]]];
   for(const [key,x,y] of axes){
@@ -111,11 +145,11 @@ function updateAxes(R){
     label.setAttribute('x',47+x*(len+10));label.setAttribute('y',47-y*(len+10));
   }
 }
-function draw(){dirty=false;const w=cv.clientWidth*devicePixelRatio|0,h=cv.clientHeight*devicePixelRatio|0;
+function draw(size){dirty=false;const w=Array.isArray(size)?size[0]:(cv.clientWidth*devicePixelRatio|0),h=Array.isArray(size)?size[1]:(cv.clientHeight*devicePixelRatio|0);
 if(cv.width!=w||cv.height!=h){cv.width=w;cv.height=h}gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 const R=cameraRotation(),V=mul(tr(0,0,-dist),mul(R,tr(-ctr[0],-ctr[1],-ctr[2])));
 updateAxes(R);
-gl.uniformMatrix4fv(loc.M,false,mul(pr(w/h,dist/50,dist*10),V));gl.uniformMatrix4fv(loc.N,false,R);gl.drawArrays(gl.TRIANGLES,0,nv);if(showLabels)updateFloatingLabels()}
+gl.uniformMatrix4fv(loc.M,false,mul(projection(),V));gl.uniformMatrix4fv(loc.N,false,R);gl.drawArrays(gl.TRIANGLES,0,nv);if(showLabels)updateFloatingLabels()}
 const need=()=>{if(!dirty){dirty=true;requestAnimationFrame(draw)}};
 const NAMED_COLOURS={Black:'000000',White:'FFFFFF',Red:'FF0000',Green:'008000',Blue:'0000FF',Yellow:'FFFF00',Orange:'FFA500',Purple:'800080',Pink:'FFC0CB',Brown:'8B4513',Grey:'808080',Cyan:'00FFFF',Magenta:'FF00FF',Beige:'F5F5DC',Gold:'FFD700',Olive:'808000',Teal:'008080',Navy:'000080'};
 function colourName(hex){const rgb=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));let best='Colour',dist=Infinity;for(const [name,val] of Object.entries(NAMED_COLOURS)){const c=[0,2,4].map(i=>parseInt(val.slice(i,i+2),16));const d=c.reduce((sum,x,i)=>sum+(x-rgb[i])**2,0);if(d<dist){dist=d;best=name}}return best}
@@ -133,13 +167,13 @@ poseIn.onchange=async()=>{const f=poseIn.files[0];poseIn.value='';if(!f)return;t
 const asmXf=pp=>{const r=pp.rows,t=pp.T;return w=>{const g=[0,1,2].map(k=>w[0]*r[0][k]+w[1]*r[1][k]+w[2]*r[2][k]+t[k]);return[g[0],g[2],-g[1]]}};
 function asmSources(){return pose.parts.flatMap(pp=>{const P=parsed.find(q=>q.sym===pp.dl);return P?[{P,offset:[0,0,0],local:[0,0,0],xf:asmXf(pp),flip:((pp.mirror&1)^((pp.mirror>>1)&1))===1}]:[]})}
 function rebuild(fit){const d=[];pickTris=[];let mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
-const sources=gallery?galleryData.flatMap((A,ai)=>A.parts.map(P=>({P,offset:galleryLayout[ai].offset,local:galleryLayout[ai].parts[P.sym]}))):shown().map(P=>({P,offset:[0,0,0],local:sheet?(SH[P.sym]||[0,0,0]).map((v,k)=>v+(partOffsets[name]?.[P.sym]?.[k]||0)):[0,0,0]}));
-for(const S of (assembled&&!gallery&&poseOk()?asmSources():sources)){const P=S.P,E=gallery?null:mesh[P.sym],DF=!gallery&&deformOn?deformFor(P,E):null,of=S.local||[0,0,0],T=v=>{let w=applyMesh(v,E,P.bb);if(DF)w=DF.fs.reduce((q,f)=>applyDeform(f,q),w);return S.xf?S.xf(w):w.map((x,k)=>x+of[k]+S.offset[k])};
+const sources=gallery?galleryData.flatMap((A,ai)=>A.parts.map(P=>({P,offset:galleryLayout[ai].offset,local:galleryLayout[ai].parts[P.sym],scale:galleryLayout[ai].scale}))):shown().map(P=>({P,offset:[0,0,0],local:sheet?(SH[P.sym]||[0,0,0]).map((v,k)=>v+(partOffsets[name]?.[P.sym]?.[k]||0)):[0,0,0]}));
+for(const S of (assembled&&!gallery&&poseOk()?asmSources():sources)){const P=S.P,E=gallery?null:mesh[P.sym],DF=!gallery&&deformOn?deformFor(P,E):null,of=S.local||[0,0,0],T=v=>{let w=applyMesh(v,E,P.bb);if(DF)w=DF.fs.reduce((q,f)=>applyDeform(f,q),w);return S.xf?S.xf(w):w.map((x,k)=>(x+of[k])*(S.scale||1)+S.offset[k])};
 for(const t0 of P.tris){const ord=S.flip?[0,2,1]:[0,1,2],t={c:t0.c,v:ord.map(i=>T(t0.v[i]))};if(!gallery)pickTris.push({v:t.v,sym:P.sym});const o=t.c<0?'808080FF':P.cols[t.c].rgba,col=t.c<0?[.5,.5,.5]:hex2(gallery?o:(map[o]||o)),[a,b,c]=t.v;
 let n=[(b[1]-a[1])*(c[2]-a[2])-(b[2]-a[2])*(c[1]-a[1]),(b[2]-a[2])*(c[0]-a[0])-(b[0]-a[0])*(c[2]-a[2]),(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])];
 const l=Math.hypot(...n)||1;n=n.map(x=>x/l);if(!gallery&&hoverSym===P.sym)col.splice(0,3,...col.map(v=>Math.min(1,v*.55+.45)));const vcol=t.c<0&&useVC&&hoverSym!==P.sym;for(const [i,v] of t.v.entries()){d.push(...v,...(vcol?t0.v[ord[i]].c:col),...n);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],v[k]);mx[k]=Math.max(mx[k],v[k])}}}}
 nv=d.length/9;gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(d),gl.STATIC_DRAW);
-if(fit&&nv){ctr=mn.map((x,k)=>(x+mx[k])/2);dist=Math.max(mx[0]-mn[0],mx[1]-mn[1],mx[2]-mn[2],1)*(gallery?1.65:1.8)}need();updateFloatingLabels()}
+sceneBounds=nv?[mn,mx]:null;if(nv)sceneRadius=Math.max(1,Math.hypot(...mx.map((v,k)=>(v-mn[k])/2)));if(fit)frameCamera();need();updateFloatingLabels()}
 function ui(){const L=$('parts');L.innerHTML='';if(gallery){$('animal-field').style.display='none';$('variant-field').style.display='none';$('edit-side').classList.add('gallery-hidden');$('rom-panel').style.display='none';$('gallery-action').style.margin='8px 0';$('parts-panel').style.display='none';$('palette-panel').style.display='none';$('vc').parentElement.parentElement.style.display='none';$('info').style.display='none';$('mesh').style.display='none';$('actions').style.display='none';return}else{$('animal-field').style.display='';$('variant-field').style.display='';$('edit-side').classList.remove('gallery-hidden');$('rom-panel').style.display='';$('parts-panel').style.display='';$('palette-panel').style.display='';$('vc').parentElement.parentElement.style.display='';$('info').style.display='';$('mesh').style.display='';$('actions').style.display='flex'}
 const mk=(t,on,f)=>{const r=document.createElement('div');r.className='row'+(on?' on':'');r.innerHTML='<span>'+t+'</span>';r.onclick=f;L.appendChild(r)};
 const modeTitle=document.createElement('div');modeTitle.className='parts-section-title';modeTitle.textContent='DISPLAY MODES';L.appendChild(modeTitle);
@@ -177,39 +211,20 @@ function buildGallery(){
   for(const [animal,A] of Object.entries(TABLE)){
     const B={};for(const k in A.b)B[k]=parseInt(A.b[k],16);
     const parts=A.p.map(p=>Object.assign(parseDL(dv,p.r,B),{sym:p.s,sections:p.v||[],textures:p.t||[]}));
-    const layout=sheetLayout(parts);let mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
-    for(const P of parts){if(P.bb[0]>P.bb[3])continue;const of=layout[P.sym]||[0,0,0];for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],P.bb[k]+of[k]);mx[k]=Math.max(mx[k],P.bb[k+3]+of[k])}}
     if(!parts.length)continue;
-    if(!Number.isFinite(mn[0])||mn[0]===1e9){mn=[0,0,0];mx=[1,1,1]}
-    galleryData.push({name:animal,parts});galleryLayout.push({parts:layout,mn,mx,offset:[0,0,0]});
+    galleryData.push({name:animal,parts});galleryLayout.push(gallerySheet(parts));
   }
-  // Pack each column/row to the actual bounds of the animals in it. The old
-  // global-max cell made every gap as large as the largest animal's sheet.
+  // Sheets use comparable thumbnail sizes, not a shared world-unit scale.
   const cols=Math.max(1,Math.ceil(Math.sqrt(galleryData.length)));
-  const rows=Math.ceil(galleryData.length/cols);
-  const widths=Array(cols).fill(1),heights=Array(rows).fill(1);
-  galleryLayout.forEach((g,i)=>{
-    const w=Math.max(1,g.mx[0]-g.mn[0]),h=Math.max(1,g.mx[1]-g.mn[1]);
-    widths[i%cols]=Math.max(widths[i%cols],w);
-    heights[Math.floor(i/cols)]=Math.max(heights[Math.floor(i/cols)],h);
-  });
-  const typical=Math.max(1,Math.min(...galleryLayout.map(g=>Math.max(g.mx[0]-g.mn[0],g.mx[1]-g.mn[1]))));
-  // Tight gutters: the previous 8% gap exaggerated the empty space between sheets.
-  const gap=Math.max(3,Math.round(typical*.025));
-  const depthStep=Math.max(8,Math.round(typical*.16));
-  const xStarts=[],yStarts=[];let x=0,y=0;
-  for(let c=0;c<cols;c++){xStarts[c]=x;x+=widths[c]+gap}
-  for(let r=0;r<rows;r++){yStarts[r]=y;y-=heights[r]+gap}
+  const rows=Math.ceil(galleryData.length/cols),gap=.08,depthStep=.16;
   galleryLayout.forEach((g,i)=>{
     const col=i%cols,row=Math.floor(i/cols);
-    // Keep the familiar rows/columns, but stagger rows slightly in depth so the gallery
-    // reads as a shallow 3D display rather than a single flat sheet.
-    g.offset=[Math.round(xStarts[col]-g.mn[0]),Math.round(yStarts[row]-g.mn[1]),Math.round((row-(rows-1)/2)*depthStep)];
+    g.offset=[col*(1+gap)-g.mn[0],-row*(1+gap)-g.mn[1],(row-(rows-1)/2)*depthStep];
   });
   const L=$('gallery-list');L.innerHTML='';galleryData.forEach((A,i)=>{const r=document.createElement('div');r.className='row';r.innerHTML='<span>'+A.name.charAt(0).toUpperCase()+A.name.slice(1)+' <small>('+A.parts.length+' parts)</small></span>';r.onclick=()=>{setGallery(false);pick(A.name)};L.appendChild(r);const secs=TABLE[A.name].s||[];for(const sec of secs){const sub=document.createElement('div');sub.className='row variant-item';sub.textContent='↳ '+sec.replaceAll('_',' ');sub.onclick=()=>{setGallery(false);pick(A.name);$('variant').value=sec;$('variant').onchange()};L.appendChild(sub)}});
 }
 function animalEmoji(n){const x=n.toLowerCase();for(const [key,emoji] of [['bear','🐻'],['dog','🐕'],['fox','🦊'],['mouse','🐭'],['rat','🐀'],['penguin','🐧'],['elephant','🐘'],['lion','🦁'],['sheep','🐑'],['camel','🐪'],['turtle','🐢'],['bird','🐦'],['frog','🐸'],['rabbit','🐇'],['hippo','🦛'],['gorilla','🦍'],['fish','🐟'],['hyena','🐕'],['vulture','🦅']])if(x.includes(key))return emoji;return '🐾'}
-function setGallery(on){returnMode=null;hoverSym=null;$('back-to-sheet').hidden=on;gallery=on;$('gallery-toggle').textContent=gallery?'← RETURN TO EDITOR':'🖼️ ALL ANIMALS GALLERY';$('gallery-list').style.display=gallery?'block':'none';$('variant').disabled=gallery;$('an').disabled=gallery;$('animal-label').firstChild.textContent=gallery?'Animal Gallery':name.charAt(0).toUpperCase()+name.slice(1);$('variant-label').textContent=gallery?galleryData.length+' animals · exploded parts sheets':(variant||'All Variants');ui();info();rebuild(true)}
+function setGallery(on){returnMode=null;hoverSym=null;$('back-to-sheet').hidden=true;gallery=on;$('gallery-toggle').textContent=gallery?'← RETURN TO EDITOR':'🖼️ ALL ANIMALS GALLERY';$('gallery-list').style.display=gallery?'block':'none';$('variant').disabled=gallery;$('an').disabled=gallery;$('animal-label').firstChild.textContent=gallery?'Animal Gallery':name.charAt(0).toUpperCase()+name.slice(1);$('variant-label').textContent=gallery?galleryData.length+' animals · exploded parts sheets':(variant||'All Variants');ui();info();rebuild(true)}
 function pick(n){returnMode=null;hoverSym=null;$('back-to-sheet').hidden=true;gallery=false;$('gallery-toggle').textContent='🖼️ ALL ANIMALS GALLERY';$('gallery-list').style.display='none';$('variant').disabled=false;$('an').disabled=false;name=n;$('animal-label').firstChild.textContent=n.charAt(0).toUpperCase()+n.slice(1);$('variant-label').textContent='All Variants';cur=TABLE[n];bases={};for(const k in cur.b)bases[k]=parseInt(cur.b[k],16);
 parsed=cur.p.map(p=>Object.assign(
   parseDL(dv,p.r,bases),
@@ -282,6 +297,33 @@ $('exp').onclick=()=>{if(!cur)return;const r={};for(const o in map)r[o]=map[o].s
 const ms=Object.keys(mesh).filter(k=>mesh[k].s.some(x=>x!=1)||mesh[k].m.some(x=>x!=0)||mesh[k].o).map(k=>(o=>{if(mesh[k].o)o.about=[0,0,0];return o})({symbol:k,scale:mesh[k].s,move:mesh[k].m})),o={animal:name,recolor:r};if(ms.length)o.mesh=ms;
 const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));a.download=name+'.json';a.click()};
 $('imp').onclick=()=>$('impf').click();
+// Render a transparent square directly from the current WebGL geometry. Restore
+// the viewport and camera synchronously so exporting does not change the view.
+$('save-icon').onclick=()=>{
+  if(!nv)return;
+  const saved={width:cv.style.width,height:cv.style.height,dist,ctr};
+  let png;
+  try{
+    cv.style.width='256px';cv.style.height='256px';frameCamera();draw([1024,1024]);
+    const image=document.createElement('canvas');image.width=image.height=1024;
+    const ctx=image.getContext('2d');ctx.drawImage(cv,0,0);
+    const pixels=ctx.getImageData(0,0,1024,1024).data;
+    let left=1024,top=1024,right=-1,bottom=-1;
+    for(let y=0;y<1024;y++)for(let x=0;x<1024;x++)if(pixels[(y*1024+x)*4+3]){
+      left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y);
+    }
+    if(right<left)return;
+    const side=Math.max(right-left+1,bottom-top+1)/.88;
+    const output=document.createElement('canvas');output.width=output.height=256;
+    output.getContext('2d').drawImage(image,(left+right+1-side)/2,(top+bottom+1-side)/2,side,side,0,0,256,256);
+    png=output.toDataURL('image/png');
+  }finally{
+    cv.style.width=saved.width;cv.style.height=saved.height;dist=saved.dist;ctr=saved.ctr;need();
+  }
+  const bytes=Uint8Array.from(atob(png.split(',')[1]),c=>c.charCodeAt(0));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bytes],{type:'image/png'}));
+  a.download=(name||'viewer')+'-icon.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
 $('impf').onchange=async e=>{if(gallery)return;const f=e.target.files[0];if(!f||!dv)return;const c=JSON.parse(await f.text());if(!TABLE[c.animal])return;pick(c.animal);
 for(const o in c.recolor||{}){const k=o.toUpperCase(),n=c.recolor[o].toUpperCase();map[k]=n.length==6?n+k.slice(6):n}for(const m of c.mesh||[])mesh[m.symbol]={s:m.scale||[1,1,1],m:m.move||[0,0,0],o:!!m.about&&m.about.every(x=>x==0)};ui();rebuild(false);info()};
 // CPU-side screen-space triangle picking. Uses the same MVP as the renderer,
@@ -289,7 +331,7 @@ for(const o in c.recolor||{}){const k=o.toUpperCase(),n=c.recolor[o].toUpperCase
 function pickPart(clientX,clientY){
   if(gallery||!pickTris.length||!cv.clientWidth||!cv.clientHeight)return null;
   const R=cameraRotation(),V=mul(tr(0,0,-dist),mul(R,tr(-ctr[0],-ctr[1],-ctr[2])));
-  const M=mul(pr(cv.clientWidth/cv.clientHeight,dist/50,dist*10),V);
+  const M=mul(projection(),V);
   const rect=cv.getBoundingClientRect(),px=(clientX-rect.left)/rect.width*2-1,py=1-(clientY-rect.top)/rect.height*2;
   const proj=v=>{const x=v[0],y=v[1],z=v[2],w=M[3]*x+M[7]*y+M[11]*z+M[15];if(w<=0)return null;return [(M[0]*x+M[4]*y+M[8]*z+M[12])/w,(M[1]*x+M[5]*y+M[9]*z+M[13])/w,(M[2]*x+M[6]*y+M[10]*z+M[14])/w]};
   let best=null,depth=Infinity;
@@ -307,35 +349,72 @@ function rememberView(){if(!gallery&&cur)returnMode={sheet,all,variant,sel}}
 function selectMeshAt(x,y){const sym=pickPart(x,y);if(!sym)return;const i=parsed.findIndex(P=>P.sym===sym);if(i<0)return;
   if(sheet||all)returnMode={sheet,all,variant,sel};else if(!returnMode)returnMode={sheet:true,all:false,variant,sel};
   sel=i;all=false;sheet=false;hoverSym=null;$('hover-part').style.display='none';$('back-to-sheet').hidden=false;$('part-inspector').hidden=true;ui();rebuild(true);info();}
-$('back-to-sheet').onclick=()=>{if(returnMode){({sheet,all,sel}=returnMode);returnMode=null}else{sheet=true;all=false}if(sheet)SH=sheetLayout(visibleParts());ui();rebuild(true);info()};
+$('back-to-sheet').onclick=()=>{$('back-to-sheet').hidden=true;if(returnMode){({sheet,all,sel}=returnMode);returnMode=null}else{sheet=true;all=false}if(sheet)SH=sheetLayout(visibleParts());ui();rebuild(true);info()};
 function hoverAt(x,y){if(dr||gallery||!sheet&&!all){if(hoverSym){hoverSym=null;rebuild(false)}$('hover-part').style.display='none';cv.style.cursor='grab';return}
   const next=pickPart(x,y);if(next!==hoverSym){hoverSym=next;rebuild(false)}
   const tip=$('hover-part');tip.style.display=next?'block':'none';if(next){tip.textContent=partNames[name]?.[next] ? partNames[name][next]+' · '+next : next;const r=cv.getBoundingClientRect();tip.style.left=Math.min(r.width-120,x-r.left+12)+'px';tip.style.top=Math.max(5,y-r.top-24)+'px'}cv.style.cursor=next?'pointer':'grab';}
 cv.addEventListener('pointerleave',()=>{hoverSym=null;$('hover-part').style.display='none';rebuild(false)});
 
-$('camera-reset').onclick=()=>{yaw=0;pit=-Math.PI/4;roll=0;rebuild(true)};
+function cameraView(view){
+  held.clear();roll=0;
+  [yaw,pit]=({front:[0,0],right:[-Math.PI/2,0],top:[0,Math.PI/2],reset:[0,-Math.PI/4]})[view];
+  frameCamera();
+}
+$('camera-reset').onclick=()=>cameraView('reset');
+$('camera-fit').onclick=frameCamera;
+for(const view of ['front','right','top'])$('camera-'+view).onclick=()=>cameraView(view);
+$('camera-in').onclick=()=>zoomCamera(-.2);
+$('camera-out').onclick=()=>zoomCamera(.2);
+$('camera-roll-left').onclick=()=>{roll-=Math.PI/12;need()};
+$('camera-roll-right').onclick=()=>{roll+=Math.PI/12;need()};
 let dr=null;
+const pointers=new Map();let gesture=null;
 cv.oncontextmenu=e=>e.preventDefault();
-cv.onpointerdown=e=>{const dragPart=sheet&&e.button===(moveButton==='left'?0:2)&&!e.shiftKey?pickPart(e.clientX,e.clientY):null;dr=[e.clientX,e.clientY,e.button,e.shiftKey,e.clientX,e.clientY,false,dragPart];cv.setPointerCapture(e.pointerId)};
-cv.onpointerup=e=>{if(dr&&!dr[6]&&dr[2]===0&&!dr[3])inspectPartAt(e.clientX,e.clientY);dr=null};
-cv.ondblclick=e=>selectMeshAt(e.clientX,e.clientY);
-cv.onpointercancel=()=>dr=null;
-cv.onpointermove=e=>{
-  if(!dr){hoverAt(e.clientX,e.clientY);return;}
-  const dx=e.clientX-dr[0],dy=e.clientY-dr[1];if(Math.hypot(e.clientX-dr[4],e.clientY-dr[5])>5)dr[6]=true;
-  if(sheet&&dr[7]){const sym=dr[7],offsets=partOffsets[name]||(partOffsets[name]={}),o=offsets[sym]||(offsets[sym]=[0,0,0]);const scale=2*dist*Math.tan(.4)/Math.max(1,cv.clientHeight),R=cameraRotation();const sx=dx*scale,sy=-dy*scale;for(let k=0;k<3;k++)o[k]+=R[k*4]*sx+R[k*4+1]*sy;rebuild(false);}
-  else if(dr[2]===2||dr[3]||e.shiftKey){
-    const step=dist*.002;
-    ctr[0]-=dx*step*Math.cos(yaw);
-    ctr[1]-=dx*step*Math.sin(yaw);
-    ctr[2]+=dy*step;
-  }else{
-    yaw-=dx*.01;
-    pit+=dy*.01;
-  }
-  dr[0]=e.clientX;dr[1]=e.clientY;need()
+cv.onpointerdown=e=>{
+  if(e.pointerType!=='touch'&&e.button>2)return;
+  cv.focus();e.preventDefault();cv.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId,[e.clientX,e.clientY]);
+  if(pointers.size>1){const [a,b]=[...pointers.values()];gesture={x:(a[0]+b[0])/2,y:(a[1]+b[1])/2,d:Math.hypot(a[0]-b[0],a[1]-b[1])};dr=null;return}
+  const modified=e.shiftKey||e.ctrlKey||e.metaKey;
+  const movePart=e.pointerType!=='touch'&&!modified&&sheet&&(e.altKey||e.button===(moveButton==='left'?0:moveButton==='right'?2:-1));
+  const sym=movePart?pickPart(e.clientX,e.clientY):null;
+  dr={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false,
+    mode:sym?'part':e.button===1?'zoom':e.button===2||modified?'pan':'orbit',sym,
+    inspect:e.button===0&&!modified&&!e.altKey};
 };
-cv.onwheel=e=>{e.preventDefault();dist*=e.deltaY>0?1.1:.9;need()};addEventListener('resize',need);need();
+function endPointer(e){
+  pointers.delete(e.pointerId);
+  if(dr&&dr.id===e.pointerId&&e.type==='pointerup'&&!dr.moved&&dr.inspect)inspectPartAt(e.clientX,e.clientY);
+  dr=null;gesture=null;cv.style.cursor='grab';
+  if(cv.hasPointerCapture(e.pointerId))cv.releasePointerCapture(e.pointerId);
+}
+cv.onpointerup=endPointer;cv.onpointercancel=endPointer;
+cv.onlostpointercapture=e=>{pointers.delete(e.pointerId);dr=null;gesture=null};
+cv.ondblclick=e=>{if(!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey)selectMeshAt(e.clientX,e.clientY)};
+cv.onpointermove=e=>{
+  if(pointers.has(e.pointerId))pointers.set(e.pointerId,[e.clientX,e.clientY]);
+  if(gesture&&pointers.size>1){
+    const [a,b]=[...pointers.values()],x=(a[0]+b[0])/2,y=(a[1]+b[1])/2,d=Math.hypot(a[0]-b[0],a[1]-b[1]);
+    if(d>0&&gesture.d>0)zoomCamera(Math.log(gesture.d/d));
+    panCamera(x-gesture.x,y-gesture.y);gesture={x,y,d};return;
+  }
+  if(!dr){if(!pointers.size)hoverAt(e.clientX,e.clientY);return}
+  if(e.pointerId!==dr.id)return;
+  // A click must not nudge either the camera or a part.
+  if(!dr.moved&&Math.hypot(e.clientX-dr.startX,e.clientY-dr.startY)<5)return;
+  dr.moved=true;cv.style.cursor='grabbing';
+  const dx=e.clientX-dr.x,dy=e.clientY-dr.y;
+  if(dr.mode==='part'){
+    const offsets=partOffsets[name]||(partOffsets[name]={}),o=offsets[dr.sym]||(offsets[dr.sym]=[0,0,0]);
+    const delta=cameraPlaneDelta(cameraRotation(),dist,cv.clientHeight,dx,dy);
+    for(let k=0;k<3;k++)o[k]+=delta[k];rebuild(false);
+  }else if(dr.mode==='pan')panCamera(dx,dy);
+  else if(dr.mode==='zoom')zoomCamera(dy*.01);
+  else{const speed=2*Math.PI/Math.max(1,cv.clientHeight);yaw-=dx*speed;pit=Math.max(-Math.PI/2,Math.min(Math.PI/2,pit+dy*speed));need()}
+  dr.x=e.clientX;dr.y=e.clientY;
+};
+cv.addEventListener('wheel',e=>{e.preventDefault();const pixels=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?cv.clientHeight:1);zoomCamera(pixels*.001)},{passive:false});
+new ResizeObserver(need).observe(cv);addEventListener('resize',need);need();
 
 // Resizable sidebars: drag the handles, or use arrow keys when focused.
 (function(){let active=null;const root=document.body;
@@ -351,12 +430,19 @@ cv.onwheel=e=>{e.preventDefault();dist*=e.deltaY>0?1.1:.9;need()};addEventListen
 const held=new Set();let lastFrame=0;
 cv.tabIndex=0;
 cv.addEventListener('pointerdown',()=>cv.focus());
-cv.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['w','a','s','d','q','e',' ','control','shift'].includes(k)){held.add(k);e.preventDefault()}});
+cv.setAttribute('aria-label','3D viewport. Drag to orbit, Shift drag to pan, wheel to zoom. F frames the scene; Home resets the camera.');
+cv.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  if(['w','a','s','d','q','e',' ','shift'].includes(k)){held.add(k);e.preventDefault();return}
+  const actions={f:frameCamera,home:()=>cameraView('reset'),'1':()=>cameraView('front'),'3':()=>cameraView('right'),'7':()=>cameraView('top'),'+':()=>zoomCamera(-.15),'=':()=>zoomCamera(-.15),'-':()=>zoomCamera(.15),arrowleft:()=>panCamera(-32,0),arrowright:()=>panCamera(32,0),arrowup:()=>panCamera(0,-32),arrowdown:()=>panCamera(0,32)};
+  if(actions[k]){e.preventDefault();actions[k]()}
+});
 cv.addEventListener('keyup',e=>held.delete(e.key.toLowerCase()));
 cv.addEventListener('blur',()=>held.clear());window.addEventListener('blur',()=>held.clear());
 function flyFrame(t){const dt=Math.min((t-lastFrame)/1000||0,.06);lastFrame=t;
-  if(held.size&&dv){if(held.has('q')!==held.has('e')){roll+=(held.has('e')?1:-1)*dt*1.25;need()}const speed=dist*.55*dt*(held.has('shift')?3:1),f=[Math.sin(yaw),0,Math.cos(yaw)],r=[Math.cos(yaw),0,-Math.sin(yaw)];let move=[0,0,0];
-    for(const [key,vec,sign] of [['w',f,-1],['s',f,1],['a',r,-1],['d',r,1],[' ',[0,1,0],1],['control',[0,1,0],-1]])if(held.has(key))for(let k=0;k<3;k++)move[k]+=vec[k]*sign;
+  if(held.size&&dv){if(held.has('q')!==held.has('e')){roll+=(held.has('e')?1:-1)*dt*1.25;need()}const speed=dist*.55*dt*(held.has('shift')?3:1),R=cameraRotation(),f=[R[2],R[6],R[10]],r=[R[0],R[4],R[8]],up=[R[1],R[5],R[9]];let move=[0,0,0];
+    for(const [key,vec,sign] of [['w',f,-1],['s',f,1],['a',r,-1],['d',r,1],[' ',up,1]])if(held.has(key))for(let k=0;k<3;k++)move[k]+=vec[k]*sign;
     const len=Math.hypot(...move);if(len){for(let k=0;k<3;k++)ctr[k]+=move[k]/len*speed;need()}
   }requestAnimationFrame(flyFrame)
 }requestAnimationFrame(flyFrame);
@@ -372,7 +458,7 @@ $('grid-toggle').onchange=e=>{showGrid=e.target.checked;$('view').classList.togg
 $('move-button').onchange=e=>{moveButton=e.target.value};
 $('labels-toggle').onchange=e=>{showLabels=e.target.checked;updateFloatingLabels()};
 $('background-color').oninput=e=>{backgroundOverride=e.target.value;$('view').style.background=backgroundOverride};
-function updateFloatingLabels(){const host=$('floating-labels');if(!showLabels||gallery||!dv){host.replaceChildren();return}const R=cameraRotation(),V=mul(tr(0,0,-dist),mul(R,tr(-ctr[0],-ctr[1],-ctr[2]))),M=mul(pr(cv.clientWidth/cv.clientHeight,dist/50,dist*10),V);host.replaceChildren();for(const P of shown()){if(!P||P.bb[0]>P.bb[3])continue;const b=P.bb,of=sheet?(SH[P.sym]||[0,0,0]).map((v,k)=>v+(partOffsets[name]?.[P.sym]?.[k]||0)):[0,0,0];const q=[0,1,2].map(k=>(b[k]+b[k+3])/2+of[k]);const w=M[3]*q[0]+M[7]*q[1]+M[11]*q[2]+M[15];if(w<=0)continue;const x=(M[0]*q[0]+M[4]*q[1]+M[8]*q[2]+M[12])/w,y=(M[1]*q[0]+M[5]*q[1]+M[9]*q[2]+M[13])/w;if(Math.abs(x)>1||Math.abs(y)>1)continue;const label=document.createElement('span');label.textContent=partNames[name]?.[P.sym]||P.sym;const shift=labelOffsets[name]?.[P.sym]||[0,0];label.style.left=`calc(${(x+1)*50}% + ${shift[0]}px)`;label.style.top=`calc(${(1-y)*50}% + ${shift[1]}px)`;label.dataset.sym=P.sym;label.dataset.baseX=(x+1)*50;label.dataset.baseY=(1-y)*50;host.appendChild(label)}}
+function updateFloatingLabels(){const host=$('floating-labels');if(!showLabels||gallery||!dv){host.replaceChildren();return}const R=cameraRotation(),V=mul(tr(0,0,-dist),mul(R,tr(-ctr[0],-ctr[1],-ctr[2]))),M=mul(projection(),V);host.replaceChildren();for(const P of shown()){if(!P||P.bb[0]>P.bb[3])continue;const b=P.viewBB||P.bb,of=sheet?(SH[P.sym]||[0,0,0]).map((v,k)=>v+(partOffsets[name]?.[P.sym]?.[k]||0)):[0,0,0];const q=[0,1,2].map(k=>(b[k]+b[k+3])/2+of[k]);const w=M[3]*q[0]+M[7]*q[1]+M[11]*q[2]+M[15];if(w<=0)continue;const x=(M[0]*q[0]+M[4]*q[1]+M[8]*q[2]+M[12])/w,y=(M[1]*q[0]+M[5]*q[1]+M[9]*q[2]+M[13])/w;if(Math.abs(x)>1||Math.abs(y)>1)continue;const label=document.createElement('span');label.textContent=partNames[name]?.[P.sym]||P.sym;const shift=labelOffsets[name]?.[P.sym]||[0,0];label.style.left=`calc(${(x+1)*50}% + ${shift[0]}px)`;label.style.top=`calc(${(1-y)*50}% + ${shift[1]}px)`;label.dataset.sym=P.sym;label.dataset.baseX=(x+1)*50;label.dataset.baseY=(1-y)*50;host.appendChild(label)}}
 $('collapse-left').onclick=()=>document.body.classList.toggle('left-collapsed');
 $('collapse-right').onclick=()=>document.body.classList.toggle('right-collapsed');
 

@@ -20,6 +20,7 @@ def main():
     commands = [
         ['node', '--check', 'tools/viewer/js/app.js'],
         ['node', '--check', 'tools/viewer/js/deform.js'],
+        ['node', 'tests/test_camera.js'],
         ['node', 'tests/test_deform_parity.js'],
         [sys.executable, 'tests/test_live_deform.py'],
         [sys.executable, 'tools/sssv_logic.py', 'examples/logic_example.json', '--seed', '7'],
