@@ -1,0 +1,11 @@
+{
+  "animal": "fox",
+  "note": "Pangolin donor probe: enlarge only the existing fox body by 5% about its bounding-box centre. Retains existing topology, rig and behaviour. ROM dry-run and cold-boot visual verification are required before treating this as validated.",
+  "mesh": [
+    {
+      "symbol": "D_04004090_CBAC0",
+      "scale": [1.05, 1.05, 1.05],
+      "move": [0, 0, 0]
+    }
+  ]
+}
