@@ -1,0 +1,569 @@
+{
+ "animal": "mouse",
+ "words": [
+  {
+   "word_rom": "0xccfb4",
+   "expect": "6682FFFF",
+   "new": "FFDD00FF",
+   "label": "legs prim #1"
+  },
+  {
+   "word_rom": "0xccfd4",
+   "expect": "6682FFFF",
+   "new": "FFDD00FF",
+   "label": "legs prim #2"
+  },
+  {
+   "word_rom": "0xcd484",
+   "expect": "6682FFFF",
+   "new": "FFDD00FF",
+   "label": "head prim (start)"
+  },
+  {
+   "word_rom": "0xcd51c",
+   "expect": "6682FFFF",
+   "new": "FFDD00FF",
+   "label": "head shell"
+  },
+  {
+   "word_rom": "0xcda7c",
+   "expect": "6682FFFF",
+   "new": "FFDD00FF",
+   "label": "body"
+  },
+  {
+   "word_rom": "0xcce44",
+   "expect": "6682FFFF",
+   "new": "FFDD00FF",
+   "label": "ear outer shell"
+  },
+  {
+   "word_rom": "0xcce0c",
+   "expect": "FF9999FF",
+   "new": "202020FF",
+   "label": "ear inner #1"
+  },
+  {
+   "word_rom": "0xcce1c",
+   "expect": "FF9999FF",
+   "new": "202020FF",
+   "label": "ear inner #2"
+  },
+  {
+   "word_rom": "0xcd4bc",
+   "expect": "FFFFFFFF",
+   "new": "E62D2DFF",
+   "label": "whisker group -> red cheek patches"
+  }
+ ],
+ "vertices": [
+  {
+   "rom": "0xccd20",
+   "index": 0,
+   "expect": [
+    118,
+    3,
+    9
+   ],
+   "new": [
+    201,
+    3,
+    9
+   ]
+  },
+  {
+   "rom": "0xccd20",
+   "index": 1,
+   "expect": [
+    227,
+    38,
+    10
+   ],
+   "new": [
+    386,
+    38,
+    10
+   ]
+  },
+  {
+   "rom": "0xccd20",
+   "index": 2,
+   "expect": [
+    191,
+    45,
+    89
+   ],
+   "new": [
+    325,
+    45,
+    89
+   ]
+  },
+  {
+   "rom": "0xccd20",
+   "index": 3,
+   "expect": [
+    108,
+    38,
+    121
+   ],
+   "new": [
+    184,
+    38,
+    121
+   ]
+  },
+  {
+   "rom": "0xccd20",
+   "index": 4,
+   "expect": [
+    24,
+    11,
+    6
+   ],
+   "new": [
+    41,
+    11,
+    6
+   ]
+  },
+  {
+   "rom": "0xccd20",
+   "index": 5,
+   "expect": [
+    117,
+    7,
+    -107
+   ],
+   "new": [
+    199,
+    7,
+    -107
+   ]
+  },
+  {
+   "rom": "0xccd20",
+   "index": 6,
+   "expect": [
+    196,
+    22,
+    -72
+   ],
+   "new": [
+    333,
+    22,
+    -72
+   ]
+  },
+  {
+   "rom": "0xccd90",
+   "index": 0,
+   "expect": [
+    221,
+    47,
+    121
+   ],
+   "new": [
+    376,
+    47,
+    121
+   ]
+  },
+  {
+   "rom": "0xccd90",
+   "index": 1,
+   "expect": [
+    104,
+    38,
+    167
+   ],
+   "new": [
+    177,
+    38,
+    167
+   ]
+  },
+  {
+   "rom": "0xccd90",
+   "index": 2,
+   "expect": [
+    119,
+    -49,
+    14
+   ],
+   "new": [
+    202,
+    -49,
+    14
+   ]
+  },
+  {
+   "rom": "0xccd90",
+   "index": 3,
+   "expect": [
+    291,
+    40,
+    2
+   ],
+   "new": [
+    495,
+    40,
+    2
+   ]
+  },
+  {
+   "rom": "0xccd90",
+   "index": 4,
+   "expect": [
+    241,
+    17,
+    -119
+   ],
+   "new": [
+    410,
+    17,
+    -119
+   ]
+  },
+  {
+   "rom": "0xccd90",
+   "index": 5,
+   "expect": [
+    116,
+    -5,
+    -157
+   ],
+   "new": [
+    197,
+    -5,
+    -157
+   ]
+  },
+  {
+   "rom": "0xccd90",
+   "index": 6,
+   "expect": [
+    -30,
+    -2,
+    2
+   ],
+   "new": [
+    -51,
+    -2,
+    2
+   ]
+  },
+  {
+   "rom": "0xcd1a0",
+   "index": 0,
+   "expect": [
+    22,
+    97,
+    -24
+   ],
+   "new": [
+    45,
+    138,
+    -72
+   ],
+   "expect_normal": [
+    117,
+    238,
+    221,
+    255
+   ],
+   "normal": [
+    50,
+    110,
+    0,
+    255
+   ]
+  },
+  {
+   "rom": "0xcd1a0",
+   "index": 1,
+   "expect": [
+    24,
+    65,
+    -1
+   ],
+   "new": [
+    66,
+    119,
+    -100
+   ],
+   "expect_normal": [
+    117,
+    238,
+    221,
+    255
+   ],
+   "normal": [
+    50,
+    110,
+    0,
+    255
+   ]
+  },
+  {
+   "rom": "0xcd1a0",
+   "index": 2,
+   "expect": [
+    46,
+    393,
+    -94
+   ],
+   "new": [
+    45,
+    138,
+    -128
+   ],
+   "expect_normal": [
+    117,
+    238,
+    221,
+    255
+   ],
+   "normal": [
+    50,
+    110,
+    0,
+    255
+   ]
+  },
+  {
+   "rom": "0xcd1a0",
+   "index": 3,
+   "expect": [
+    45,
+    -85,
+    -31
+   ],
+   "new": [
+    45,
+    -152,
+    -72
+   ],
+   "expect_normal": [
+    164,
+    214,
+    72,
+    255
+   ],
+   "normal": [
+    50,
+    146,
+    0,
+    255
+   ]
+  },
+  {
+   "rom": "0xcd1a0",
+   "index": 4,
+   "expect": [
+    44,
+    -50,
+    -12
+   ],
+   "new": [
+    66,
+    -126,
+    -100
+   ],
+   "expect_normal": [
+    164,
+    214,
+    72,
+    255
+   ],
+   "normal": [
+    50,
+    146,
+    0,
+    255
+   ]
+  },
+  {
+   "rom": "0xcd1a0",
+   "index": 5,
+   "expect": [
+    151,
+    -329,
+    -34
+   ],
+   "new": [
+    45,
+    -152,
+    -128
+   ],
+   "expect_normal": [
+    164,
+    214,
+    72,
+    255
+   ],
+   "normal": [
+    50,
+    146,
+    0,
+    255
+   ]
+  },
+  {
+   "rom": "0xcd1a0",
+   "index": 6,
+   "expect": [
+    1,
+    -84,
+    14
+   ],
+   "new": [
+    45,
+    -152,
+    -72
+   ],
+   "expect_normal": [
+    202,
+    33,
+    106,
+    255
+   ],
+   "normal": [
+    50,
+    146,
+    0,
+    255
+   ]
+  },
+  {
+   "rom": "0xcd1a0",
+   "index": 7,
+   "expect": [
+    21,
+    -49,
+    13
+   ],
+   "new": [
+    45,
+    -152,
+    -128
+   ],
+   "expect_normal": [
+    202,
+    33,
+    106,
+    255
+   ],
+   "normal": [
+    50,
+    146,
+    0,
+    255
+   ]
+  },
+  {
+   "rom": "0xcd1a0",
+   "index": 8,
+   "expect": [
+    -39,
+    -377,
+    87
+   ],
+   "new": [
+    24,
+    -152,
+    -100
+   ],
+   "expect_normal": [
+    202,
+    33,
+    106,
+    255
+   ],
+   "normal": [
+    50,
+    146,
+    0,
+    255
+   ]
+  },
+  {
+   "rom": "0xcd1a0",
+   "index": 9,
+   "expect": [
+    -8,
+    81,
+    9
+   ],
+   "new": [
+    45,
+    138,
+    -72
+   ],
+   "expect_normal": [
+    102,
+    32,
+    194,
+    255
+   ],
+   "normal": [
+    50,
+    110,
+    0,
+    255
+   ]
+  },
+  {
+   "rom": "0xcd1a0",
+   "index": 10,
+   "expect": [
+    9,
+    45,
+    16
+   ],
+   "new": [
+    45,
+    138,
+    -128
+   ],
+   "expect_normal": [
+    102,
+    32,
+    194,
+    255
+   ],
+   "normal": [
+    50,
+    110,
+    0,
+    255
+   ]
+  },
+  {
+   "rom": "0xcd1a0",
+   "index": 11,
+   "expect": [
+    -48,
+    361,
+    95
+   ],
+   "new": [
+    24,
+    157,
+    -100
+   ],
+   "expect_normal": [
+    102,
+    32,
+    194,
+    255
+   ],
+   "normal": [
+    50,
+    110,
+    0,
+    255
+   ]
+  }
+ ]
+}

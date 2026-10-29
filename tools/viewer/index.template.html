@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SSSV Modkit Viewer</title><link rel="icon" href="/*VIEWER_ICON*/">
+<style>/*VIEWER_CSS*/</style></head><body>
+<div id="side"><div class="brand-row"><button id="collapse-left" class="collapse-control" title="Hide navigation" aria-label="Toggle navigation">☰</button>
+<div class="brandbar"><div class="brand"><img src="/*VIEWER_ICON*/" alt=""><div><strong>SSSV</strong><small>MODKIT · PART VIEWER</small></div></div></div></div>
+<div class="theme-dock"><label for="theme-select">Theme</label><select id="theme-select" aria-label="Colour theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option><option value="matrix">Matrix</option><option value="dracula">Dracula</option><option value="dracula-deep">Dracula · Deep Purple</option></select></div>
+<div id="gallery-action"><button id="gallery-toggle" disabled>ALL ANIMALS GALLERY</button></div><div id="gallery-list"></div>
+<details class="panel" id="rom-panel" open><summary>ROM file</summary><input type="file" id="rom" accept=".z64,.n64,.v64"><button id="forget-rom" disabled>Forget saved ROM</button><div id="msg" class="mut">Load your US 1.0 .z64. The ROM can be remembered locally in this browser; it is never uploaded.</div></details>
+<div id="animal-field"><label class="field-label" for="an">Animal</label><select id="an" disabled></select></div>
+<div id="variant-field"><label class="field-label" for="variant">Variant / section</label><select id="variant" disabled>
+  <option value="">All Variants</option>
+</select></div>
+<details id="parts-panel" class="panel" open><summary>Parts &amp; display modes</summary><div id="parts"></div></details>
+<section id="view-settings" class="panel"><h4>Viewport &amp; tools</h4>
+<label class="setting-row"><span>Floating labels</span><input id="labels-toggle" type="checkbox"></label>
+<label class="setting-row"><span>Reference grid</span><input id="grid-toggle" type="checkbox"></label>
+<label class="setting-row"><span>Background</span><input id="background-color" type="color" value="#282a36"></label>
+<label class="setting-row" for="move-button"><span>Move sheet parts</span><select id="move-button"><option value="right">Right-drag</option><option value="left">Left-drag</option></select></label>
+<p class="mut">Drag a part to reposition it on the camera-facing plane. Double-click to edit its mesh.</p></section>
+<input type="file" id="impf" accept=".json" hidden>
+<details class="help"><summary>Viewing notes &amp; controls</summary><p>Triangles without their own colour word use mesh vertex colours as an approximation. Disable vertex colours to show them grey.</p><p>Exploded sheets are browsing layouts, not assembled animals.</p><p>Left-drag: orbit. Right-drag: reposition a part in sheet mode; Shift+left-drag: pan. Mouse wheel: zoom. Q/E: roll camera (focus viewport first).</p></details>
+</div>
+<div class="resize-handle" id="resize-left" role="separator" aria-label="Resize left sidebar" aria-orientation="vertical" tabindex="0"></div>
+<div id="view"><div id="part-inspector" hidden><div id="part-symbol"></div><label>Custom name <input id="part-name" placeholder="e.g. Head, left paw"></label><div class="inspector-actions"><small>Double-click to edit mesh</small><button id="part-name-ok">OK</button></div></div><div id="floating-labels"></div>
+<canvas id="cv"></canvas><div id="hover-part" aria-hidden="true"></div><button id="back-to-sheet" hidden>← BACK</button><div id="nav-hint">WASD move · Q/E roll · Space / Ctrl vertical · Shift faster</div>
+<div id="animal-label" aria-live="polite">Load a ROM to begin<span id="variant-label"></span><button id="camera-reset" title="Reset camera to default view">RESET</button></div>
+<svg id="axes" viewBox="0 0 94 94" aria-label="World orientation axes">
+  <circle cx="47" cy="47" r="3" fill="var(--fg)" />
+  <line id="ax-x" class="x" x1="47" y1="47" x2="70" y2="47" />
+  <line id="ax-y" class="y" x1="47" y1="47" x2="47" y2="24" />
+  <line id="ax-z" class="z" x1="47" y1="47" x2="30" y2="64" />
+  <text id="ax-xl" class="x" x="73" y="47">X</text>
+  <text id="ax-yl" class="y" x="47" y="20">Y</text>
+  <text id="ax-zl" class="z" x="26" y="68">Z</text>
+</svg>
+</div>
+<div class="resize-handle" id="resize-right" role="separator" aria-label="Resize workbench" aria-orientation="vertical" tabindex="0"></div><aside id="edit-side"><div class="workbench-row"><h3>Workbench</h3><button id="collapse-right" class="collapse-control" title="Toggle workbench">◧</button></div><section id="mesh-panel" class="panel"><h4>Mesh editing</h4><div id="mesh"></div></section><div id="info" class="mut"></div><section id="palette-panel" class="panel"><h4>Palette</h4><div class="mut">Changing a colour changes every word with that colour in this animal, same as the builder config.</div><div id="pal"></div></section><div class="panel"><label><input type="checkbox" id="vc" checked> Use vertex colours for triangles without a prim colour</label></div><div id="actions"><button id="exp">Export config</button> <button id="imp">Import config</button> <button id="rst">Reset</button></div></aside>
+<script>/*VIEWER_JS*/</script></body></html>

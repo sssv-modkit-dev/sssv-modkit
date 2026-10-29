@@ -1,0 +1,14 @@
+{
+  "_note": "TEMPLATE, kept out of configs/ on purpose (the symbol is a placeholder). Copy to configs/<animal>_deform.json, set animal + symbol, then run with --dry-run first.",
+  "animal": "REPLACE_ANIMAL",
+  "deform": [
+    {
+      "symbol": "REPLACE_WITH_PART_SYMBOL",
+      "ops": [
+        { "type": "taper",   "axis": "y", "from": 1.0, "to": 0.7 },
+        { "type": "bend",    "axis": "y", "toward": "z", "degrees": 20 },
+        { "type": "inflate", "amount": 1.1, "axes": ["x", "z"], "axis": "y", "range": [0, 0.5] }
+      ]
+    }
+  ]
+}

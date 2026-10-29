@@ -1,0 +1,8 @@
+{
+  "animal": "sheep",
+  "recolor": {
+    "FFFFFFFF": "F9F084",
+    "141414FF": "004080",
+    "1E1E1EFF": "004080"
+  }
+}

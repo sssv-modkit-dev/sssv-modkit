@@ -1,0 +1,20 @@
+{
+  "_note": "SYNTHETIC example for testing the checker. Not game data; real stage requirements must be written by hand from play-testing.",
+  "start_animals": ["otter"],
+  "animals": { "otter": ["swim"], "hawk": ["fly"], "mole": ["dig"], "ox": ["strong"] },
+  "goal": "finale",
+  "doors": [
+    "door1",
+    { "id": "door2", "after": ["door1"] },
+    { "id": "door3", "after": ["door2"] },
+    { "id": "door4", "after": ["door3"] },
+    { "id": "door5", "after": ["door4"] }
+  ],
+  "stages": {
+    "lake":   { "needs": ["swim"],   "provides": [],        "grants": ["hawk"] },
+    "cliffs": { "needs": ["fly"],    "provides": [],        "grants": ["mole"] },
+    "mine":   { "needs": ["dig"],    "provides": [],        "grants": ["ox"] },
+    "gate":   { "needs": ["strong"], "provides": [],        "grants": [] },
+    "finale": { "needs": ["swim", "fly", "dig", "strong"], "provides": [], "grants": [] }
+  }
+}

@@ -1,0 +1,49 @@
+# --- Game data: NEVER commit (copyrighted) ---
+rom/*
+!rom/README.md
+*.z64
+*.n64
+*.v64
+*.rom
+*.rar
+*.zip
+*.7z
+
+# --- ROM-derived data: NEVER commit ---
+animal_table.json
+animal_table.md
+dls2.json
+vruns.json
+*.bin
+/viewers/
+
+# --- Private workspace: scanners, extractors, dumps, renders, old work ---
+lab/
+/captures/
+/dumps/
+/states/
+/src_us/
+/rnc_blocks/
+/inner/
+/tools/old/
+/configs/old/
+/qwen/
+
+# --- Generated outputs (publish .ips files via GitHub Releases instead) ---
+build/
+*.ips
+*.bps
+
+# --- Misc ---
+__pycache__/
+*.pyc
+*.bak
+*.sav
+*.sra
+*.eep
+*.fla
+*.mpk
+*.pj4
+*.st[0-9]
+.env
+.env.*

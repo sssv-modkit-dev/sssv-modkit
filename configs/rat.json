@@ -1,0 +1,7 @@
+{
+  "animal": "rat",
+  "recolor": {
+    "FF9F9FFF": "FDDEC8",
+    "FFFFFFFF": "F8F7D6"
+  }
+}
