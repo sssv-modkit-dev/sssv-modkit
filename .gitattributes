@@ -1,0 +1,2 @@
+# Shell entry points must retain POSIX line endings on every checkout.
+*.sh text eol=lf

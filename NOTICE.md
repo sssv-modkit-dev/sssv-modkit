@@ -6,8 +6,8 @@ All trademarks and game content belong to their respective owners.
 
 - This repository contains no ROM, patched ROM, or extracted model, texture, or audio files.
   You must supply your own legally obtained copy of the US 1.0 ROM (see `rom/README.md`).
-- The small bear branding icon is a raster render of game geometry, recoloured in the viewer.
-  It remains third-party game content and is not covered by the project's CC0 dedication.
+- The small bear branding icon and release-banner head are raster renders of game geometry,
+  recoloured in the viewer. They remain third-party game content and is not covered by the project's CC0 dedication.
 - Patches (.ips) distributed with releases contain only the bytes this project changes.
 - The tools read your ROM locally; nothing is uploaded anywhere (the browser viewer runs entirely on your machine).
 - To the extent possible under law, sssv-modkit dev has waived all copyright and related rights
