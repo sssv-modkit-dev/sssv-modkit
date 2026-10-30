@@ -1,0 +1,19 @@
+{
+  "animal": "fox",
+  "note": "Diagnostic Pangolin donor probe: enlarge only the existing fox body by 30% about its bounding-box centre, to make the edited part obvious in matched cold-boot captures. Preserves topology and rig; does not enlarge the collision shape. Not a final design.",
+  "mesh": [
+    {
+      "symbol": "D_04004090_CBAC0",
+      "scale": [
+        1.3,
+        1.3,
+        1.3
+      ],
+      "move": [
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}
