@@ -11,27 +11,21 @@ The first command writes `build/release-banner.png`; the batch writes three
 future concepts to `build/future-banners/`. Existing files are never overwritten.
 Use `--out` to choose another filename (or batch directory).
 
-The default command uses a POSIX shell (Linux, macOS, WSL or Git Bash), Python
-3.8+ and an installed Chrome, Chromium or Edge browser. No Python packages or
-network access are required. The browser runs headlessly with a temporary
-profile, using the HTML composer's drawing routine and embedded local assets.
-Fonts depend on the host, so typography can vary between platforms.
-Use `--browser '/path/to/browser'` if automatic browser discovery fails. Under
-WSL, install Python and Chromium inside WSL; under Git Bash, Windows Python and
-Chrome/Edge are supported.
+The command-line generator requires Python 3.8+ and a local Chrome, Chromium or
+Edge browser. The `sh` entry point also requires a POSIX-compatible shell.
+No additional Python packages, ROM, server or network access are required.
+Use `--browser /path/to/browser` if automatic browser discovery fails.
 
-Python is also a direct entry point, including from Windows terminals:
+You can run the same generator directly with Python from any terminal:
 
 ```sh
 python tools/make_release_banner.py --palette orange --out build/orange-banner.png
 ```
 
-The existing Windows System.Drawing generator remains available for its original
-rendering and PowerShell syntax:
-
-```powershell
-powershell -NoProfile -File tools/make_release_banner.ps1 -Version 'EDITION SERIES'
-```
+Use `python3` instead of `python` if that is your Python 3 command. Both entry
+points accept the same options. Paths containing spaces should be quoted.
+The generator runs the browser headlessly with a temporary profile and embeds
+the local image and drawing code. The output is a 1500 x 500 PNG.
 
 Names follow invented colour adjective + animal part + animal. The complete title
 is italic and accent-coloured, with matched quotation marks around the name.
@@ -40,8 +34,9 @@ Optional `--name`, `--version` and `--palette blue|orange|green` control the tit
 secondary label and accent. By default the head fur and ear tips also follow
 the palette, retaining facet shading and leaving eyes, teeth and mouth unchanged.
 
-The optional `tools/release_banner.html` composer provides an interactive
-alternative without Python or a shell. Language-named quote styles control
+For an interactive workflow, open `tools/release_banner.html` in a browser,
+adjust the name, label, accent and quotation style, then choose **Save banner
+PNG**. This workflow needs only a browser. Language-named quote styles control
 punctuation; they do not translate the release name or the word "edition".
 
 ## Available heads
@@ -81,7 +76,7 @@ These masks are specific to the verified 256px bear render; they are not generic
 part detection. Other animals or named parts need their own reviewed masks or
 fresh renders. The browser composer keeps supplied PNG colours unchanged.
 
-The shell/Python generator and browser preview use medium-weight italic system
-text. The PowerShell generator uses Segoe UI Semibold Italic on Windows.
-Its equivalent options are `-Name`, `-Version`, `-Out`, `-Palette`, `-QuoteStyle`,
-`-Recolor` and `-Batch`.
+The generator and browser preview use medium-weight italic system text, fitted
+to the available title width. No specific font is required. Installed fonts and
+browser rendering can change the text's appearance between systems; choose fonts
+with glyph coverage for your title when using non-Latin text.
