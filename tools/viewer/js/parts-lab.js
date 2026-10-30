@@ -102,10 +102,3 @@ if(!Object.keys(romTable).length){startDemos();$('rom').disabled=true}
 else $('msg').textContent='Animal table embedded in this private build. Choose your ROM; remembering it is optional.';
 function readSharedDemo(){if(!location.hash.startsWith('#demo='))return;try{if(location.hash.length>16000)throw new Error('Share link is too large.');applyDemoPreset(JSON.parse(decodeURIComponent(location.hash.slice(6))))}catch(err){$('demo-status').textContent='Could not open shared demo: '+err.message}}
 readSharedDemo();addEventListener('hashchange',readSharedDemo);
-
-// Two-finger pinch zoom and pan; one-finger orbit keeps the shared pointer controls.
-const touches=new Map();let pinch=null;
-cv.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;touches.set(e.pointerId,[e.clientX,e.clientY]);if(touches.size===2){dr=null;pinch=touchMetrics()}},true);
-function touchMetrics(){const [a,b]=[...touches.values()];return {d:Math.hypot(a[0]-b[0],a[1]-b[1]),x:(a[0]+b[0])/2,y:(a[1]+b[1])/2}}
-cv.addEventListener('pointermove',e=>{if(!touches.has(e.pointerId))return;touches.set(e.pointerId,[e.clientX,e.clientY]);if(touches.size===2){e.stopImmediatePropagation();const next=touchMetrics();if(pinch&&next.d>2){dist*=pinch.d/next.d;ctr[0]-=(next.x-pinch.x)*dist*.002;ctr[1]+=(next.y-pinch.y)*dist*.002;need()}pinch=next}},true);
-for(const event of ['pointerup','pointercancel'])cv.addEventListener(event,e=>{touches.delete(e.pointerId);pinch=null;dr=null},true);

@@ -115,3 +115,11 @@ a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,selec
  .collapse-control{display:none!important}#animal-label{font-size:14px;max-width:62%;top:12px}#axes{width:65px;height:65px}
  #demo-panel{padding:8px}#demo-panel p{font-size:11px}#demo-actions{grid-template-columns:1fr}#demo-actions button{min-height:36px}
 }
+/* Camera actions stay reachable without obscuring the scene title or axes. */
+#camera-tools{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;justify-content:center;gap:4px;flex-wrap:wrap;width:max-content;max-width:calc(100% - 24px);padding:5px 8px;border:1px solid var(--bd);border-radius:10px;background:var(--card);box-shadow:0 3px 12px #0002;z-index:4}
+#camera-tools button,#camera-tools #camera-reset{position:static;display:inline-block;margin:0;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;color:var(--fg);background:var(--card);font-size:11px;letter-spacing:0;opacity:1}
+#camera-tools button:hover{background:var(--ac-soft);border-color:var(--ac)}
+#cv:focus-visible{outline:2px solid var(--ac);outline-offset:-3px}
+#nav-hint{width:calc(100% - 24px);text-align:center;opacity:.8}
+
+#axes{top:105px;left:10px;width:82px;height:82px}

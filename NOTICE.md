@@ -4,8 +4,10 @@ This is an **unofficial fan project**. It is not affiliated with, endorsed by, o
 original developer or publisher of Space Station Silicon Valley or its rights holders.
 All trademarks and game content belong to their respective owners.
 
-- This repository contains **no game data**: no ROM, no patched ROM, no extracted models, textures or audio.
+- This repository contains no ROM, patched ROM, or extracted model, texture, or audio files.
   You must supply your own legally obtained copy of the US 1.0 ROM (see `rom/README.md`).
+- The small bear branding icon is a raster render of game geometry, recoloured in the viewer.
+  It remains third-party game content and is not covered by the project's CC0 dedication.
 - Patches (.ips) distributed with releases contain only the bytes this project changes.
 - The tools read your ROM locally; nothing is uploaded anywhere (the browser viewer runs entirely on your machine).
 - To the extent possible under law, sssv-modkit dev has waived all copyright and related rights
