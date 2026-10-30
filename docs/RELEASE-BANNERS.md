@@ -26,6 +26,9 @@ Use `python3` instead of `python` if that is your Python 3 command. Both entry
 points accept the same options. Paths containing spaces should be quoted.
 The generator runs the browser headlessly with a temporary profile and embeds
 the local image and drawing code. The output is a 1500 x 500 PNG.
+The command-line generator and interactive composer share `tools/release_banner.js`
+for layout, typography, quotation marks and raster recolouring. The generator
+checks that rendering completed and the PNG dimensions match before saving.
 
 Names follow invented colour adjective + animal part + animal. The complete title
 is italic and accent-coloured, with matched quotation marks around the name.
@@ -35,8 +38,11 @@ secondary label and accent. By default the head fur and ear tips also follow
 the palette, retaining facet shading and leaving eyes, teeth and mouth unchanged.
 
 For an interactive workflow, open `tools/release_banner.html` in a browser,
-adjust the name, label, accent and quotation style, then choose **Save banner
-PNG**. This workflow needs only a browser. Language-named quote styles control
+choose a transparent PNG with **Head render**, adjust the name, label, accent
+and quotation style, then choose **Save banner PNG**. For the bundled bear,
+select `tools/viewer/assets/icon.png`. Opening a local HTML file shows a preview
+but requires this file selection to enable export under browser security rules.
+This workflow needs only a browser. Language-named quote styles control
 punctuation; they do not translate the release name or the word "edition".
 
 ## Available heads

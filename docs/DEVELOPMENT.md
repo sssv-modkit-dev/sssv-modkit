@@ -8,6 +8,7 @@ python tools/check.py
 ```
 
 This checks Python and JavaScript syntax, camera math and live input handlers,
+shared banner rendering rules, browser discovery and failed-output protection,
 saved deformation vectors, fresh
 Python/JavaScript parity, and a synthetic progression example. It needs no ROM
 and does not rewrite fixtures. Keep the saved golden vectors as an independent

@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import random
 import shutil
+import struct
 import subprocess
 import tempfile
 
@@ -21,15 +22,18 @@ STYLES = ('english', 'french', 'spanish', 'german', 'japanese')
 
 def find_browser(explicit):
     if explicit:
-        candidate = shutil.which(explicit) or explicit
+        candidate = shutil.which(explicit) or Path(explicit).expanduser()
         if Path(candidate).is_file():
             return str(Path(candidate).resolve())
         raise ValueError('Browser executable not found: ' + explicit)
-    for name in ('chromium', 'chromium-browser', 'google-chrome', 'chrome', 'msedge'):
+    for name in ('chromium', 'chromium-browser', 'google-chrome', 'google-chrome-stable', 'chrome', 'msedge', 'microsoft-edge'):
         if shutil.which(name):
             return shutil.which(name)
-    candidates = [Path('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'),
-                  Path('/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge')]
+    candidates = []
+    for directory in (Path('/Applications'), Path.home() / 'Applications'):
+        for application, binary in (('Google Chrome', 'Google Chrome'),
+                                    ('Chromium', 'Chromium'), ('Microsoft Edge', 'Microsoft Edge')):
+            candidates.append(directory / f'{application}.app/Contents/MacOS/{binary}')
     for variable in ('PROGRAMFILES', 'PROGRAMFILES(X86)', 'LOCALAPPDATA'):
         if os.environ.get(variable):
             for suffix in ('Google/Chrome/Application/chrome.exe',
@@ -43,42 +47,29 @@ def find_browser(explicit):
 
 def make_page(options, style):
     # Inline local assets so rendering never needs a server or network request.
-    source = (ROOT / 'tools/release_banner.html').read_text(encoding='utf-8')
-    _, opening, script = source.partition('<script>')
-    script, closing, _ = script.partition('</script>')
-    script, handlers, _ = script.partition("for(const id of ['name','version','accent'])")
-    if not opening or not closing or not handlers:
-        raise ValueError('Composer script structure changed; update the banner renderer.')
+    script = (ROOT / 'tools/release_banner.js').read_text(encoding='utf-8')
     icon = base64.b64encode((ROOT / 'tools/viewer/assets/icon.png').read_bytes()).decode('ascii')
     settings = json.dumps({
         'name': options.name or PRESETS[options.palette][0],
         'version': options.version, 'accent': PRESETS[options.palette][1],
         'style': style, 'recolor': options.recolor,
     }, ensure_ascii=True).replace('<', '\\u003c')
-    # Reuse the composer's actual draw routine and quote definitions.
-    script = script.replace('document.getElementById(id)', 'values[id]')
     return r'''<!doctype html><meta charset="utf-8">
 <style>html,body{margin:0;width:1500px;height:500px;overflow:hidden}canvas{display:block}</style>
 <canvas width="1500" height="500"></canvas><script>
 const settings=SETTINGS;
-const values={name:{value:settings.name},version:{value:settings.version},accent:{value:settings.accent}};
 SCRIPT
-chosenStyle=settings.style;
 const img=new Image();
-img.onload=()=>{
- const raster=document.createElement('canvas');raster.width=img.width;raster.height=img.height;
- const r=raster.getContext('2d');r.drawImage(img,0,0);
- const pixels=r.getImageData(0,0,img.width,img.height),p=pixels.data;
- const target=settings.accent.match(/\w\w/g).map(v=>parseInt(v,16));
- for(let y=0;y<img.height;y++)for(let x=0;x<img.width;x++){
-  const i=(y*img.width+x)*4;if(!p[i+3])continue;
-  const [red,green,blue]=[p[i],p[i+1],p[i+2]];let factor=0;
-  if(blue>red*1.5&&blue>green*1.25&&['head','both'].includes(settings.recolor))factor=.65*blue/128;
-  if(y<40&&red>blue&&green>=blue&&['ears','both'].includes(settings.recolor))factor=.9*Math.max(red,green)/200;
-  if(factor>0)for(let c=0;c<3;c++)p[i+c]=Math.min(255,Math.round(target[c]*factor));
+img.onload=async()=>{
+ try {
+  await document.fonts.ready;
+  ReleaseBanner.draw(document.querySelector('canvas'),settings,img);
+  document.documentElement.dataset.bannerStatus='ready';
+ } catch(error) {
+  document.documentElement.dataset.bannerStatus='failed';
  }
- r.putImageData(pixels,0,0);head=raster;draw();
 };
+img.onerror=()=>{document.documentElement.dataset.bannerStatus='failed'};
 img.src='data:image/png;base64,ICON';
 </script>'''.replace('SCRIPT', script).replace('ICON', icon).replace('SETTINGS', settings)
 
@@ -93,16 +84,22 @@ def render(options, browser, output):
                    '--no-default-browser-check', '--hide-scrollbars',
                    '--force-device-scale-factor=1', '--window-size=1500,500',
                    '--virtual-time-budget=3000', '--run-all-compositor-stages-before-draw',
-                   '--user-data-dir=' + str(work / 'profile'),
+                   '--user-data-dir=' + str(work / 'profile'), '--dump-dom',
                    '--screenshot=' + str(screenshot), page.as_uri()]
         result = subprocess.run(command, capture_output=True, timeout=60)
         if result.returncode or not screenshot.is_file():
             raise ValueError('Browser could not render the banner: ' +
                              result.stderr.decode(errors='replace')[-2000:])
+        if b'data-banner-status="ready"' not in result.stdout:
+            raise ValueError('Banner rendering did not complete; no output was written.')
+        png = screenshot.read_bytes()
+        if (png[:16] != b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR' or
+                len(png) < 24 or struct.unpack('>II', png[16:24]) != (1500, 500)):
+            raise ValueError('Browser returned an invalid banner size; expected 1500 x 500 PNG.')
         output.parent.mkdir(parents=True, exist_ok=True)
         # Exclusive creation also protects against a file appearing during rendering.
         with output.open('xb') as destination:
-            destination.write(screenshot.read_bytes())
+            destination.write(png)
     print(f'Banner saved: {output}\nQuotation style: {style}\nBear raster recolour: {options.recolor}')
 
 
@@ -117,7 +114,7 @@ def main():
     parser.add_argument('--batch', action='store_true')
     parser.add_argument('--browser', help='Path to Chrome, Chromium or Edge')
     options = parser.parse_args()
-    output = options.out or ROOT / ('build/future-banners' if options.batch else 'build/release-banner.png')
+    output = options.out.expanduser() if options.out else ROOT / ('build/future-banners' if options.batch else 'build/release-banner.png')
     jobs = [(palette, output / f'{palette}-bear.png') for palette in PRESETS] if options.batch else [(options.palette, output)]
     try:
         for _, path in jobs:
