@@ -20,7 +20,7 @@ the README instructions, build the viewer locally:
 python tools/build_viewer.py tools/animal_table.json
 ```
 
-Open `viewers/rom_viewer.html` in a modern browser with WebGL support. Test ROM
+Open `viewers/parts_viewer.html` in a modern browser with WebGL support. Test ROM
 loading, animal/variant selection, parts sheets, mesh controls, config
 import/export, themes, and local ROM storage. Use **Forget saved ROM** to remove
 the browser's stored copy. The viewer embeds `tools/viewer/assets/icon.png` for
