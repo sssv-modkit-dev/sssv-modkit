@@ -1,0 +1,140 @@
+{
+  "animal": "fox",
+  "note": "Pangolin silhouette prototype v1 using the existing fox rig and topology. Broader raised torso, reduced ears, tapered extended snout and tail, earth-tone palette. Shared by FOX, FIRE_FOX and RACING_FOX. No added scale plates, curl animation, collision or behaviour changes. Normals remain unchanged; inspect shading and attachments in game. The generated index also associates head colour words with gorilla; effects in other banks remain unverified. Prototype validation targets Racing Fox only.",
+  "words": [
+    {
+      "word_rom": "0xcbb4c",
+      "expect": "FFFFFFFF",
+      "new": "B69A70"
+    },
+    {
+      "word_rom": "0xcbc74",
+      "expect": "FFFFFFFF",
+      "new": "B69A70"
+    },
+    {
+      "word_rom": "0xcc77c",
+      "expect": "FFFFFFFF",
+      "new": "B69A70"
+    },
+    {
+      "word_rom": "0xcbacc",
+      "expect": "FF2000FF",
+      "new": "967044"
+    },
+    {
+      "word_rom": "0xcbc3c",
+      "expect": "FF2000FF",
+      "new": "967044"
+    },
+    {
+      "word_rom": "0xcc74c",
+      "expect": "FF2000FF",
+      "new": "967044"
+    },
+    {
+      "word_rom": "0xcc7d4",
+      "expect": "FF2000FF",
+      "new": "967044"
+    }
+  ],
+  "mesh": [
+    {
+      "symbol": "D_04004D10_CC740",
+      "groups": [
+        0,
+        1
+      ],
+      "about": [
+        -27,
+        0,
+        -6
+      ],
+      "scale": [
+        0.4,
+        0.8,
+        0.75
+      ],
+      "move": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "deform": [
+    {
+      "symbol": "D_04004090_CBAC0",
+      "about": [
+        0,
+        0,
+        -22
+      ],
+      "ops": [
+        {
+          "type": "inflate",
+          "amount": 1.45,
+          "axes": [
+            "y",
+            "z"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "D_04004D10_CC740",
+      "groups": [
+        2,
+        3,
+        4
+      ],
+      "about": [
+        -5,
+        0,
+        15
+      ],
+      "ops": [
+        {
+          "type": "taper",
+          "axis": "z",
+          "range": [
+            0.6,
+            1
+          ],
+          "from": 1,
+          "to": 0.45
+        },
+        {
+          "type": "inflate",
+          "amount": 1.18,
+          "axes": [
+            "z"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "D_04004200_CBC30",
+      "about": [
+        -73,
+        0,
+        0
+      ],
+      "ops": [
+        {
+          "type": "inflate",
+          "amount": 1.25,
+          "axes": [
+            "x"
+          ]
+        },
+        {
+          "type": "taper",
+          "axis": "x",
+          "from": 1,
+          "to": 0.45
+        }
+      ]
+    }
+  ]
+}
