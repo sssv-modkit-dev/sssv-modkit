@@ -13,10 +13,11 @@ Optional files next to this script:
                            Put third-party franchise names here, locally; none are shipped in this file.
 Rules (see docs/PREPUBLISH.md for the why): ROM magic bytes, big files, lab/ dumps/ captures/ states/ paths,
 ROM-derived tables (animal_table.json shape), long hex dumps, decomp-style source files, denylist words."""
-import sys, os, re, json, subprocess, fnmatch, hashlib
+import sys, os, re, json, subprocess, hashlib
 
-US10_SHA1 = 'e5e09205aa743a9e5043a42df72adc379c746b0b'
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from romio import US10_SHA1  # noqa: E402
 MAX_BYTES = 512 * 1024
 ROM_MAGIC = (b'\x80\x37\x12\x40', b'\x37\x80\x40\x12', b'\x40\x12\x37\x80')   # .z64 / .v64 / .n64 byte orders
 BAD_EXT = ('.z64', '.n64', '.v64', '.rom', '.sav', '.eep', '.sra', '.fla', '.mpk', '.st0', '.st1', '.pj4', '.zip', '.7z')

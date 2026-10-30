@@ -7,7 +7,8 @@ no additional packages are needed.
 python tools/check.py
 ```
 
-This checks Python and JavaScript syntax, camera math and live input handlers,
+This checks Python and JavaScript syntax, the builder's safety refusals and
+IPS/CRC helpers on a synthetic ROM, camera math and live input handlers,
 saved deformation vectors, fresh
 Python/JavaScript parity, and a synthetic progression example. It needs no ROM
 and does not rewrite fixtures. Keep the saved golden vectors as an independent
@@ -33,6 +34,12 @@ For a config change, dry-run that exact file before building:
 python tools/make_animal_mods.py configs/bear.json --out build --name bear_test --dry-run
 python tools/make_animal_mods.py configs/bear.json --out build --name bear_test
 ```
+
+The dry run applies the same plan as the real build to an in-memory copy, so its
+vertex counts and bounding boxes match the build. Code layout: `tools/romio.py`
+holds ROM identity, lookup, CRC and IPS; the builder splits into `plan_edits`
+(every check, no writes) and `apply_plan`. When refactoring the builder, rebuild
+each config before and after and compare the IPS files byte for byte.
 
 Use one config at a time when comparing edits. Folder input combines every
 top-level JSON config, including alternate examples for the same animal.

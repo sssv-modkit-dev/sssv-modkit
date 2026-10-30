@@ -74,8 +74,8 @@ python tools/animal_table.py /path/to/sssv/src.us/sssv/animals tools/animal_tabl
 ```
 
 Replace the source path with the location in your checkout. This writes `tools/animal_table.json`
-and `tools/animal_table.md`; keep both private. The generator reads the ROM from `rom/`
-or the `SSSV_ROM` environment variable.
+and `tools/animal_table.md`; keep both private. The generator reads the ROM from `--rom FILE`, the `SSSV_ROM`
+environment variable or `rom/`.
 
 ## Part viewer
 

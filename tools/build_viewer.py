@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build a portable single-file viewer from modular sources and the ROM-derived table."""
-import argparse,base64,json,subprocess,sys
+import argparse,base64,json,re,subprocess,sys
 from urllib.parse import quote
 from pathlib import Path
 here=Path(__file__).resolve().parent
@@ -35,7 +35,6 @@ for a,d in t.items():
     for p in d['parts']:
         if not p['ended'] or p['seg']==1:continue
         j=p['joint_calls'][0].split(' | ')[0] if p['joint_calls'] else '?'
-        import re
         ps.append({'s':p['symbol'],'r':p['rom'],'j':re.sub(r'(?<=[0-9A-Fa-f])U\b','',j).replace(' ','-'),'v':p.get('sections',[]),'t':tex})
     if ps:T[a]={'b':d['seg_bases'],'p':ps,'s':d.get('sections',[])}
 base=here/'viewer'

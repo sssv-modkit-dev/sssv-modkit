@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """Build per-animal tables (display lists, SETPRIMCOLOR words, vertex groups, bounding boxes) from the decomp + ROM.
 Read-only: never writes ROM bytes.
-Usage: python animal_table.py [animals_dir] [out_prefix]
-  animals_dir default: src_us/src.us/sssv/animals ; writes <out_prefix>.json and <out_prefix>.md (default animal_table)
+Usage: python animal_table.py ANIMALS_DIR [OUT_PREFIX] [--rom FILE]
+  ANIMALS_DIR is <decomp>/src.us/sssv/animals; writes <OUT_PREFIX>.json and <OUT_PREFIX>.md (default animal_table)
 Seg base for each symbol D_<seg2><off6>_<ROM> is derived as ROM - off (so no guessing); seg1 = 0x398D0."""
-import os, re, sys, json, struct
+import argparse, os, re, sys, json, struct
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import sssv_paths
-ROM = open(sssv_paths.ROM, 'rb').read()
-adir = sys.argv[1] if len(sys.argv) > 1 else 'src_us/src.us/sssv/animals'
-outp = sys.argv[2] if len(sys.argv) > 2 else 'animal_table'
+from romio import find_rom, read_us10
+ROM = b''   # set by main()
 
 OPS = {0x01, 0x03, 0x04, 0x06, 0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF,
        0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEF, 0xF0, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD}
@@ -82,53 +80,72 @@ def parse_dl(rom_addr, segbases, maxcmds=600):
         elif op == 0xB8: ended = True; break
     return {'ended': ended, 'bad': bad, 'tris': tris, 'groups': groups, 'primcolors': colors, 'len_cmds': i + 1, 'combines': combines, 'geomode': geomode}
 
-result = {}
-for fn in sorted(os.listdir(adir)):
-    if not fn.endswith('.c'): continue
-    name = fn[:-2]
-    txt = open(os.path.join(adir, fn), encoding='utf8', errors='replace').read()
-    syms = {}
-    for m in SYM.finditer(txt):
-        full, seg, off, rom = m.group(1), int(m.group(2)), int(m.group(3), 16), int(m.group(4), 16)
-        syms[full] = (seg, off, rom)
-    gfx = set(EXT.findall(txt))
-    calls = {}
-    for m in CALL.finditer(txt):
-        args = [a.strip() for a in m.group(1).split(',')]
-        calls.setdefault(m.group(2), []).append(' '.join(' '.join(args[:2]).split()) + ' | mirror=' + (args[7] if len(args) > 7 else '?'))
-    segbases = {1: 0x398D0}
-    for s, (seg, off, rom) in syms.items():
-        if seg in (4, 5) and s in gfx: segbases.setdefault(seg, rom - off)
-    parts = []
-    for s in sorted(syms, key=lambda k: syms[k][2]):
-        seg, off, rom = syms[s]
-        if s not in gfx: continue
-        d = parse_dl(rom, segbases)
-        d.update({'symbol': s, 'seg': seg, 'rom': rom, 'joint_calls': calls.get(s, [])})
-        parts.append(d)
-    dfs, sections = draw_funcs(txt)
-    for p in parts: p['sections'] = sorted({f['section'] for f in dfs if f['section'] for e in f['events'] if e['t'] == 'part' and e['dl'] == p['symbol']})
-    variants = sorted({e['animal'] for f in dfs for e in f['events'] if e['t'] == 'load'})
-    result[name] = {'file': fn, 'seg_bases': {k: hex(v) for k, v in segbases.items()}, 'parts': parts, 'variants': variants, 'sections': sections, 'draw_funcs': dfs,
-                    'palette': sorted({c['rgba'] for p in parts if p['ended'] for c in p['primcolors']})}
+def build(adir):
+    result = {}
+    for fn in sorted(os.listdir(adir)):
+        if not fn.endswith('.c'): continue
+        name = fn[:-2]
+        txt = open(os.path.join(adir, fn), encoding='utf8', errors='replace').read()
+        syms = {}
+        for m in SYM.finditer(txt):
+            full, seg, off, rom = m.group(1), int(m.group(2)), int(m.group(3), 16), int(m.group(4), 16)
+            syms[full] = (seg, off, rom)
+        gfx = set(EXT.findall(txt))
+        calls = {}
+        for m in CALL.finditer(txt):
+            args = [a.strip() for a in m.group(1).split(',')]
+            calls.setdefault(m.group(2), []).append(' '.join(' '.join(args[:2]).split()) + ' | mirror=' + (args[7] if len(args) > 7 else '?'))
+        segbases = {1: 0x398D0}
+        for s, (seg, off, rom) in syms.items():
+            if seg in (4, 5) and s in gfx: segbases.setdefault(seg, rom - off)
+        parts = []
+        for s in sorted(syms, key=lambda k: syms[k][2]):
+            seg, off, rom = syms[s]
+            if s not in gfx: continue
+            d = parse_dl(rom, segbases)
+            d.update({'symbol': s, 'seg': seg, 'rom': rom, 'joint_calls': calls.get(s, [])})
+            parts.append(d)
+        dfs, sections = draw_funcs(txt)
+        for p in parts: p['sections'] = sorted({f['section'] for f in dfs if f['section'] for e in f['events'] if e['t'] == 'part' and e['dl'] == p['symbol']})
+        variants = sorted({e['animal'] for f in dfs for e in f['events'] if e['t'] == 'load'})
+        result[name] = {'file': fn, 'seg_bases': {k: hex(v) for k, v in segbases.items()}, 'parts': parts, 'variants': variants, 'sections': sections, 'draw_funcs': dfs,
+                        'palette': sorted({c['rgba'] for p in parts if p['ended'] for c in p['primcolors']})}
 
-json.dump(result, open(outp + '.json', 'w'), indent=1)
-with open(outp + '.md', 'w') as f:
-    f.write('# Animal parts / colours (auto-generated, read-only)\n\n')
-    for name, a in result.items():
-        ok = [p for p in a['parts'] if p['ended']]
-        f.write(f"## {name}  (sections {', '.join(a['sections']) or '-'}; load_animal {', '.join(a['variants']) or '-'}; bases {a['seg_bases']}; {len(ok)} valid DLs of {len(a['parts'])} Gfx symbols; palette {', '.join(a['palette']) or '-'})\n")
-        for p in a['parts']:
-            if not p['ended']:
-                f.write(f"- `{p['symbol']}` INVALID ({p['bad']})\n"); continue
-            cols = ','.join(c['rgba'] for c in p['primcolors']) or '-'
-            ext = ''
-            bb = [g['bbox'] for g in p['groups'] if g['bbox']]
-            if bb:
-                mn = [min(b[i][0] for b in bb) for i in range(3)]; mx = [max(b[i][1] for b in bb) for i in range(3)]
-                ext = f" extent x[{mn[0]},{mx[0]}] y[{mn[1]},{mx[1]}] z[{mn[2]},{mx[2]}]"
-            jc = ('; joints: ' + ' / '.join(p['joint_calls'][:3])) if p['joint_calls'] else ''
-            f.write(f"- `{p['symbol']}` tris={p['tris']} vtxgroups={len(p['groups'])} colors=[{cols}]{ext}{jc} sections=[{','.join(p['sections'])}]\n")
-        f.write('\n')
-print('animals:', len(result), ' valid DLs:', sum(1 for a in result.values() for p in a['parts'] if p['ended']),
-      ' total Gfx symbols:', sum(len(a['parts']) for a in result.values()))
+    return result
+
+def write(result, outp):
+    with open(outp + '.json', 'w', encoding='utf-8') as f: json.dump(result, f, indent=1)
+    with open(outp + '.md', 'w', encoding='utf-8') as f:
+        f.write('# Animal parts / colours (auto-generated, read-only)\n\n')
+        for name, a in result.items():
+            ok = [p for p in a['parts'] if p['ended']]
+            f.write(f"## {name}  (sections {', '.join(a['sections']) or '-'}; load_animal {', '.join(a['variants']) or '-'}; bases {a['seg_bases']}; {len(ok)} valid DLs of {len(a['parts'])} Gfx symbols; palette {', '.join(a['palette']) or '-'})\n")
+            for p in a['parts']:
+                if not p['ended']:
+                    f.write(f"- `{p['symbol']}` INVALID ({p['bad']})\n"); continue
+                cols = ','.join(c['rgba'] for c in p['primcolors']) or '-'
+                ext = ''
+                bb = [g['bbox'] for g in p['groups'] if g['bbox']]
+                if bb:
+                    mn = [min(b[i][0] for b in bb) for i in range(3)]; mx = [max(b[i][1] for b in bb) for i in range(3)]
+                    ext = f" extent x[{mn[0]},{mx[0]}] y[{mn[1]},{mx[1]}] z[{mn[2]},{mx[2]}]"
+                jc = ('; joints: ' + ' / '.join(p['joint_calls'][:3])) if p['joint_calls'] else ''
+                f.write(f"- `{p['symbol']}` tris={p['tris']} vtxgroups={len(p['groups'])} colors=[{cols}]{ext}{jc} sections=[{','.join(p['sections'])}]\n")
+            f.write('\n')
+
+def main():
+    global ROM
+    ap = argparse.ArgumentParser(description='Build animal_table.json/.md from decomp animal sources and your US 1.0 ROM (read-only).')
+    ap.add_argument('animals_dir', help='<decomp>/src.us/sssv/animals')
+    ap.add_argument('out_prefix', nargs='?', default='animal_table')
+    ap.add_argument('--rom', help='unmodified US 1.0 .z64 (default: env SSSV_ROM, then ./rom or <repo>/rom)')
+    a = ap.parse_args()
+    if not os.path.isdir(a.animals_dir): raise SystemExit(f'animals directory not found: {a.animals_dir}')
+    ROM = read_us10(find_rom(a.rom, quiet=True))
+    result = build(a.animals_dir)
+    write(result, a.out_prefix)
+    print('animals:', len(result), ' valid DLs:', sum(1 for d in result.values() for p in d['parts'] if p['ended']),
+          ' total Gfx symbols:', sum(len(d['parts']) for d in result.values()))
+
+if __name__ == '__main__':
+    main()
