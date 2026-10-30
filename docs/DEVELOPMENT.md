@@ -8,6 +8,7 @@ python tools/check.py
 ```
 
 This checks Python and JavaScript syntax, camera math and live input handlers,
+shared banner rendering rules, browser discovery and failed-output protection,
 saved deformation vectors, fresh
 Python/JavaScript parity, and a synthetic progression example. It needs no ROM
 and does not rewrite fixtures. Keep the saved golden vectors as an independent
@@ -43,3 +44,48 @@ reference, screenshots, browser evidence, and ROM-free fixture instructions.
 See [deform preview](DEFORM-TRYOUT.md), [glossary](GLOSSARY.md), and
 [release checks](PREPUBLISH.md). Emulator automation is maintained separately in
 [sssv-modkit-automated-testing](https://github.com/sssv-modkit-dev/sssv-modkit-automated-testing).
+
+## Coverage and focused checks
+
+`tools/check.py` parses active Python sources, checks JavaScript syntax, runs the
+saved deform vectors, compares fresh Python expectations against both live and
+standalone JavaScript, and runs the synthetic stage-shuffle example. It does not
+read a ROM, regenerate fixtures, build a viewer or start an emulator.
+
+For a focused math check:
+
+```text
+node tests/test_deform_parity.js
+python tests/test_live_deform.py
+```
+
+These compare synthetic coordinates, bounds, clamp counts and rejected inputs.
+They do not establish real-ROM vertex selection or matching game shading.
+
+To check bundling without replacing the current generated page:
+
+```text
+python tools/build_viewer.py tools/animal_table.json build/viewer-check.html
+```
+
+## Find the right context
+
+Start with [agent guidance](../AGENTS.md) and [project status](../PROJECT.md),
+then read only the sources needed for the task. [Architecture](ARCHITECTURE.md)
+maps responsibilities; the [documentation index](README.md) links user guides.
+
+| Task | Start with | Validation |
+|---|---|---|
+| Config and patch safety | Builder docstring and affected planner | Synthetic checks; exact-config dry-run and patch self-test when needed |
+| Deform math | Python `plan_deform`, live and standalone JS, DEFORM-TRYOUT.md | Saved and fresh parity; browser/game checks for integration |
+| Viewer interaction | `tools/viewer/`, `tools/build_viewer.py` | Syntax, rebuild, browser inspection |
+| Animal/variant index | `tools/animal_table.py`, GLOSSARY.md | Targeted synthetic checks and local index inspection |
+| Custom mesh or rig | ARCHITECTURE.md, donor draw events and private research | Verified budgets, transforms and runtime evidence before ROM writes |
+| Emulator scenes and states | Separate harness README and recipes | Synthetic harness tests, followed by real scene/state verification |
+| Documentation | User guides and linked CLI entry points | Link/anchor checks, example syntax, whitespace and publication scan |
+
+Keep handoffs short: objective, relevant files, observed evidence, unresolved
+question, and next validation. Separate chats that edit code should use isolated
+worktrees or distinct repositories. A plain Git worktree starts from committed files; app-managed worktrees may
+also carry local changes. Verify that the guidance and inputs needed for the task
+are present, and pass private research paths explicitly.
