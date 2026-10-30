@@ -1,5 +1,7 @@
 
-const TABLE=/*TABLE*/null;
+let TABLE=/*TABLE*/null;
+let romTable=TABLE,demoMode=false;
+function readPart(p,B){return p.demo||parseDL(dv,p.r,B)}
 //#PURE-START
 function vtx(dv,b,off,i){const o=b+off+16*i;if(o<0||o+16>dv.byteLength||dv.getUint16(o+6))return null;const q=[dv.getInt16(o),dv.getInt16(o+2),dv.getInt16(o+4)];q.c=[dv.getUint8(o+12)/255,dv.getUint8(o+13)/255,dv.getUint8(o+14)/255];return q}
 function parseDL(dv,addr,bases){const vb={},cols=[],tris=[],bb=[1e9,1e9,1e9,-1e9,-1e9,-1e9];let c=-1;
@@ -88,6 +90,7 @@ console.table(rows);deform=nd;deformCache.clear();deformOn=true;ui();rebuild(fal
 const $=id=>document.getElementById(id);
 let pickTris=[],hoverSym=null,returnMode=null,partNames={},partOffsets={},labelOffsets={},selectedSym=null,moveButton="right",showGrid=false,showLabels=false,backgroundOverride=null;let mesh={},dv=null,cur=null,name='',bases={},parsed=[],map={},sel=0,variant='',all=false,sheet=false,SH={},useVC=true,yaw=0,pit=-Math.PI/4,roll=0,dist=1,ctr=[0,0,0],nv=0,dirty=false,gallery=false,galleryData=[],galleryLayout=[];
 const cv=$('cv'),gl=cv.getContext('webgl',{alpha:true});
+if(!gl){$('demo-status').textContent='WebGL is unavailable. Enable hardware acceleration or try another browser.';throw new Error('WebGL unavailable')}
 function sh(t,s){const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);return x}
 const pg=gl.createProgram();
 gl.attachShader(pg,sh(gl.VERTEX_SHADER,'attribute vec3 p,c,n;uniform mat4 M,N;varying vec3 vc;varying float vl;void main(){gl_Position=M*vec4(p,1.);vc=c;vec3 q=normalize((N*vec4(n,0.)).xyz);vl=.45+.55*abs(dot(q,normalize(vec3(-.3,.5,.8))));}'));
@@ -141,17 +144,16 @@ const l=Math.hypot(...n)||1;n=n.map(x=>x/l);if(!gallery&&hoverSym===P.sym)col.sp
 nv=d.length/9;gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(d),gl.STATIC_DRAW);
 if(fit&&nv){ctr=mn.map((x,k)=>(x+mx[k])/2);dist=Math.max(mx[0]-mn[0],mx[1]-mn[1],mx[2]-mn[2],1)*(gallery?1.65:1.8)}need();updateFloatingLabels()}
 function ui(){const L=$('parts');L.innerHTML='';if(gallery){$('animal-field').style.display='none';$('variant-field').style.display='none';$('edit-side').classList.add('gallery-hidden');$('rom-panel').style.display='none';$('gallery-action').style.margin='8px 0';$('parts-panel').style.display='none';$('palette-panel').style.display='none';$('vc').parentElement.parentElement.style.display='none';$('info').style.display='none';$('mesh').style.display='none';$('actions').style.display='none';return}else{$('animal-field').style.display='';$('variant-field').style.display='';$('edit-side').classList.remove('gallery-hidden');$('rom-panel').style.display='';$('parts-panel').style.display='';$('palette-panel').style.display='';$('vc').parentElement.parentElement.style.display='';$('info').style.display='';$('mesh').style.display='';$('actions').style.display='flex'}
-const mk=(t,on,f)=>{const r=document.createElement('div');r.className='row'+(on?' on':'');r.innerHTML='<span>'+t+'</span>';r.onclick=f;L.appendChild(r)};
+const mk=(t,on,f)=>{const r=document.createElement('button');r.type='button';r.className='row'+(on?' on':'');r.setAttribute('aria-pressed',String(on));r.innerHTML='<span>'+t+'</span>';r.onclick=f;L.appendChild(r)};
 const modeTitle=document.createElement('div');modeTitle.className='parts-section-title';modeTitle.textContent='DISPLAY MODES';L.appendChild(modeTitle);
 mk('▦  Parts sheet (exploded grid)',sheet,()=>{assembled=false;sheet=!sheet;all=false;if(sheet)SH=sheetLayout(visibleParts());ui();rebuild(true);info()});
-mk('◈  All parts overlaid (shared origin)',all,()=>{assembled=false;all=!all;sheet=false;ui();rebuild(true);info()});
-mk('◉  Assembled (needs pose JSON)',assembled&&poseOk(),()=>{if(!poseOk()){poseIn.click();return}assembled=!assembled;all=false;sheet=false;ui();rebuild(true);info()});
-const hasDef=Object.keys(deform).length;mk('\u25B3  Deform preview: '+(deformOn?'ON':hasDef?'off':'load a config...')+(hasDef?'  (shift+click = load another)':''),deformOn,e=>{if(e.shiftKey||!hasDef){defIn.click();return}deformOn=!deformOn;ui();rebuild(false);info()});
+if(!demoMode)mk('◈  All parts overlaid (shared origin)',all,()=>{assembled=false;all=!all;sheet=false;ui();rebuild(true);info()});
+mk(demoMode?'◉  Assembled creature':'◉  Assembled (needs pose JSON)',demoMode?all:assembled&&poseOk(),()=>{if(demoMode){all=true;sheet=false;ui();rebuild(true);info();return}if(!poseOk()){poseIn.click();return}assembled=!assembled;all=false;sheet=false;ui();rebuild(true);info()});
+const hasDef=Object.keys(deform).length;mk('\u25B3  Deform preview: '+(deformOn?'ON':hasDef?'off':demoMode?'use Bend / Twist':'load a config...')+(hasDef&&!demoMode?'  (shift+click = load another)':''),deformOn,e=>{if(demoMode&&!hasDef)return;if(!demoMode&&(e.shiftKey||!hasDef)){defIn.click();return}deformOn=!deformOn;ui();rebuild(false);info()});
 const partsTitle=document.createElement('div');partsTitle.className='parts-section-title';partsTitle.textContent='INDIVIDUAL PARTS';L.appendChild(partsTitle);
 cur.p.forEach((p,i)=>{
   if(variant&&!(p.v||[]).includes(variant))return;
-  mk(p.r.toString(16).toUpperCase()+' &nbsp;'+parsed[i].tris.length+
-    ' tris &nbsp;j '+p.j+
+  mk((demoMode?p.s+' · '+parsed[i].tris.length+' triangles':p.r.toString(16).toUpperCase()+' &nbsp;'+parsed[i].tris.length+' tris &nbsp;j '+p.j)+
     (noOwnColour(parsed[i])?
       ' &nbsp;<i title="No prim colour in this list">vtx col</i>':''),
     !all&&!sheet&&i==sel,
@@ -176,7 +178,7 @@ function buildGallery(){
   galleryData=[];galleryLayout=[];
   for(const [animal,A] of Object.entries(TABLE)){
     const B={};for(const k in A.b)B[k]=parseInt(A.b[k],16);
-    const parts=A.p.map(p=>Object.assign(parseDL(dv,p.r,B),{sym:p.s,sections:p.v||[],textures:p.t||[]}));
+    const parts=A.p.map(p=>Object.assign(readPart(p,B),{sym:p.s,sections:p.v||[],textures:p.t||[]}));
     const layout=sheetLayout(parts);let mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
     for(const P of parts){if(P.bb[0]>P.bb[3])continue;const of=layout[P.sym]||[0,0,0];for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],P.bb[k]+of[k]);mx[k]=Math.max(mx[k],P.bb[k+3]+of[k])}}
     if(!parts.length)continue;
@@ -212,7 +214,7 @@ function animalEmoji(n){const x=n.toLowerCase();for(const [key,emoji] of [['bear
 function setGallery(on){returnMode=null;hoverSym=null;$('back-to-sheet').hidden=on;gallery=on;$('gallery-toggle').textContent=gallery?'← RETURN TO EDITOR':'🖼️ ALL ANIMALS GALLERY';$('gallery-list').style.display=gallery?'block':'none';$('variant').disabled=gallery;$('an').disabled=gallery;$('animal-label').firstChild.textContent=gallery?'Animal Gallery':name.charAt(0).toUpperCase()+name.slice(1);$('variant-label').textContent=gallery?galleryData.length+' animals · exploded parts sheets':(variant||'All Variants');ui();info();rebuild(true)}
 function pick(n){returnMode=null;hoverSym=null;$('back-to-sheet').hidden=true;gallery=false;$('gallery-toggle').textContent='🖼️ ALL ANIMALS GALLERY';$('gallery-list').style.display='none';$('variant').disabled=false;$('an').disabled=false;name=n;$('animal-label').firstChild.textContent=n.charAt(0).toUpperCase()+n.slice(1);$('variant-label').textContent='All Variants';cur=TABLE[n];bases={};for(const k in cur.b)bases[k]=parseInt(cur.b[k],16);
 parsed=cur.p.map(p=>Object.assign(
-  parseDL(dv,p.r,bases),
+  readPart(p,bases),
   {sym:p.s,sections:p.v||[],textures:p.t||[]}
 ));const V=$('variant');
 const sections=cur.s||[];V.innerHTML=sections.length>1?'<option value="">All Variants ✨</option>'+sections.map(s=>'<option value="'+s+'">'+s.replaceAll('_',' ')+' ✦</option>').join(''):'<option value="">'+(sections.length===1?sections[0].replaceAll('_',' '):'No variants')+'</option>';
@@ -230,7 +232,7 @@ V.onchange=()=>{
   ui();
   rebuild(true);
   info();
-};map={};mesh={};sel=0;all=false;sheet=true;SH=sheetLayout(visibleParts());$('an').value=n;ui();rebuild(true);info()}
+};map={};mesh={};deform={};deformOn=false;deformCache.clear();assembled=false;sel=0;all=demoMode;sheet=!demoMode;SH=sheetLayout(visibleParts());$('an').value=n;ui();rebuild(true);info()}
 const ROM_DB='sssv-modkit-viewer';
 function openRomDB(){return new Promise((resolve,reject)=>{
   if(!('indexedDB' in window)){reject(new Error('IndexedDB unavailable'));return}
@@ -251,8 +253,9 @@ async function forgetLastROM(){const db=await openRomDB();try{await new Promise(
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Could not clear saved ROM'));
 })}finally{db.close()}}
 async function loadROM(ab,filename,restored=false){
+  if(!Object.keys(romTable).length){$('msg').textContent='Choose your local animal_table.json first.';return false}
   if(ab.byteLength!=0x2000000&&ab.byteLength!=0x1000000&&ab.byteLength<0x800000){$('msg').textContent='That does not look like an N64 ROM.';return false}
-  dv=new DataView(ab);let ok='';try{const h=[...new Uint8Array(await crypto.subtle.digest('SHA-1',ab))].map(x=>x.toString(16).padStart(2,'0')).join('');
+  demoMode=false;TABLE=romTable;document.body.classList.remove('demo-mode');dv=new DataView(ab);let ok='';try{const h=[...new Uint8Array(await crypto.subtle.digest('SHA-1',ab))].map(x=>x.toString(16).padStart(2,'0')).join('');
     ok=h=='e5e09205aa743a9e5043a42df72adc379c746b0b'?'SHA1 matches US 1.0.':'WARNING: not the unmodified US 1.0 ROM (a patched ROM is fine for previewing).'}catch(_){}
   $('msg').textContent=(restored?'Restored saved ROM: ':'')+filename+' loaded. '+ok;
   $('rom-panel').open=false;
@@ -261,10 +264,10 @@ async function loadROM(ab,filename,restored=false){
   pick(Object.keys(TABLE)[0]);return true;
 }
 $('rom').onchange=async e=>{const f=e.target.files[0];if(!f)return;const ab=await f.arrayBuffer();
-  if(await loadROM(ab,f.name)){try{await saveLastROM(ab,f.name);$('msg').textContent+=' Last ROM saved in this browser.'}catch(err){$('msg').textContent+=' Could not save a local copy for next time: '+err.message}}
+  try{if(await loadROM(ab,f.name)&&$('remember-rom').checked){try{await saveLastROM(ab,f.name);$('msg').textContent+=' Last ROM saved in this browser.'}catch(err){$('msg').textContent+=' Could not save a local copy for next time: '+err.message}}}catch(err){$('msg').textContent='Could not render ROM with that table: '+err.message}
 };
 $('forget-rom').onclick=async()=>{try{await forgetLastROM();$('forget-rom').disabled=true;$('msg').textContent='Saved ROM forgotten. The currently loaded ROM remains available until you close this page.'}catch(err){$('msg').textContent='Could not clear saved ROM: '+err.message}};
-(async()=>{try{const saved=await getLastROM();if(saved&&saved.buffer){$('msg').textContent='Restoring your last ROM from this browser…';await loadROM(saved.buffer,saved.filename||'last ROM',true);$('forget-rom').disabled=false}}catch(err){$('msg').textContent='Choose your ROM file to begin. Local auto-restore is unavailable in this browser: '+err.message}})();
+if(Object.keys(romTable).length)(async()=>{try{const saved=await getLastROM();if(saved&&saved.buffer){$('msg').textContent='Restoring your last ROM from this browser…';await loadROM(saved.buffer,saved.filename||'last ROM',true);$('forget-rom').disabled=false}}catch(err){$('msg').textContent='Choose your ROM file to begin. Local auto-restore is unavailable in this browser: '+err.message}})();
 const themeModes=['system','light','dark','matrix','dracula','dracula-deep'];
 function setTheme(mode){
   if(!themeModes.includes(mode))mode='system';
@@ -277,7 +280,7 @@ try{const savedTheme=localStorage.getItem('sssv-viewer-theme');if(themeModes.inc
 setTheme(themeMode);
 $('theme-select').onchange=()=>setTheme($('theme-select').value);
 $('vc').onchange=()=>{useVC=$('vc').checked;rebuild(false)};
-$('rst').onclick=()=>{map={};mesh={};ui();rebuild(false);info()};
+$('rst').onclick=()=>{map={};mesh={};deform={};deformOn=false;deformCache.clear();partOffsets[name]={};ui();rebuild(true);info()};
 $('exp').onclick=()=>{if(!cur)return;const r={};for(const o in map)r[o]=map[o].slice(6)==o.slice(6)?map[o].slice(0,6):map[o];
 const ms=Object.keys(mesh).filter(k=>mesh[k].s.some(x=>x!=1)||mesh[k].m.some(x=>x!=0)||mesh[k].o).map(k=>(o=>{if(mesh[k].o)o.about=[0,0,0];return o})({symbol:k,scale:mesh[k].s,move:mesh[k].m})),o={animal:name,recolor:r};if(ms.length)o.mesh=ms;
 const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));a.download=name+'.json';a.click()};

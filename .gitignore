@@ -16,6 +16,10 @@ dls2.json
 vruns.json
 *.bin
 /viewers/
+/site/dist/
+/site/.git/
+/site/.openai/
+/site/*.tar.gz
 
 # --- Private workspace: scanners, extractors, dumps, renders, old work ---
 lab/

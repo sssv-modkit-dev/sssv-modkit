@@ -1,13 +1,14 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SSSV Modkit Viewer</title><link rel="icon" href="/*VIEWER_ICON*/">
+<title>SSSV Parts Lab</title><meta name="description" content="A low-poly playground. Explore original creatures, take them apart, and make them your own. No ROM needed for demos."><link rel="icon" href="/*VIEWER_ICON*/">
 <style>/*VIEWER_CSS*/</style></head><body>
 <div id="side"><div class="brand-row"><button id="collapse-left" class="collapse-control" title="Hide navigation" aria-label="Toggle navigation">☰</button>
-<div class="brandbar"><div class="brand"><img src="/*VIEWER_ICON*/" alt=""><div><strong>SSSV</strong><small>MODKIT · PART VIEWER</small></div></div></div></div>
+<div class="brandbar"><div class="brand"><img src="/*VIEWER_ICON*/" alt=""><div><strong>PARTS LAB</strong><small>SSSV MODKIT · INTERACTIVE PLAYGROUND</small></div></div></div></div>
+<section id="demo-panel" class="panel"><div class="lab-eyebrow">TAKE SOMETHING APART</div><p>Meet three original low-poly creatures. Orbit, explore, and make them a little stranger.</p><button id="demo-start">Explore original demos</button><div id="demo-actions"><button id="demo-assemble">Assemble</button><button id="demo-explode">Explode parts</button><button id="demo-stretch">Stretch legs</button><button id="demo-bend">Bend</button><button id="demo-twist">Twist</button><button id="demo-colour">Random palette</button><button id="demo-share">Copy share link</button></div><p id="demo-status" class="mut" role="status">Original CC0 demo geometry. No game assets included.</p></section>
 <div class="theme-dock"><label for="theme-select">Theme</label><select id="theme-select" aria-label="Colour theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option><option value="matrix">Matrix</option><option value="dracula">Dracula</option><option value="dracula-deep">Dracula · Deep Purple</option></select></div>
 <div id="gallery-action"><button id="gallery-toggle" disabled>ALL ANIMALS GALLERY</button></div><div id="gallery-list"></div>
-<details class="panel" id="rom-panel" open><summary>ROM file</summary><input type="file" id="rom" accept=".z64,.n64,.v64"><button id="forget-rom" disabled>Forget saved ROM</button><div id="msg" class="mut">Load your US 1.0 .z64. The ROM can be remembered locally in this browser; it is never uploaded.</div></details>
-<div id="animal-field"><label class="field-label" for="an">Animal</label><select id="an" disabled></select></div>
+<details class="panel" id="rom-panel"><summary>Open your SSSV files · local only</summary><label for="local-table">1. Your animal_table.json</label><input type="file" id="local-table" accept=".json"><label for="rom">2. Your US 1.0 ROM</label><input type="file" id="rom" accept=".z64,.n64,.v64"><label><input type="checkbox" id="remember-rom"> Remember ROM in this browser</label><button id="forget-rom" disabled>Forget saved ROM</button><div id="msg" class="mut">Generate the animal table with the modkit, then select it here with your ROM. Both files stay in your browser.</div></details>
+<div id="animal-field"><label class="field-label" for="an">Model / animal</label><select id="an" disabled></select></div>
 <div id="variant-field"><label class="field-label" for="variant">Variant / section</label><select id="variant" disabled>
   <option value="">All Variants</option>
 </select></div>
@@ -19,7 +20,7 @@
 <label class="setting-row" for="move-button"><span>Move sheet parts</span><select id="move-button"><option value="right">Right-drag</option><option value="left">Left-drag</option></select></label>
 <p class="mut">Drag a part to reposition it on the camera-facing plane. Double-click to edit its mesh.</p></section>
 <input type="file" id="impf" accept=".json" hidden>
-<details class="help"><summary>Viewing notes &amp; controls</summary><p>Triangles without their own colour word use mesh vertex colours as an approximation. Disable vertex colours to show them grey.</p><p>Exploded sheets are browsing layouts, not assembled animals.</p><p>Left-drag: orbit. Right-drag: reposition a part in sheet mode; Shift+left-drag: pan. Mouse wheel: zoom. Q/E: roll camera (focus viewport first).</p></details>
+<details class="help"><summary>About &amp; controls</summary><p>Original demos are authored from primitives under CC0. They are not extracted or randomized game models. Unofficial fan project, not affiliated with the game’s rights holders.</p><p>Drag: orbit. Right-drag: move an exploded part; Shift+drag: pan. Wheel or pinch: zoom. Double-click a part to edit its mesh, or choose its row. Q/E: roll camera.</p><p>Game mode: exploded sheets are browsing layouts, not assembled animals. Vertex colours approximate triangles without a colour word.</p><a href="https://github.com/sssv-modkit-dev/sssv-modkit" target="_blank" rel="noopener">Source, setup &amp; project credits ↗</a></details>
 </div>
 <div class="resize-handle" id="resize-left" role="separator" aria-label="Resize left sidebar" aria-orientation="vertical" tabindex="0"></div>
 <div id="view"><div id="part-inspector" hidden><div id="part-symbol"></div><label>Custom name <input id="part-name" placeholder="e.g. Head, left paw"></label><div class="inspector-actions"><small>Double-click to edit mesh</small><button id="part-name-ok">OK</button></div></div><div id="floating-labels"></div>

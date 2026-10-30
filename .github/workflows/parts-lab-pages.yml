@@ -1,0 +1,44 @@
+name: Deploy Parts Lab
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/viewer/**'
+      - 'tools/build_viewer.py'
+      - 'tests/**'
+      - 'tools/check.py'
+      - '.github/workflows/parts-lab-pages.yml'
+permissions:
+  contents: read
+concurrency:
+  group: parts-lab-pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python tools/check.py
+      - run: python tools/build_viewer.py --public
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

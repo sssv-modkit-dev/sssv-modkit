@@ -85,12 +85,28 @@ Generate the viewer locally after generating the table:
 python tools/build_viewer.py tools/animal_table.json
 ```
 
-Open the generated `viewers/rom_viewer.html` and load your own ROM to inspect animal parts,
+Open the generated `viewers/parts_viewer.html` and load your own ROM to inspect animal parts,
 try scale sliders, and preview deformations. The page runs entirely in your browser; nothing
 is uploaded. Its embedded animal metadata is derived from local inputs, so keep the generated
 page private. Active sources live in `tools/viewer/` (HTML, CSS, and JavaScript).
 Deformations preserve geometry counts and leave normals unchanged, so large bends or twists
 can affect shading.
+
+### Public Parts Lab
+
+[Open the public Parts Lab](https://sssv-parts-lab.wintrybrook9.chatgpt.site).
+
+Build a shareable playground with three original CC0 demo creatures and no game data:
+
+```text
+python tools/build_viewer.py --public
+```
+
+Open `site/dist/index.html`, or deploy only `site/dist` to static hosting. This mode
+never reads your local animal table or ROM. Visitors can explore assembled and
+exploded models, recolour and deform parts, and share demo presets. Optional game
+mode accepts each visitor's own locally generated animal table and ROM.
+See [hosting and privacy details](site/README.md). A GitHub Pages workflow is included.
 
 ## Repository layout
 
