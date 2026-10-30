@@ -107,7 +107,7 @@ can affect shading.
 
 ### Public Parts Lab
 
-[Open the public Parts Lab](https://sssv-parts-lab.wintrybrook9.chatgpt.site).
+[Open the public Parts Lab](https://sssv-modkit-dev.github.io/sssv-modkit/).
 
 Build a shareable playground with three original CC0 demo creatures and no game data:
 
