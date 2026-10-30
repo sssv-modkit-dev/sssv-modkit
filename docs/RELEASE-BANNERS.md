@@ -2,25 +2,47 @@
 
 Generate a minimal banner from the verified local game-head branding render:
 
-```powershell
-powershell -NoProfile -File tools/make_release_banner.ps1 -Version 'EDITION SERIES'
-powershell -NoProfile -File tools/make_release_banner.ps1 -Batch
+```sh
+sh tools/make_release_banner.sh --version 'EDITION SERIES'
+sh tools/make_release_banner.sh --batch
 ```
 
 The first command writes `build/release-banner.png`; the batch writes three
 future concepts to `build/future-banners/`. Existing files are never overwritten.
-Use `-Out` to choose another filename (or batch directory).
+Use `--out` to choose another filename (or batch directory).
+
+The default command uses a POSIX shell (Linux, macOS, WSL or Git Bash), Python
+3.8+ and an installed Chrome, Chromium or Edge browser. No Python packages or
+network access are required. The browser runs headlessly with a temporary
+profile, using the HTML composer's drawing routine and embedded local assets.
+Fonts depend on the host, so typography can vary between platforms.
+Use `--browser '/path/to/browser'` if automatic browser discovery fails. Under
+WSL, install Python and Chromium inside WSL; under Git Bash, Windows Python and
+Chrome/Edge are supported.
+
+Python is also a direct entry point, including from Windows terminals:
+
+```sh
+python tools/make_release_banner.py --palette orange --out build/orange-banner.png
+```
+
+The existing Windows System.Drawing generator remains available for its original
+rendering and PowerShell syntax:
+
+```powershell
+powershell -NoProfile -File tools/make_release_banner.ps1 -Version 'EDITION SERIES'
+```
 
 Names follow invented colour adjective + animal part + animal. The complete title
 is italic and accent-coloured, with matched quotation marks around the name.
 A fine bottom rule and short accent line complete the minimal layout.
-Optional `-Name`, `-Version` and `-Palette blue|orange|green` control the title,
+Optional `--name`, `--version` and `--palette blue|orange|green` control the title,
 secondary label and accent. By default the head fur and ear tips also follow
 the palette, retaining facet shading and leaving eyes, teeth and mouth unchanged.
 
-Windows System.Drawing provides rendering without added packages, network calls,
-manual uploads or AI image generation. The optional `tools/release_banner.html`
-composer provides an interactive alternative.
+The optional `tools/release_banner.html` composer provides an interactive
+alternative without Python or a shell. Language-named quote styles control
+punctuation; they do not translate the release name or the word "edition".
 
 ## Available heads
 
@@ -45,19 +67,21 @@ The earlier AI-made fox concept is superseded and is not a game render.
 Each generation randomly chooses English curly quotes, French spaced guillemets,
 Spanish guillemets, German low/high quotes, or Japanese corner brackets. These are
 selected typographic conventions, not an exhaustive rule for each language.
-Use `-QuoteStyle english|french|spanish|german|japanese` to reproduce a choice;
+Use `--quote-style english|french|spanish|german|japanese` to reproduce a choice;
 `random` is the default. The command prints the selected style. Batch mode chooses
 independently per banner unless a style is pinned. The HTML composer holds its
 choice while editing; its shuffle button explicitly chooses again.
 
 ## Raster recolouring
 
-Use `-Recolor both|head|ears|original` (default: `both`). This remaps the cached
+Use `--recolor both|head|ears|original` (default: `both`). This remaps the cached
 bear PNG using a blue-fur colour mask and a pale-ear mask restricted to its top
 40 pixel rows. It does not modify model vertices, ROM data or the source icon.
 These masks are specific to the verified 256px bear render; they are not generic
 part detection. Other animals or named parts need their own reviewed masks or
 fresh renders. The browser composer keeps supplied PNG colours unchanged.
 
-The title uses Segoe UI Semibold Italic on Windows, lighter than the original
-bold italic; the browser preview uses medium-weight italic system text.
+The shell/Python generator and browser preview use medium-weight italic system
+text. The PowerShell generator uses Segoe UI Semibold Italic on Windows.
+Its equivalent options are `-Name`, `-Version`, `-Out`, `-Palette`, `-QuoteStyle`,
+`-Recolor` and `-Batch`.
