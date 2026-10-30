@@ -15,7 +15,8 @@ Names follow invented colour adjective + animal part + animal. The complete titl
 is italic and accent-coloured, with matched quotation marks around the name.
 A fine bottom rule and short accent line complete the minimal layout.
 Optional `-Name`, `-Version` and `-Palette blue|orange|green` control the title,
-secondary label and accent. Palette changes do not recolour the blue head.
+secondary label and accent. By default the head fur and ear tips also follow
+the palette, retaining facet shading and leaving eyes, teeth and mouth unchanged.
 
 Windows System.Drawing provides rendering without added packages, network calls,
 manual uploads or AI image generation. The optional `tools/release_banner.html`
@@ -31,7 +32,7 @@ The current 256 x 256 head export is enlarged in the 1500 x 500 composition.
 
 ## Publication
 
-The selected README banner is `docs/images/releases/ceruleanish-ear-bear-v2.png`.
+The selected README banner is `docs/images/releases/ceruleanish-ear-bear-v3.png`.
 Future concepts remain local in build; no version numbers or releases are implied.
 Review images under docs/PREPUBLISH.md. Game-head renders remain third-party game
 content, outside the CC0 dedication; see NOTICE.md. Never publish ROMs, extracted
@@ -48,3 +49,15 @@ Use `-QuoteStyle english|french|spanish|german|japanese` to reproduce a choice;
 `random` is the default. The command prints the selected style. Batch mode chooses
 independently per banner unless a style is pinned. The HTML composer holds its
 choice while editing; its shuffle button explicitly chooses again.
+
+## Raster recolouring
+
+Use `-Recolor both|head|ears|original` (default: `both`). This remaps the cached
+bear PNG using a blue-fur colour mask and a pale-ear mask restricted to its top
+40 pixel rows. It does not modify model vertices, ROM data or the source icon.
+These masks are specific to the verified 256px bear render; they are not generic
+part detection. Other animals or named parts need their own reviewed masks or
+fresh renders. The browser composer keeps supplied PNG colours unchanged.
+
+The title uses Segoe UI Semibold Italic on Windows, lighter than the original
+bold italic; the browser preview uses medium-weight italic system text.

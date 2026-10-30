@@ -4,6 +4,7 @@ param(
     [string]$Out = '',
     [ValidateSet('blue', 'orange', 'green')][string]$Palette = 'blue',
     [ValidateSet('random', 'english', 'french', 'spanish', 'german', 'japanese')][string]$QuoteStyle = 'random',
+    [ValidateSet('original', 'head', 'ears', 'both')][string]$Recolor = 'both',
     [switch]$Batch
 )
 $ErrorActionPreference = 'Stop'
@@ -12,7 +13,7 @@ $root = Split-Path $PSScriptRoot -Parent
 if ($Batch) {
     if (!$Out) { $Out = Join-Path $root 'build/future-banners' }
     foreach ($choice in @('blue', 'orange', 'green')) {
-        & $PSCommandPath -Palette $choice -QuoteStyle $QuoteStyle -Version 'FUTURE CONCEPT' -Out (Join-Path $Out "$choice-bear.png")
+        & $PSCommandPath -Palette $choice -QuoteStyle $QuoteStyle -Recolor $Recolor -Version 'FUTURE CONCEPT' -Out (Join-Path $Out "$choice-bear.png")
     }
     return
 }
@@ -37,8 +38,30 @@ $headPath = Join-Path $PSScriptRoot 'viewer/assets/icon.png'
 $bitmap = New-Object System.Drawing.Bitmap 1500,500
 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
 $head = [System.Drawing.Image]::FromFile($headPath)
+$render = [System.Drawing.Bitmap]::new($head)
 $resources = [System.Collections.Generic.List[System.IDisposable]]::new()
 try {
+    # Masks are specific to the verified 256px bear raster, not generic anatomy.
+    $target = [System.Drawing.ColorTranslator]::FromHtml($presets[$Palette][1])
+    if ($Recolor -ne 'original') {
+        for ($y = 0; $y -lt $render.Height; $y++) {
+            for ($x = 0; $x -lt $render.Width; $x++) {
+                $pixel = $head.GetPixel($x, $y)
+                if (!$pixel.A) { continue }
+                $fur = $pixel.B -gt ($pixel.R * 1.5) -and $pixel.B -gt ($pixel.G * 1.25)
+                $ear = $y -lt 40 -and $pixel.R -gt $pixel.B -and $pixel.G -ge $pixel.B
+                $factor = 0
+                if ($fur -and $Recolor -in @('head', 'both')) { $factor = 0.65 * $pixel.B / 128 }
+                if ($ear -and $Recolor -in @('ears', 'both')) { $factor = 0.9 * [Math]::Max($pixel.R, $pixel.G) / 200 }
+                if ($factor -gt 0) {
+                    $render.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($pixel.A,
+                        [int][Math]::Min(255, $target.R * $factor),
+                        [int][Math]::Min(255, $target.G * $factor),
+                        [int][Math]::Min(255, $target.B * $factor)))
+                }
+            }
+        }
+    }
     $graphics.Clear([System.Drawing.ColorTranslator]::FromHtml('#111b29'))
     $graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAliasGridFit
     $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
@@ -47,8 +70,8 @@ try {
         $resources.Add($b)
         return $b
     }
-    function Font($size, $style) {
-        $f = [System.Drawing.Font]::new('Segoe UI', [single]$size, $style, [System.Drawing.GraphicsUnit]::Pixel)
+    function Font($size, $style, $family = 'Segoe UI') {
+        $f = [System.Drawing.Font]::new($family, [single]$size, $style, [System.Drawing.GraphicsUnit]::Pixel)
         $resources.Add($f)
         return $f
     }
@@ -65,7 +88,7 @@ try {
     $format = [System.Drawing.StringFormat]::GenericTypographic
     $resources.Add($format)
     do {
-        $title = Font $size ([System.Drawing.FontStyle]::Bold -bor [System.Drawing.FontStyle]::Italic)
+        $title = Font $size ([System.Drawing.FontStyle]::Italic) 'Segoe UI Semibold'
         if ($graphics.MeasureString($caption, $title, 2000, $format).Width -le 890) { break }
         $size--
     } while ($size -gt 12)
@@ -73,14 +96,16 @@ try {
     $graphics.DrawString($Version, $small, $muted, 70, 315)
     $scale = [Math]::Min(340 / $head.Width, 340 / $head.Height)
     $rect = [System.Drawing.RectangleF]::new(1230 - $head.Width*$scale/2, 250 - $head.Height*$scale/2, $head.Width*$scale, $head.Height*$scale)
-    $graphics.DrawImage($head, $rect)
+    $graphics.DrawImage($render, $rect)
     [System.IO.Directory]::CreateDirectory((Split-Path $Out -Parent)) | Out-Null
     $bitmap.Save($Out, [System.Drawing.Imaging.ImageFormat]::Png)
     Write-Output "Banner saved: $Out"
     Write-Output "Quotation style: $QuoteStyle"
+    Write-Output "Bear raster recolour: $Recolor"
 } finally {
     foreach ($resource in $resources) { $resource.Dispose() }
     $head.Dispose()
+    $render.Dispose()
     $graphics.Dispose()
     $bitmap.Dispose()
 }
