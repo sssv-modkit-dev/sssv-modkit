@@ -1,5 +1,7 @@
 # SSSV Modkit
 
+![SSSV Modkit — "Ceruleanish Ear Bear" edition](docs/images/releases/ceruleanish-ear-bear.png)
+
 Tools and patches for modding **Space Station Silicon Valley** (Nintendo 64, US 1.0): recolour the animals,
 reshape their meshes, and build small `.ips` patches you can apply to your own ROM.
 

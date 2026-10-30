@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>SSSV release banner composer</title>
+<style>
+body{margin:24px;background:#eceef1;color:#172130;font:16px system-ui}label{display:inline-block;margin:0 16px 16px 0}input{display:block;padding:8px;font:inherit}canvas{display:block;width:min(100%,1200px);height:auto;margin:12px 0}button{padding:10px 18px;font:inherit}p{max-width:900px}
+</style>
+<h1>Release banner</h1>
+<p>Choose a transparent PNG exported with the viewer’s Save icon PNG control. Everything stays in this browser. The initial bear is the existing game-head branding render.</p>
+<label>Release name<input id="name" value="Ceruleanish Ear Bear" maxlength="70"></label>
+<label>Version or label<input id="version" value="CONCEPT" maxlength="40"></label>
+<label>Accent<input id="accent" type="color" value="#8dc4ed"></label>
+<label>Head render<input id="image" type="file" accept="image/png"></label>
+<canvas id="banner" width="1500" height="500" aria-label="Release banner preview"></canvas>
+<button id="save">Save banner PNG</button>
+<p id="status" role="status"></p>
+<script>
+const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
+const field=id=>document.getElementById(id);let head=null;
+function draw(){
+ctx.fillStyle='#111b29';ctx.fillRect(0,0,1500,500);
+ctx.fillStyle=field('accent').value;ctx.fillRect(70,76,32,3);
+ctx.font='500 21px system-ui';ctx.fillText('SSSV MODKIT',70,120);
+const title='"'+field('name').value+'" edition';let size=60;
+do{ctx.font=`italic 600 ${size}px system-ui`;if(ctx.measureText(title).width<=890)break;size--}while(size>20);
+ctx.fillStyle='#f2f4f7';ctx.fillText(title,70,265);
+ctx.fillStyle='#9ba9b9';ctx.font='400 21px system-ui';ctx.fillText(field('version').value,70,335);
+if(head){const scale=Math.min(340/head.width,340/head.height);ctx.drawImage(head,1230-head.width*scale/2,250-head.height*scale/2,head.width*scale,head.height*scale)}
+}
+for(const id of ['name','version','accent'])field(id).addEventListener('input',draw);
+function load(src,revoke=false){const img=new Image();img.onload=()=>{head=img;draw();field('status').textContent='Render loaded.';if(revoke)URL.revokeObjectURL(src)};img.onerror=()=>{field('status').textContent='Could not load image. Choose a transparent PNG.';if(revoke)URL.revokeObjectURL(src)};img.src=src}
+field('image').onchange=()=>{const file=field('image').files[0];if(file)load(URL.createObjectURL(file),true)};
+field('save').onclick=()=>canvas.toBlob(blob=>{if(!blob)return;const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=(field('name').value.toLowerCase().replace(/[^a-z0-9]+/g,'-')||'release')+'-banner.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)},'image/png');
+draw();load('viewer/assets/icon.png');
+</script>
+</html>
