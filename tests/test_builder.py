@@ -96,6 +96,88 @@ class Plan(unittest.TestCase):
         self.assertEqual(list(struct.unpack_from('>hhh', a, VTX_B)), [6, 5, 5])
 
 
+class CodePatch(unittest.TestCase):
+    OFF = 0x1800
+
+    def rom(self):
+        rom = fake_rom() + bytearray(0x2000); rom[self.OFF:self.OFF + 8] = bytes.fromhex('0011223344556677'); return rom
+
+    def entry(self, **kw):
+        e = {'offset': hex(self.OFF), 'expect': '00112233', 'write': 'DEADBEEF', 'note': 'synthetic'}; e.update(kw); return e
+
+    def refuses(self, text, *entries, cfgs=(), rom=None):
+        with self.assertRaises(SystemExit) as cm: plan({'code_patch': list(entries)}, *cfgs, rom=rom or self.rom())
+        self.assertIn(text, str(cm.exception))
+
+    def test_success_applies_and_reports(self):
+        p, log = plan({'code_patch': [self.entry(), self.entry(offset=hex(self.OFF + 4), expect='44 55 66 77', write='01 02 03 04')]}, rom=self.rom())
+        self.assertEqual([c[0] for c in p['code']], [self.OFF, self.OFF + 4])
+        self.assertTrue(any('2 code patches' in line for line in log))
+        out = []
+        rom, _ = B.apply_plan(bytes(self.rom()), p, log=out.append)
+        self.assertEqual(bytes(rom[self.OFF:self.OFF + 8]).hex(), 'deadbeef01020304')
+        self.assertTrue(any('code_patch' in line and 'synthetic' in line for line in out))
+
+    def test_works_next_to_an_animal_config(self):
+        p, _ = plan({'animal': 'bear', 'recolor': {'B03F00FF': '00FF00'}, 'code_patch': [self.entry()]}, rom=self.rom())
+        self.assertEqual((len(p['words']), len(p['code'])), (2, 1))
+
+    def test_expect_mismatch_fails(self):
+        self.refuses('expected 99999999', self.entry(expect='99999999'))
+
+    def test_bad_shapes_refused(self):
+        self.refuses('outside the ROM', self.entry(offset='0x2FFF', expect='0000', write='1111', align=False))
+        self.refuses('"expect" is 4 bytes but "write" is 2', self.entry(write='DEAD'))
+        self.refuses('odd length', self.entry(expect='001122', write='DEADBE', align=False))
+        self.refuses('not whole hex', self.entry(write='DEADBEE'))
+
+    def test_overlap_refused(self):
+        self.refuses('overlap', self.entry(), self.entry(offset=hex(self.OFF + 2), expect='2233 4455', write='AAAA BBBB', align=False))
+        self.refuses('overlap', self.entry(), self.entry())
+
+    def test_conflict_with_other_edits_refused(self):
+        self.refuses('overlaps a vertex', self.entry(offset=hex(VTX_B), expect='00050005', write='00000000', allow_header=True),
+                     cfgs=[{'animal': 'rat', 'vertices': [{'rom': hex(VTX_B), 'expect': [5, 5, 5], 'new': [6, 6, 6]}]}])
+        self.refuses('overlaps a mesh rat TAIL', self.entry(offset=hex(VTX_B + 4), expect='0005', write='0000', align=False, allow_header=True),
+                     cfgs=[{'animal': 'rat', 'mesh': [{'symbol': 'TAIL', 'move': [1, 0, 0]}]}])
+        self.refuses('overlaps a colour word', self.entry(offset=hex(DL + 4), expect='B03F00FF', write='00000000', allow_header=True),
+                     cfgs=[{'animal': 'bear', 'recolor': {'B03F00FF': '00FF00'}}])
+        # a neighbouring, non-overlapping patch is fine
+        plan({'code_patch': [self.entry(offset=hex(VTX_B + 32), expect='00000000', write='00000001', allow_header=True)]},
+             {'animal': 'rat', 'mesh': [{'symbol': 'TAIL', 'move': [1, 0, 0]}]}, rom=self.rom())
+
+    def test_header_guard(self):
+        rom = fake_rom()
+        e = {'offset': '0x10', 'expect': '00000000', 'write': '12345678'}
+        self.refuses('header', e, rom=rom)
+        p, _ = plan({'code_patch': [dict(e, allow_header=True)]}, rom=rom)
+        self.assertEqual(p['code'][0][0], 0x10)
+        self.refuses('header', dict(e, allow_header='yes'), rom=rom)
+
+    def test_alignment(self):
+        self.refuses('4-byte aligned', self.entry(offset=hex(self.OFF + 2), expect='2233 4455', write='AAAA BBBB'))
+        self.refuses('4-byte aligned', self.entry(expect='0011', write='AAAA'))
+        p, _ = plan({'code_patch': [self.entry(offset=hex(self.OFF + 2), expect='22334455', write='AAAABBBB', align=False)]}, rom=self.rom())
+        self.assertEqual(len(p['code']), 1)
+
+    def test_ips_round_trip_and_crc(self):
+        orig = bytes(self.rom()) + bytes(0x101000)
+        p, _ = plan({'animal': 'bear', 'recolor': {'B03F00FF': '00FF00'}, 'code_patch': [self.entry()]}, rom=orig)
+        rom, _ = B.apply_plan(orig, p, log=lambda s: None)
+        romio.fix_crc(rom)
+        ips = romio.make_ips(orig, rom)
+        self.assertEqual(romio.apply_ips(orig, ips), bytes(rom))
+        self.assertEqual(bytes(rom[self.OFF:self.OFF + 4]), bytes.fromhex('DEADBEEF'))
+        self.assertEqual(orig[self.OFF:self.OFF + 4].hex(), '00112233')    # base untouched
+
+    def test_example_config_loads_and_plans(self):
+        import json
+        cfg = json.loads((ROOT / 'examples' / 'code_patch.example.json').read_text(encoding='utf-8'))
+        rom = fake_rom() + bytearray(0x2000); rom[0x2101:0x2103] = b'\xaa\xbb'
+        p, _ = plan(cfg, rom=rom)
+        self.assertEqual(len(p['code']), 2)
+
+
 class Ips(unittest.TestCase):
     def roundtrip(self, orig, new):
         ips = romio.make_ips(orig, new)
