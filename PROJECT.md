@@ -22,6 +22,7 @@ The public modkit provides config-driven edits to the owner's US 1.0 ROM and a l
 - Earlier private notes described dog skeleton decoding and candidate bank-growth space. Those research files and helpers are absent from this public checkout; their claims must be recovered and verified before implementation.
 - The public harness has synthetic tests and capture/recipe support. A historical one-frame run produced a black capture with a core error; that run did not establish scene correctness or state replay reliability.
 - Both projects have been published. Local source checks do not establish the current live remote state.
+- Claude, 2026-10-31: `deform` verified in game for the first time. A `bear_deform` build loaded on the Fat Bear Mountain stage from the cartridge; original and patched frames differ only around the bear, whose arms and shoulders are tapered and bent with no tearing. The effect looks milder than the config suggests. The crazy bear variant was not seen. Emulator capture (save state with forced level id); evidence in private `lab/`.
 
 ## Next tasks
 
