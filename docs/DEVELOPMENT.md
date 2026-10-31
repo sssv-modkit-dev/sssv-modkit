@@ -41,6 +41,15 @@ holds ROM identity, lookup, CRC and IPS; the builder splits into `plan_edits`
 (every check, no writes) and `apply_plan`. When refactoring the builder, rebuild
 each config before and after and compare the IPS files byte for byte.
 
+`code_patch` writes raw bytes at ROM file offsets (`examples/code_patch.example.json`;
+format in the builder docstring). Each entry needs `expect` (checked against the
+base ROM) and a same-length `write`. It refuses out-of-range, odd-length or
+overlapping entries, clashes with colour/vertex/mesh/deform edits, writes below
+0x1000 without `"allow_header": true`, and non-4-byte-aligned writes without
+`"align": false`. `--dry-run` lists each patch; CRC repair and the IPS self-test
+apply as usual. The example uses synthetic bytes only; never commit real game
+bytes or addresses.
+
 Use one config at a time when comparing edits. Folder input combines every
 top-level JSON config, including alternate examples for the same animal.
 

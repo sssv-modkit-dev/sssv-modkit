@@ -1,0 +1,6 @@
+{
+  "code_patch": [
+    {"offset": "0x2000", "expect": "00 00 00 00", "write": "DE AD BE EF", "note": "synthetic placeholder bytes; replace with your own offset and bytes"},
+    {"offset": "0x2101", "expect": "AA BB", "write": "CC DD", "align": false, "note": "unaligned patch must say so"}
+  ]
+}
