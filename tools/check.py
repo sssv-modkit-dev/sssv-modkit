@@ -18,6 +18,9 @@ def main():
         ast.parse(path.read_text(encoding='utf-8-sig'), filename=str(path.relative_to(ROOT)))
     print('Python syntax: %d active tool/test files.' % len(paths), flush=True)
     commands = [
+        ['node', '--check', 'tools/release_banner.js'],
+        ['node', 'tests/test_release_banner.js'],
+        [sys.executable, 'tests/test_release_banner.py'],
         ['node', '--check', 'tools/viewer/js/app.js'],
         ['node', '--check', 'tools/viewer/js/deform.js'],
         ['node', '--check', 'tools/viewer/js/parts-lab.js'],
