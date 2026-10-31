@@ -12,6 +12,7 @@ assert(source.indexOf(start) < source.indexOf(end), 'pure markers out of order')
 const live = vm.createContext({});
 vm.runInContext(source.split(start)[1].split(end)[0], live, {timeout: 1000});
 const cases = JSON.parse(fs.readFileSync(0, 'utf8'));
+const ranges = c => c.ranges || [[0, c.verts.length]];
 const plain = value => JSON.parse(JSON.stringify(value));
 let passed = 0, rejected = 0;
 for (const c of cases) {
@@ -19,18 +20,23 @@ for (const c of cases) {
     let actual, error;
     try {
       if (mode === 'live') {
-        const part = {tris: [{v: c.verts}], bb: []};
+        // Vertices carry their id in .o (as parseDL does); groups share them when ranges overlap.
+        const vo = c.verts.map((v, i) => Object.assign(v.slice(), {o: 16 * i}));
+        const part = {tris: [], bb: [], groups: ranges(c).map(([s, n]) => ({verts: vo.slice(s, s + n)}))};
         const prepared = live.deformPrepare(part, null, c.entries);
         actual = {
-          out: c.verts.map(v => prepared.fs.reduce((p, f) => live.applyDeform(f, p), v)),
+          out: vo.map(v => live.deformPoint(prepared, v, [v[0], v[1], v[2]])),
           before: prepared.before, after: prepared.after, clamped: prepared.clip,
         };
       } else {
         let points = c.verts, before, after, clamped = 0;
         for (const entry of c.entries) {
-          const result = standalone.planDeform(points, entry);
+          const groups = ranges(c).map(([s, n]) => points.slice(s, s + n).map((p, k) => ({o: s + k, p})));
+          const result = standalone.planDeformGroups(groups, entry);
           if (!before) before = result.bboxBefore;
-          points = result.verts; after = result.bboxAfter; clamped += result.clamped;
+          points = points.map(p => p.slice());
+          result.offsets.forEach((o, k) => { points[o] = result.verts[k]; });
+          after = result.bboxAfter; clamped += result.clamped;
         }
         actual = {out: points, before, after, clamped};
       }
