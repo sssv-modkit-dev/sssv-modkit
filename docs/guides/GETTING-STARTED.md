@@ -23,7 +23,7 @@ outside this repository. Replace the source path below with its animal-source di
 python tools/animal_table.py /path/to/sssv/src.us/sssv/animals tools/animal_table
 ```
 
-The generator reads your ROM from `rom/` or `SSSV_ROM` and writes
+The generator reads your ROM from `--rom FILE`, `SSSV_ROM` or `rom/` and writes
 `tools/animal_table.json` and `tools/animal_table.md`. These are private, locally
 derived files. The builder needs the JSON table; it is not shipped with the project.
 

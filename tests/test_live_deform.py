@@ -13,11 +13,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.dont_write_bytecode = True
 
 
-def expected(builder, verts, entries):
+def expected(builder, verts, entries, ranges=None):
     buf = bytearray(16 * len(verts))
     for i, v in enumerate(verts):
         struct.pack_into('>hhh', buf, 16 * i, *v)
-    part = {'symbol': 'synthetic', 'groups': [{'rom': 0, 'n': len(verts)}]}
+    ranges = ranges or [[0, len(verts)]]   # vertex groups as [first index, count]; may overlap like shared vertex data
+    part = {'symbol': 'synthetic', 'groups': [{'rom': 16 * s, 'n': n} for s, n in ranges]}
     clip = 0
     before = None
     for entry in entries:
@@ -64,9 +65,24 @@ def main():
         ('zero-span', [[1, 0, 2], [-1, 0, -2], [0, 0, 0]], [{'ops': [bend, taper]}]),
     ]
     inputs.extend({'name': n, 'verts': v, 'entries': e} for n, v, e in focused)
+    # Vertex groups: selection, overlapping groups (each unique vertex once), and per-entry selections.
+    gv = [[-100, -80, -30], [60, 0, 25], [110, 100, 70], [-20, 40, 90], [30, -60, -45], [80, 20, 5]]
+    grouped = [
+        ('groups-subset', [{'groups': [1], 'ops': [taper, bend]}], [[0, 3], [3, 3]]),
+        ('groups-all-default', [{'ops': [taper, twist]}], [[0, 3], [3, 3]]),
+        ('groups-overlap-dedup', [{'ops': [inflate, taper]}], [[0, 4], [2, 4]]),
+        ('groups-overlap-clamp', [{'ops': [{'type': 'inflate', 'amount': 400}]}], [[0, 4], [2, 4]]),
+        ('groups-duplicate-index', [{'groups': [0, 0, 1], 'ops': [twist]}], [[0, 4], [2, 4]]),
+        ('groups-per-entry', [{'groups': [0], 'ops': [bend]}, {'groups': [1], 'ops': [taper]}, {'ops': [inflate]}],
+         [[0, 4], [2, 4]]),
+        ('groups-partial-cover', [{'ops': [twist, taper]}], [[1, 3]]),
+        ('groups-empty-selection', [{'groups': [], 'ops': [taper]}], [[0, 3], [3, 3]]),
+    ]
+    for n, e, r in grouped:
+        inputs.append({'name': n, 'verts': gv, 'entries': e, 'ranges': r})
     for case in inputs:
         try:
-            case.update(expected(builder, case['verts'], case['entries']))
+            case.update(expected(builder, case['verts'], case['entries'], case.get('ranges')))
         except SystemExit:
             case['error'] = True
     result = subprocess.run(['node', str(ROOT / 'tests/test_live_deform.js')],

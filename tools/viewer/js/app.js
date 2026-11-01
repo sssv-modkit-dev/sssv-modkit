@@ -3,11 +3,11 @@ let TABLE=/*TABLE*/null;
 let romTable=TABLE,demoMode=false;
 function readPart(p,B){return p.demo||parseDL(dv,p.r,B)}
 //#PURE-START
-function vtx(dv,b,off,i){const o=b+off+16*i;if(o<0||o+16>dv.byteLength||dv.getUint16(o+6))return null;const q=[dv.getInt16(o),dv.getInt16(o+2),dv.getInt16(o+4)];q.c=[dv.getUint8(o+12)/255,dv.getUint8(o+13)/255,dv.getUint8(o+14)/255];return q}
-function parseDL(dv,addr,bases){const vb={},cols=[],tris=[],bb=[1e9,1e9,1e9,-1e9,-1e9,-1e9];let c=-1;
+function vtx(dv,b,off,i){const o=b+off+16*i;if(o<0||o+16>dv.byteLength||dv.getUint16(o+6))return null;const q=[dv.getInt16(o),dv.getInt16(o+2),dv.getInt16(o+4)];q.o=o;q.c=[dv.getUint8(o+12)/255,dv.getUint8(o+13)/255,dv.getUint8(o+14)/255];return q}
+function parseDL(dv,addr,bases){const vb={},cols=[],tris=[],groups=[],bb=[1e9,1e9,1e9,-1e9,-1e9,-1e9];let c=-1;
 for(let i=0;i<800;i++){const o=addr+8*i;if(o+8>dv.byteLength)break;const op=dv.getUint8(o),w0=dv.getUint32(o),w1=dv.getUint32(o+4);
 if(op==0xB8)break;
-if(op==4){const seg=w1>>>24,off=w1&0xFFFFFF,n=((w0&0x3FF)+1)>>4,v0=((w0>>>16)&255)>>1,b=bases[seg];for(let k=0;k<n;k++){const q=vb[v0+k]=b===undefined?null:vtx(dv,b,off,k);if(q)for(let a=0;a<3;a++){bb[a]=Math.min(bb[a],q[a]);bb[a+3]=Math.max(bb[a+3],q[a])}}}
+if(op==4){const seg=w1>>>24,off=w1&0xFFFFFF,n=((w0&0x3FF)+1)>>4,v0=((w0>>>16)&255)>>1,b=bases[seg],gv=[];groups.push({verts:gv});for(let k=0;k<n;k++){const q=vb[v0+k]=b===undefined?null:vtx(dv,b,off,k);if(q)gv.push(q);if(q)for(let a=0;a<3;a++){bb[a]=Math.min(bb[a],q[a]);bb[a+3]=Math.max(bb[a+3],q[a])}}}
 else if(op==0xFA){cols.push({rgba:w1.toString(16).toUpperCase().padStart(8,'0'),rom:o+4});c=cols.length-1}
 else if(op==0xBF||op==0xB1){const T=op==0xBF?[[(w1>>>16)&255,(w1>>>8)&255,w1&255]]:[[(w0>>>16)&255,(w0>>>8)&255,w0&255],[(w1>>>16)&255,(w1>>>8)&255,w1&255]];
 for(const t of T){const v=t.map(k=>vb[k>>1]);if(v.every(x=>x)&&new Set(t).size==3)tris.push({v,c})}}}
@@ -15,7 +15,7 @@ for(const t of T){const v=t.map(k=>vb[k>>1]);if(v.every(x=>x)&&new Set(t).size==
 // frame/layout only the rendered geometry, excluding unused cache entries.
 const viewBB=[1e9,1e9,1e9,-1e9,-1e9,-1e9];
 for(const t of tris)for(const q of t.v)for(let a=0;a<3;a++){viewBB[a]=Math.min(viewBB[a],q[a]);viewBB[a+3]=Math.max(viewBB[a+3],q[a])}
-return{cols,tris,bb,viewBB}}
+return{cols,tris,bb,viewBB,groups}}
 // --- shared op maths: keep every vertex operation here so the deform preview can be added next to it ---
 function applyMesh(v,E,bb){if(!E)return v;const c0=E.o?[0,0,0]:[0,1,2].map(k=>(bb[k]+bb[k+3])/2);return v.map((x,k)=>Math.floor(c0[k]+(x-c0[k])*E.s[k]+E.m[k]+.5))}
 // true if the part has no G_SETPRIMCOLOR, or has triangles drawn before its first one
@@ -79,14 +79,26 @@ function makeDeform(lo,hi,ops,about){
 // one vertex through one makeDeform fn -> rounded, int16-clamped [x,y,z]; st.clip counts clamped coordinates
 function applyDeform(f,v,st){const p=[v[0],v[1],v[2]];f(p);return p.map(x=>{let y=Math.floor(x+.5);if(y<-32768||y>32767){if(st)st.clip++;y=Math.max(-32768,Math.min(32767,y))}return y})}
 function bboxOf(pts){const lo=[1e9,1e9,1e9],hi=[-1e9,-1e9,-1e9];for(const p of pts)for(let k=0;k<3;k++){if(p[k]<lo[k])lo[k]=p[k];if(p[k]>hi[k])hi[k]=p[k]}return[lo,hi]}
-// entries = [{ops,about}] in config order. Mesh edit E (or null) runs first, like the builder. Each entry's bbox comes from the vertices as the previous entry left them.
+// entries = [{ops,about,groups}] in config order. Like the builder: each entry selects whole vertex groups (all of them unless "groups":[i,..]), every unique vertex (by ROM offset) is deformed once,
+// the mesh edit E (or null) runs first, and each entry's bbox comes from its selected vertices as the previous entry left them. Each fn in fs carries .sel (Set of vertex offsets).
+function partGroups(P){if(P.groups)return P.groups;const seen=new Set(),gv=[];let n=0;for(const t of P.tris)for(const v of t.v)if(!seen.has(v)){seen.add(v);if(v.o===undefined)v.o=--n;gv.push(v)}return[{verts:gv}]}
 function deformPrepare(P,E,entries){
-  let pts=P.tris.flatMap(t=>t.v.map(v=>E?applyMesh(v,E,P.bb):[v[0],v[1],v[2]]));
-  const st={clip:0},fs=[];if(!pts.length)return{fs,before:[[0,0,0],[0,0,0]],after:[[0,0,0],[0,0,0]],clip:0};
-  const before=bboxOf(pts);
-  for(const en of entries){const[lo,hi]=bboxOf(pts);const f=makeDeform(lo,hi,en.ops,en.about);fs.push(f);pts=pts.map(p=>applyDeform(f,p,st))}
-  return{fs,before,after:bboxOf(pts),clip:st.clip};
+  const G=partGroups(P),cur=new Map();
+  for(const g of G)for(const v of g.verts)if(!cur.has(v.o))cur.set(v.o,E?applyMesh(v,E,P.bb):[v[0],v[1],v[2]]);
+  const st={clip:0},fs=[];let before=null,after=null;
+  if(!cur.size)return{fs,before:[[0,0,0],[0,0,0]],after:[[0,0,0],[0,0,0]],clip:0};
+  for(const en of entries){
+    const sel=[],seen=new Set();
+    for(const i of en.groups||G.map((_,k)=>k)){if(!G[i])throw new Error('deform "groups" index '+i+' is out of range');for(const v of G[i].verts)if(!seen.has(v.o)){seen.add(v.o);sel.push(v.o)}}
+    if(!sel.length)throw new Error('deform selects no vertices');
+    const pts=sel.map(o=>cur.get(o)),[lo,hi]=bboxOf(pts);if(!before)before=[lo,hi];
+    const f=makeDeform(lo,hi,en.ops,en.about);f.sel=seen;fs.push(f);
+    sel.forEach((o,k)=>cur.set(o,applyDeform(f,pts[k],st)));after=bboxOf(sel.map(o=>cur.get(o)));
+  }
+  return{fs,before,after,clip:st.clip};
 }
+// one drawn vertex v (original, carries .o) at mesh-edited position w -> deformed position; only entries whose groups include v touch it
+function deformPoint(R,v,w){return R.fs.reduce((q,f)=>!f.sel||f.sel.has(v.o)?applyDeform(f,q):q,w)}
 // Camera helpers use CSS pixels, independently of display pixel density.
 function cameraPlaneDelta(R,distance,height,dx,dy){
   const scale=2*distance*Math.tan(.4)/Math.max(1,height);
@@ -109,7 +121,7 @@ function deformFor(P,E){const en=deform[P.sym];if(!en)return null;const key=P.sy
 const defIn=Object.assign(document.createElement('input'),{type:'file',accept:'.json',hidden:true});document.body.appendChild(defIn);
 defIn.onchange=async()=>{const f=defIn.files[0];defIn.value='';if(!f)return;try{
 const j=JSON.parse(await f.text()),nd={};let n=0;
-for(const e of (j.animals||[j]))for(const d of (e&&e.deform)||[]){if(!d.symbol||!Array.isArray(d.ops))throw new Error('every deform entry needs "symbol" and "ops"');(nd[d.symbol]=nd[d.symbol]||[]).push({ops:d.ops,about:d.about});n++;if(d.groups)console.warn('deform preview ignores "groups" ('+d.symbol+'): it deforms every vertex of the part')}
+for(const e of (j.animals||[j]))for(const d of (e&&e.deform)||[]){if(!d.symbol||!Array.isArray(d.ops))throw new Error('every deform entry needs "symbol" and "ops"');(nd[d.symbol]=nd[d.symbol]||[]).push({ops:d.ops,about:d.about,groups:d.groups});n++}
 if(!n)throw new Error('no "deform" entries in that file');
 const rows=[],fmt=a=>a.map(b=>b.join(',')).join('  ..  ');
 for(const s in nd){const P=parsed.find(q=>q.sym===s);if(!P){rows.push({part:s,note:'not in the animal currently shown'});continue}const R=deformPrepare(P,mesh[s],nd[s]);rows.push({part:s,before:fmt(R.before),after:fmt(R.after),clamped:R.clip})}
@@ -174,7 +186,7 @@ const asmXf=pp=>{const r=pp.rows,t=pp.T;return w=>{const g=[0,1,2].map(k=>w[0]*r
 function asmSources(){return pose.parts.flatMap(pp=>{const P=parsed.find(q=>q.sym===pp.dl);return P?[{P,offset:[0,0,0],local:[0,0,0],xf:asmXf(pp),flip:((pp.mirror&1)^((pp.mirror>>1)&1))===1}]:[]})}
 function rebuild(fit){const d=[];pickTris=[];let mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
 const sources=gallery?galleryData.flatMap((A,ai)=>A.parts.map(P=>({P,offset:galleryLayout[ai].offset,local:galleryLayout[ai].parts[P.sym],scale:galleryLayout[ai].scale}))):shown().map(P=>({P,offset:[0,0,0],local:sheet?(SH[P.sym]||[0,0,0]).map((v,k)=>v+(partOffsets[name]?.[P.sym]?.[k]||0)):[0,0,0]}));
-for(const S of (assembled&&!gallery&&poseOk()?asmSources():sources)){const P=S.P,E=gallery?null:mesh[P.sym],DF=!gallery&&deformOn?deformFor(P,E):null,of=S.local||[0,0,0],T=v=>{let w=applyMesh(v,E,P.bb);if(DF)w=DF.fs.reduce((q,f)=>applyDeform(f,q),w);return S.xf?S.xf(w):w.map((x,k)=>(x+of[k])*(S.scale||1)+S.offset[k])};
+for(const S of (assembled&&!gallery&&poseOk()?asmSources():sources)){const P=S.P,E=gallery?null:mesh[P.sym],DF=!gallery&&deformOn?deformFor(P,E):null,of=S.local||[0,0,0],T=v=>{let w=applyMesh(v,E,P.bb);if(DF)w=deformPoint(DF,v,w);return S.xf?S.xf(w):w.map((x,k)=>(x+of[k])*(S.scale||1)+S.offset[k])};
 for(const t0 of P.tris){const ord=S.flip?[0,2,1]:[0,1,2],t={c:t0.c,v:ord.map(i=>T(t0.v[i]))};if(!gallery)pickTris.push({v:t.v,sym:P.sym});const o=t.c<0?'808080FF':P.cols[t.c].rgba,col=t.c<0?[.5,.5,.5]:hex2(gallery?o:(map[o]||o)),[a,b,c]=t.v;
 let n=[(b[1]-a[1])*(c[2]-a[2])-(b[2]-a[2])*(c[1]-a[1]),(b[2]-a[2])*(c[0]-a[0])-(b[0]-a[0])*(c[2]-a[2]),(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])];
 const l=Math.hypot(...n)||1;n=n.map(x=>x/l);if(!gallery&&hoverSym===P.sym)col.splice(0,3,...col.map(v=>Math.min(1,v*.55+.45)));const vcol=t.c<0&&useVC&&hoverSym!==P.sym;for(const [i,v] of t.v.entries()){d.push(...v,...(vcol?t0.v[ord[i]].c:col),...n);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],v[k]);mx[k]=Math.max(mx[k],v[k])}}}}

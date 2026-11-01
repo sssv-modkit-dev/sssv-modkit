@@ -12,10 +12,11 @@ with that table:
 python tools/make_animal_mods.py configs/bear_deform.json --out build --name deform_test --dry-run
 ```
 
-The preview uses triangle-drawn vertices; the builder uses whole selected vertex
-groups. The preview ignores `groups` and warns when they are present. Repeated
-triangle vertices can inflate its clamp count. Preview face-normal shading
-differs from the game's stored normals.
+Like the builder, the preview deforms whole selected vertex groups (all of a
+part's groups, or those listed in `groups`), each unique vertex once, and counts
+clamped coordinates the same way. Vertices in a group but not drawn by any
+triangle are still part of the selection. Preview face-normal shading differs
+from the game's stored normals.
 
 For a new edit, copy `examples/deform_example.json` to a new config and replace
 its animal and part-symbol placeholders using your locally generated table.

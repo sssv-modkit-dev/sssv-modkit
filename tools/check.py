@@ -25,6 +25,7 @@ def main():
         ['node', '--check', 'tools/viewer/js/deform.js'],
         ['node', '--check', 'tools/viewer/js/parts-lab.js'],
         ['node', 'tests/test_parts_lab.js'],
+        [sys.executable, 'tests/test_builder.py'],
         [sys.executable, 'tests/test_public_build.py'],
         ['node', 'tests/test_camera.js'],
         ['node', 'tests/test_deform_parity.js'],
