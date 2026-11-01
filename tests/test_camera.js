@@ -4,6 +4,13 @@ const fs = require('fs');
 const vm = require('vm');
 const source = fs.readFileSync('tools/viewer/js/app.js', 'utf8');
 const live = vm.createContext({});
+// Reviewed names are defaults, local names override them, and list text is escaped.
+const labels = vm.createContext({partNames:{animal:{head:'My head'}},TABLE:{animal:{p:[{s:'head',n:'Reviewed head'},{s:'jaw',n:'Jaw'}]}}});
+vm.runInContext(source.slice(source.indexOf('function partLabel('),source.indexOf('const visibleParts=')),labels);
+assert.strictEqual(labels.partLabel('animal','head'),'My head');
+assert.strictEqual(labels.partLabel('animal','jaw'),'Jaw');
+assert.strictEqual(labels.partLabel('missing','head'),'');
+assert.strictEqual(labels.labelHTML('<img onerror="bad">'),'&lt;img onerror=&quot;bad&quot;&gt;');
 vm.runInContext(source.split('//#PURE-START')[1].split('//#PURE-END')[0], live);
 vm.runInContext(source.slice(source.indexOf('const mul='), source.indexOf('const cameraRotation=')), live);
 const close = (a,b) => assert(Math.abs(a-b) < 1e-8, `${a} != ${b}`);

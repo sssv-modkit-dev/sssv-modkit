@@ -169,6 +169,9 @@ const need=()=>{if(!dirty){dirty=true;requestAnimationFrame(draw)}};
 const NAMED_COLOURS={Black:'000000',White:'FFFFFF',Red:'FF0000',Green:'008000',Blue:'0000FF',Yellow:'FFFF00',Orange:'FFA500',Purple:'800080',Pink:'FFC0CB',Brown:'8B4513',Grey:'808080',Cyan:'00FFFF',Magenta:'FF00FF',Beige:'F5F5DC',Gold:'FFD700',Olive:'808000',Teal:'008080',Navy:'000080'};
 function colourName(hex){const rgb=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));let best='Colour',dist=Infinity;for(const [name,val] of Object.entries(NAMED_COLOURS)){const c=[0,2,4].map(i=>parseInt(val.slice(i,i+2),16));const d=c.reduce((sum,x,i)=>sum+(x-rgb[i])**2,0);if(d<dist){dist=d;best=name}}return best}
 const hex2=s=>[0,2,4].map(i=>parseInt(s.substr(i,2),16)/255);
+// Embedded reviewed labels are defaults; local user names take precedence.
+function partLabel(animal,symbol){return partNames[animal]?.[symbol]||TABLE[animal]?.p.find(p=>p.s===symbol)?.n||''}
+function labelHTML(text){return text.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const visibleParts=()=>parsed.filter(
   P=>!variant||P.sections.includes(variant)
 );
@@ -199,7 +202,7 @@ const hasDef=Object.keys(deform).length;mk('\u25B3  Deform preview: '+(deformOn?
 const partsTitle=document.createElement('div');partsTitle.className='parts-section-title';partsTitle.textContent='INDIVIDUAL PARTS';L.appendChild(partsTitle);
 cur.p.forEach((p,i)=>{
   if(variant&&!(p.v||[]).includes(variant))return;
-  mk((demoMode?p.s+' · '+parsed[i].tris.length+' triangles':p.r.toString(16).toUpperCase()+' &nbsp;'+parsed[i].tris.length+' tris &nbsp;j '+p.j)+
+  mk((partLabel(name,p.s)?labelHTML(partLabel(name,p.s))+' · ':'')+(demoMode?p.s+' · '+parsed[i].tris.length+' triangles':p.r.toString(16).toUpperCase()+' &nbsp;'+parsed[i].tris.length+' tris &nbsp;j '+p.j)+
     (noOwnColour(parsed[i])?
       ' &nbsp;<i title="No prim colour in this list">vtx col</i>':''),
     !all&&!sheet&&i==sel,
@@ -358,7 +361,7 @@ function pickPart(clientX,clientY){
     const z=u*a[2]+v*b[2]+(1-u-v)*c[2];if(z<depth){depth=z;best=t.sym}
   }return best;
 }
-function inspectPartAt(x,y){const sym=pickPart(x,y);if(!sym)return;selectedSym=sym;const el=$('part-inspector');el.hidden=false;$('part-symbol').textContent=sym;$('part-name').value=partNames[name]?.[sym]||'';el.style.left='auto';el.style.right='12px';}
+function inspectPartAt(x,y){const sym=pickPart(x,y);if(!sym)return;selectedSym=sym;const el=$('part-inspector');el.hidden=false;$('part-symbol').textContent=sym;$('part-name').value=partLabel(name,sym);el.style.left='auto';el.style.right='12px';}
 $('part-name').oninput=e=>{if(!selectedSym)return;(partNames[name]||(partNames[name]={}))[selectedSym]=e.target.value;saveViewerPrefs();updateFloatingLabels();};
 function rememberView(){if(!gallery&&cur)returnMode={sheet,all,variant,sel}}
 function selectMeshAt(x,y){const sym=pickPart(x,y);if(!sym)return;const i=parsed.findIndex(P=>P.sym===sym);if(i<0)return;
@@ -367,7 +370,7 @@ function selectMeshAt(x,y){const sym=pickPart(x,y);if(!sym)return;const i=parsed
 $('back-to-sheet').onclick=()=>{$('back-to-sheet').hidden=true;if(returnMode){({sheet,all,sel}=returnMode);returnMode=null}else{sheet=true;all=false}if(sheet)SH=sheetLayout(visibleParts());ui();rebuild(true);info()};
 function hoverAt(x,y){if(dr||gallery||!sheet&&!all){if(hoverSym){hoverSym=null;rebuild(false)}$('hover-part').style.display='none';cv.style.cursor='grab';return}
   const next=pickPart(x,y);if(next!==hoverSym){hoverSym=next;rebuild(false)}
-  const tip=$('hover-part');tip.style.display=next?'block':'none';if(next){tip.textContent=partNames[name]?.[next] ? partNames[name][next]+' · '+next : next;const r=cv.getBoundingClientRect();tip.style.left=Math.min(r.width-120,x-r.left+12)+'px';tip.style.top=Math.max(5,y-r.top-24)+'px'}cv.style.cursor=next?'pointer':'grab';}
+  const tip=$('hover-part');tip.style.display=next?'block':'none';if(next){tip.textContent=partLabel(name,next) ? partLabel(name,next)+' · '+next : next;const r=cv.getBoundingClientRect();tip.style.left=Math.min(r.width-120,x-r.left+12)+'px';tip.style.top=Math.max(5,y-r.top-24)+'px'}cv.style.cursor=next?'pointer':'grab';}
 cv.addEventListener('pointerleave',()=>{hoverSym=null;$('hover-part').style.display='none';rebuild(false)});
 
 function cameraView(view){
@@ -465,7 +468,7 @@ function flyFrame(t){const dt=Math.min((t-lastFrame)/1000||0,.06);lastFrame=t;
 // Viewer-only annotations and layout offsets: never write to the ROM.
 function saveViewerPrefs(){try{localStorage.setItem('sssv-viewer-annotations-v1',JSON.stringify({partNames,partOffsets,labelOffsets}))}catch(_){}}
 try{const p=JSON.parse(localStorage.getItem('sssv-viewer-annotations-v1')||'{}');partNames=p.partNames||{};partOffsets=p.partOffsets||{};labelOffsets=p.labelOffsets||{}}catch(_){}
-$('part-name').addEventListener('change',saveViewerPrefs);
+$('part-name').addEventListener('change',()=>{saveViewerPrefs();ui()});
 $('part-name-ok').onclick=()=>{$('part-inspector').hidden=true;saveViewerPrefs()};
 $('part-name').addEventListener('keydown',e=>{if(e.key==='Enter'){$('part-name-ok').click();cv.focus()}});
 cv.addEventListener('pointerup',()=>saveViewerPrefs());
@@ -473,7 +476,7 @@ $('grid-toggle').onchange=e=>{showGrid=e.target.checked;$('view').classList.togg
 $('move-button').onchange=e=>{moveButton=e.target.value};
 $('labels-toggle').onchange=e=>{showLabels=e.target.checked;updateFloatingLabels()};
 $('background-color').oninput=e=>{backgroundOverride=e.target.value;$('view').style.background=backgroundOverride};
-function updateFloatingLabels(){const host=$('floating-labels');if(!showLabels||gallery||!dv){host.replaceChildren();return}const R=cameraRotation(),V=mul(tr(0,0,-dist),mul(R,tr(-ctr[0],-ctr[1],-ctr[2]))),M=mul(projection(),V);host.replaceChildren();for(const P of shown()){if(!P||P.bb[0]>P.bb[3])continue;const b=P.viewBB||P.bb,of=sheet?(SH[P.sym]||[0,0,0]).map((v,k)=>v+(partOffsets[name]?.[P.sym]?.[k]||0)):[0,0,0];const q=[0,1,2].map(k=>(b[k]+b[k+3])/2+of[k]);const w=M[3]*q[0]+M[7]*q[1]+M[11]*q[2]+M[15];if(w<=0)continue;const x=(M[0]*q[0]+M[4]*q[1]+M[8]*q[2]+M[12])/w,y=(M[1]*q[0]+M[5]*q[1]+M[9]*q[2]+M[13])/w;if(Math.abs(x)>1||Math.abs(y)>1)continue;const label=document.createElement('span');label.textContent=partNames[name]?.[P.sym]||P.sym;const shift=labelOffsets[name]?.[P.sym]||[0,0];label.style.left=`calc(${(x+1)*50}% + ${shift[0]}px)`;label.style.top=`calc(${(1-y)*50}% + ${shift[1]}px)`;label.dataset.sym=P.sym;label.dataset.baseX=(x+1)*50;label.dataset.baseY=(1-y)*50;host.appendChild(label)}}
+function updateFloatingLabels(){const host=$('floating-labels');if(!showLabels||gallery||!dv){host.replaceChildren();return}const R=cameraRotation(),V=mul(tr(0,0,-dist),mul(R,tr(-ctr[0],-ctr[1],-ctr[2]))),M=mul(projection(),V);host.replaceChildren();for(const P of shown()){if(!P||P.bb[0]>P.bb[3])continue;const b=P.viewBB||P.bb,of=sheet?(SH[P.sym]||[0,0,0]).map((v,k)=>v+(partOffsets[name]?.[P.sym]?.[k]||0)):[0,0,0];const q=[0,1,2].map(k=>(b[k]+b[k+3])/2+of[k]);const w=M[3]*q[0]+M[7]*q[1]+M[11]*q[2]+M[15];if(w<=0)continue;const x=(M[0]*q[0]+M[4]*q[1]+M[8]*q[2]+M[12])/w,y=(M[1]*q[0]+M[5]*q[1]+M[9]*q[2]+M[13])/w;if(Math.abs(x)>1||Math.abs(y)>1)continue;const label=document.createElement('span');label.textContent=partLabel(name,P.sym)||P.sym;const shift=labelOffsets[name]?.[P.sym]||[0,0];label.style.left=`calc(${(x+1)*50}% + ${shift[0]}px)`;label.style.top=`calc(${(1-y)*50}% + ${shift[1]}px)`;label.dataset.sym=P.sym;label.dataset.baseX=(x+1)*50;label.dataset.baseY=(1-y)*50;host.appendChild(label)}}
 $('collapse-left').onclick=()=>document.body.classList.toggle('left-collapsed');
 $('collapse-right').onclick=()=>document.body.classList.toggle('right-collapsed');
 

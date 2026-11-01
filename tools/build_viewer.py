@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build a portable single-file viewer from modular sources and the ROM-derived table."""
-import argparse,base64,json,re,subprocess,sys
+import argparse,base64,hashlib,json,re,subprocess,sys
 from urllib.parse import quote
 from pathlib import Path
 here=Path(__file__).resolve().parent
@@ -10,8 +10,9 @@ parser.add_argument('output',nargs='?',type=Path,help='output HTML (default: vie
 parser.add_argument('--animals-dir',type=Path,help='generate the table first from decomp animal sources; requires a local ROM')
 parser.add_argument('--public',action='store_true',help='Build original demos only; never read a ROM or animal table')
 parser.add_argument('--out',type=Path,help='Override output HTML path')
+parser.add_argument('--labels',type=Path,help='Embed a private sssv-viewer-labels-v1 part-name file (never used in public builds)')
 args=parser.parse_args()
-if args.public and (args.table or args.animals_dir): parser.error('--public rejects private table/source inputs; use --out for output')
+if args.public and (args.table or args.animals_dir or args.labels): parser.error('--public rejects private table/source/label inputs; use --out for output')
 out=args.out or args.output or here.parent/('site/dist/index.html' if args.public else 'viewers/parts_viewer.html')
 if args.public:
     t={}
@@ -37,10 +38,23 @@ for a,d in t.items():
         j=p['joint_calls'][0].split(' | ')[0] if p['joint_calls'] else '?'
         ps.append({'s':p['symbol'],'r':p['rom'],'j':re.sub(r'(?<=[0-9A-Fa-f])U\b','',j).replace(' ','-'),'v':p.get('sections',[]),'t':tex})
     if ps:T[a]={'b':d['seg_bases'],'p':ps,'s':d.get('sections',[])}
+if args.labels:
+    labels=json.loads(args.labels.read_text(encoding='utf-8-sig'))
+    if not isinstance(labels,dict) or labels.get('format')!='sssv-viewer-labels-v1' or not isinstance(labels.get('partNames'),dict):
+        parser.error('labels must use sssv-viewer-labels-v1 with a partNames object')
+    if labels.get('table_sha256') and labels['table_sha256']!=hashlib.sha256(src.read_bytes()).hexdigest():
+        parser.error('labels were reviewed against a different animal table')
+    for animal,names in labels['partNames'].items():
+        if animal not in T or not isinstance(names,dict): parser.error('unknown animal or invalid names in labels: '+animal)
+        parts={p['s']:p for p in T[animal]['p']}
+        for symbol,label in names.items():
+            if symbol not in parts or not isinstance(label,str) or not label.strip() or len(label)>120:
+                parser.error('unknown part or invalid label: '+animal+' / '+symbol)
+            parts[symbol]['n']=label
 base=here/'viewer'
 html=(base/'index.template.html').read_text(encoding='utf-8')
 css=(base/'css'/'app.css').read_text(encoding='utf-8')
-js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')
+js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')
 icon_path=next((base/'assets'/name for name in ('icon.png','icon.ico') if (base/'assets'/name).is_file()),None)
 if icon_path and not args.public:
     mime='image/png' if icon_path.suffix=='.png' else 'image/x-icon'
