@@ -76,7 +76,7 @@ function load(i){
  bxlo={p:buf(new Float32Array(lpo)),c:buf(new Float32Array(lco)),n:lpo.length/3};
  buildMeshes();buildAnimals();
  const b=L.bb;cam.t=[(b[0]+b[3])/2,(b[1]+b[4])/2,(b[2]+b[5])/2];cam.d=Math.max(b[3]-b[0],b[4]-b[1],1000)*1.4;
- $('info').textContent=`level ${L.id}: ${n/3} tris, tex zone ${L.zone} sub ${L.sub}, ${ns} spawns, z ${zmin}..${zmax}`+L.minfo;
+ $('info').textContent=`level ${L.id}: ${n/3} tris, tex zone ${L.zone} sub ${L.sub}, ${ns} spawns, z ${zmin}..${zmax}`+L.minfo+' · '+data.SOURCE_LABEL;
 }
 function buildAnimals(){
  const P=[],C=[],a=L.an||[];L.anl=[];
@@ -236,5 +236,5 @@ if(gl){load(+(HP.get('lv')||0));$('lv').value=+(HP.get('lv')||0);
  requestAnimationFrame(frame);}
 
 /*EDITOR*/
-return {get level(){return L;},get records(){return edRecords;},get camera(){return cam;},get parts(){return edParts;},get selection(){return Array.from(edSelection);},diff:edDiff,select(value){edSelected=value;edSelection=new Set([value]);$('ed-category').value='all';edList();},load,current:edCurrent,view:currentView};
+return {sourceSha1:EDITOR_SHA1,get level(){return L;},get records(){return edRecords;},get camera(){return cam;},get parts(){return edParts;},get selection(){return Array.from(edSelection);},diff:edDiff,select(value){edSelected=value;edSelection=new Set([value]);$('ed-category').value='all';edList();},load,current:edCurrent,view:currentView};
 }

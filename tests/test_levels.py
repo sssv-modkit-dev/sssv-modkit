@@ -60,3 +60,30 @@ project={'format':'sssv-workspace-project','version':1,'rom_sha1':diff['rom_sha1
 rejects(lambda: levels.validate(project,stock))
 assert levels.romio.apply_ips(stock,levels.patch(stock,stock+b'expanded'))==stock+b'expanded'
 print('Level builder: source binding, record boundaries, deletion rejection and expanded IPS roundtrip passed.')
+
+# Modded bases and all three N64 byte orders normalize to the same identity.
+base = bytearray(0x800000)
+base[:4] = bytes.fromhex('80371240')
+base[0x3B:0x3F] = b'NSVE'
+base[0x2000] = 123
+assert levels.normalize_rom(base) == base
+swapped = bytearray(base)
+swapped[0::2], swapped[1::2] = swapped[1::2], swapped[0::2]
+assert levels.normalize_rom(swapped) == base
+little = bytearray(base)
+little[0::4], little[1::4], little[2::4], little[3::4] = little[3::4], little[2::4], little[1::4], little[0::4]
+assert levels.normalize_rom(little) == base
+assert levels.normalize_rom(base + bytes(16)) == base + bytes(16)
+wrong = bytearray(base); wrong[0x3B:0x3F] = b'ABCD'
+rejects(lambda: levels.normalize_rom(wrong))
+rejects(lambda: levels.normalize_rom(base[:-1]))
+script = """
+const assert=require('assert'),fs=require('fs'),r=require('./src/levels/rom.js');
+const base=Buffer.from(fs.readFileSync(0,'utf8'),'base64');
+assert.deepStrictEqual(Buffer.from(r.normalize(base)),base);
+for(const stride of [2,4]){const swap=Buffer.from(base);for(let i=0;i<swap.length;i+=stride)swap.subarray(i,i+stride).reverse();assert.deepStrictEqual(Buffer.from(r.normalize(swap)),base);}
+const expanded=Buffer.concat([base,Buffer.alloc(16)]);assert.deepStrictEqual(Buffer.from(r.normalize(expanded)),expanded);
+const bad=Buffer.from(base);bad[0x3B]=0;assert.throws(()=>r.normalize(bad));
+console.log('Stock/modded-size ROM normalization, byte orders and wrong-game rejection passed in Python/JS.');
+"""
+subprocess.run(['node','-e',script],input=base64.b64encode(base).decode(),text=True,cwd=ROOT,check=True)

@@ -41,6 +41,38 @@ def split_chunks(body):
     raise ValueError('Missing level end marker')
 
 
+def normalize_rom(data):
+    rom = bytearray(data)
+    if not 0x800000 <= len(rom) <= 0x1000000 or len(rom) % 4:
+        raise ValueError('Use an 8-16 MB SSSV US ROM')
+    magic = bytes(rom[:4])
+    if magic == bytes.fromhex('37804012'):
+        rom[0::2], rom[1::2] = rom[1::2], rom[0::2]
+    elif magic == bytes.fromhex('40123780'):
+        rom[0::4], rom[1::4], rom[2::4], rom[3::4] = rom[3::4], rom[2::4], rom[1::4], rom[0::4]
+    elif magic != bytes.fromhex('80371240'):
+        raise ValueError('Unrecognized N64 ROM byte order')
+    if rom[0x3B:0x3F] != b'NSVE':
+        raise ValueError('Use a US SSSV ROM, not a different game or region')
+    return bytes(rom)
+
+
+def read_level_rom(path):
+    stock = normalize_rom(Path(path).read_bytes())
+    for level in range(1, 37):
+        start, end = struct.unpack_from('>II', stock, TABLE + (level-1)*8)
+        if not 0 <= start < end <= len(stock):
+            raise ValueError(f'Stage {level}: unsupported or damaged level table')
+        body, _ = rnc.unpack(stock, start)
+        chunks, _ = split_chunks(body)
+        for kind, (wanted, size) in LISTS.items():
+            matches = [data for cid, _, data in chunks if cid == wanted]
+            if len(matches) != 1:
+                raise ValueError(f'Stage {level}: missing or repeated {kind} chunk')
+            edit_records(matches[0], size, {}, kind)
+    return stock
+
+
 def edit_records(data, size, spec, kind):
     if not isinstance(spec, dict) or set(spec) - {'set', 'add'}:
         raise ValueError('Only set/add operations are supported; deletion shifts script indices')
@@ -170,8 +202,10 @@ def main():
     args = parser.parse_args()
     if not args.name or Path(args.name).name != args.name or args.name in ('.', '..'):
         parser.error('name must be a single filename')
-    stock = romio.read_us10(str(args.rom))
+    stock = read_level_rom(args.rom)
     diff, parts = validate(json.loads(args.edits.read_text(encoding='utf-8-sig')), stock)
+    if parts and romio.sha1(stock) != romio.US10_SHA1:
+        parser.error('Level edits support modded ROMs; attached animal builds still require the stock ROM for their expected-byte safeguards')
     if parts and (not args.table or args.relocate):
         parser.error('Animal attachments require --table and an in-place level build')
     edited = build(diff, stock, relocate=args.relocate)

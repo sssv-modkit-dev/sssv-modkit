@@ -7,11 +7,12 @@ const LevelRom = (() => {
   const hex = b => Array.from(b,v=>v.toString(16).padStart(2,'0')).join('');
   function normalize(input) {
     const b = new Uint8Array(input).slice();
-    if(b.length!==0x800000)throw Error('Use an unmodified 8 MB US 1.0 ROM.');
+    if(b.length<0x800000||b.length>0x1000000||b.length%4)throw Error('Use an 8–16 MB SSSV US ROM.');
     const magic=view(b).getUint32(0);
     if(magic===0x37804012){for(let i=0;i<b.length;i+=2)[b[i],b[i+1]]=[b[i+1],b[i]];}
     else if(magic===0x40123780){for(let i=0;i<b.length;i+=4)[b[i],b[i+1],b[i+2],b[i+3]]=[b[i+3],b[i+2],b[i+1],b[i]];}
     else if(magic!==0x80371240)throw Error('Unrecognized N64 ROM byte order.');
+    if(view(b).getUint32(0x3B)!==0x4E535645)throw Error('Use a US SSSV ROM; this is a different game or region.');
     return b;
   }
   function crc16(bytes){let c=0;for(const b of bytes){c^=b;for(let i=0;i<8;i++)c=c&1?(c>>>1)^0xA001:c>>>1;}return c;}
@@ -89,7 +90,7 @@ const LevelRom = (() => {
     ctx.putImageData(image,0,0);return canvas.toDataURL('image/png');
   }
   async function decode(input,progress=()=>{}){const rom=normalize(input),sha=hex(new Uint8Array(await crypto.subtle.digest('SHA-1',rom)));
-    if(sha!==SHA1)throw Error('ROM identity mismatch. Use the unmodified US 1.0 release.');
+    // Patched ROMs retain their own identity; structural decoders validate the layout.
     const {MODEL,TBL}=models(rom),LEVELS=[],EDITOR_STOCK={},ATLAS={};
     for(let id=1;id<=36;id++){progress(`Decoding level ${id} of 36…`);await new Promise(resolve=>setTimeout(resolve,0));const ch=chunks(rom,id),h=ch[12],m=terrain(ch[10],h),zone=h[0x21],sub=h[0x53],key=`${zone}_${sub}`;
       if(!ATLAS[key])ATLAS[key]=atlas(rom,zone,sub);
@@ -98,7 +99,7 @@ const LevelRom = (() => {
       const grid=[],tile=[];for(let i=0;i<65*97;i++){grid.push(ch[9][i*8]);tile.push(ch[9][i*8+2]);}
       LEVELS.push({id,tex:key,zone,sub,n:m.pos.length/3,bb:[xb[0],yb[0],zb[0],xb[1],yb[1],zb[1]],nsp:EDITOR_STOCK[id].props.length,pos:encoded(m.pos,Int32Array),col:encoded(m.col,Uint8Array),uv:encoded(m.uv,Int16Array),sl:encoded(m.sl,Uint8Array),wat:encoded(m.wat,Uint8Array),grid:encoded(grid,Uint8Array),tile:encoded(tile,Uint8Array),bt:b64(ch[11].subarray(0,3072)),sp:encoded(recordValues(ch[0],22),Int32Array),an:recordValues(ch[1],16)});
     }
-    return {ANIM:{models:{},names:{},species:{}},MODEL,TBL,ATLAS,LEVELS,EDITOR_STOCK,EDITOR_SHA1:sha};
+    return {ANIM:{models:{},names:{},species:{}},MODEL,TBL,ATLAS,LEVELS,EDITOR_STOCK,EDITOR_SHA1:sha,SOURCE_LABEL:sha===SHA1?'stock ROM':'modded ROM'};
   }
   return {SHA1,normalize,unpack,chunks,records,terrain,decode};
 })();
