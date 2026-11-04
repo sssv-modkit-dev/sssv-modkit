@@ -83,8 +83,6 @@ have not been tested, so support is not guaranteed.
 ![Parts sheet using original synthetic geometry](docs/images/viewer-sheet-synthetic.jpg)
 ![Mesh preview using original synthetic geometry](docs/images/viewer-mesh-synthetic.jpg)
 
-These screenshots use original demo geometry. They show the viewer, not an in-game result.
-
 See the [config guide](docs/guides/CONFIGS.md) for available edits and
 [project status](docs/PROJECT.md) for unfinished work.
 The [separate emulator tools](https://github.com/sssv-modkit-dev/sssv-modkit-automated-testing)
