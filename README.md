@@ -22,7 +22,7 @@ There is no finished mod campaign (yet) or full game download here (ever).
 ### How do I play this?
 
 - [Try Parts Lab in your browser](https://sssv-modkit-dev.github.io/sssv-modkit/): change colours and shapes, then save your edits. It opens with three original demo creatures.
-- [Edit levels in your browser](https://sssv-modkit-dev.github.io/sssv-modkit/levels.html): open your stock ROM locally, select named objects by category or drag a selection box, then export your edits. [Level editor guide](docs/guides/LEVEL-EDITOR.md).
+- [Edit levels in your browser](https://sssv-modkit-dev.github.io/sssv-modkit/levels.html): open your stock or compatible modded ROM locally, select named objects by category or drag a selection box, then export your edits. [Level editor guide](docs/guides/LEVEL-EDITOR.md).
 - [Play your ROM in the browser](https://sssv-modkit-dev.github.io/sssv-modkit/play.html): select your own uncompressed ROM or patched build. Experimental; gameplay compatibility and performance are still being tested.
 - [Make a local build](docs/guides/GETTING-STARTED.md): build a patch using your own US 1.0 ROM and the required local animal C source files, then open the patched ROM in your emulator.
 

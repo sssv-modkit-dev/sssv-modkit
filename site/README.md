@@ -72,7 +72,7 @@ the local builder. The private level editor is not bundled in the public site.
 ## Levels
 
 The public build includes `levels.html` and the `levels/` source bundle. Choose
-your own stock US 1.0 ROM; stage records, ground textures, and supported prop meshes
+your own stock or compatible modded US ROM; stage records, ground textures, and supported prop meshes
 are decoded locally. Named categories, rectangle selection, group movement,
 undo/redo and project files are described in [the editor guide](../docs/guides/LEVEL-EDITOR.md).
 No game data is read during the public build. Animal shapes are approximate,

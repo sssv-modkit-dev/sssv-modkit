@@ -1,8 +1,8 @@
 # Level editor
 
 Open [Levels](https://sssv-modkit-dev.github.io/sssv-modkit/levels.html) and choose
-your unmodified US 1.0 ROM. Big-endian `.z64`, byte-swapped `.v64`, and little-endian
-`.n64` files are normalized and checked against the stock ROM identity. The page
+your stock US ROM or a compatible modded build. Big-endian `.z64`, byte-swapped `.v64`, and little-endian
+`.n64` files (8–16 MB) are normalized and checked for the US SSSV header and supported data layout. The page
 decodes all 36 stage slots locally. No ROM, mesh, texture, or extracted spawn table
 is included in the site, and Levels makes no upload requests.
 
@@ -32,6 +32,8 @@ the camera; rectangle selection and group dragging currently need a mouse.
 
 **Save level edits** writes a source-bound `sssv-editor-diff` v1 JSON file.
 **Open level edits** restores it. View files save camera/display settings separately.
+Edits are bound to the exact ROM you selected, not the stock fingerprint. Open them with that same ROM; another modded build is a different source. Mods that reorganize tables or change record layouts may be unsupported.
+
 Downloaded edits and projects stay on your computer; save before closing the page.
 
 From the repository root:
@@ -41,7 +43,7 @@ python src/build_levels.py sssv-level-edits.json --rom rom/sssv.z64 --dry-run
 python src/build_levels.py sssv-level-edits.json --rom rom/sssv.z64 --out build/levels --name my-stage
 ```
 
-The local builder requires the original big-endian US 1.0 ROM, checks source
+The local builder accepts the same stock or modded ROM in any supported byte order, checks the saved source
 identity, recompresses edited records, repairs the header CRC, and verifies the IPS
 roundtrip. It writes a new `.z64` and `.ips`. Open the resulting ROM in **Play** or
 your emulator. Share patches rather than ROMs.
@@ -64,7 +66,7 @@ python src/build_levels.py sssv-project.json --rom rom/sssv.z64 --table animal_t
 python src/build_levels.py sssv-project.json --rom rom/sssv.z64 --table animal_table.json --out build/levels --name combined
 ```
 
-Combined builds require the level edits to fit in place. Original demo-creature
+Attached production-animal builds still require the stock ROM for the animal builder safeguards. Combined builds require the level edits to fit in place. Original demo-creature
 presets are rejected as production animal patch configurations.
 
 ## Current limits and evidence
