@@ -1,8 +1,10 @@
-# Space Station Silicon Valley (N64) Modkit
+# Space Station Silicon Valley (N64)
+# Modkit
 
 ![SSSV Modkit — Ceruleanish Ear Bear edition](docs/images/releases/ceruleanish-ear-bear-v2.png)
 
-Welcome to the sssv-modkit repository!
+# Welcome 
+Welcome to the sssv-modkit public repository!
 
 **WORK IN PROGRESS**
 
@@ -16,42 +18,30 @@ This is a fan-made modding project for Space Station Silicon Valley on the Ninte
 It lets you change animal colours and reshape their existing body parts, preview
 your edits in a browser, and build a patch to play in the game.
 
-There is no finished mod campaign or full game download here yet.
+There is no finished mod campaign (yet) or full game download here (ever).
 
 ### How do I play this?
 
-To make a local build, you need Python 3.8+, your own US 1.0 `.z64` ROM, and
-local animal C source files to generate the animal table. Those files are not
-included. Follow the [setup guide](docs/guides/GETTING-STARTED.md) first.
-
-Once setup is done, try the bear edit from the repository root:
-
-```sh
-python src/make_animal_mods.py configs/bear.json --out build --name mypack --dry-run
-python src/make_animal_mods.py configs/bear.json --out build --name mypack
-```
-
-The first command shows what will change. The second creates `build/mypack.ips`
-and `build/mypack.z64`. Your original ROM is kept as it is. Open the new ROM in
-your N64 emulator to try it; check each build in game.
-
-You can also [open the online Parts Lab](https://sssv-modkit-dev.github.io/sssv-modkit/).
-It has three original demo creatures you can try without a ROM. This is a model
-viewer and editing demo, not a playable version of Space Station Silicon Valley.
-See the [viewer guide](docs/guides/VIEWER.md) for using your own game data locally.
+ * Browser version link
+ * Link to instructions for local build
 
 ### Is this a decompilation / recompilation?
 
 No.
 
-A decompilation project works backwards from a compiled game to recreate source
-code. A recompilation takes code for one system and builds it to run on another,
+A **decompilation** project works backwards from a compiled game to recreate source
+code.
+A **recompilation** takes code for one system and builds it to run on another,
 such as turning an N64 game into a native PC application.
 
-This project edits the original N64 ROM and builds patches. It does not recreate
-the whole game's source code or turn the game into a native PC port. LLMs are
-used to help reverse engineer how the game stores and uses its data, and to write
-the tools for editing it. The current animal-table generator also needs external
+This project is a **ROM patch**. 
+It edits the original N64 ROM and builds patches. It does not recreate
+the whole game's source code or turn the game into a native PC port. 
+
+LLMs are
+used to help reverse engineer /<see: llm tools like ghidra re mcp/> how the game stores and uses its data /<explanation about the research repository />, and to write
+the tools for editing it. 
+The current animal-table generator also needs external
 animal C source files; it cannot work from a ROM alone.
 
 ### Was this made using AI?
@@ -59,8 +49,12 @@ animal C source files; it cannot work from a ROM alone.
 Yes.
 
 Most of the code is AI-written or generated, with only minor tweaks such as
-renaming file paths done by the developer. Claude and OpenAI coding tools have
+renaming file paths done by the developer.
+
+Claude and OpenAI coding tools have
 been used throughout development.
+
+### What did the AI work on vs. what did the mod developer work on?
 
 ### Can I play it on my device or phone?
 
