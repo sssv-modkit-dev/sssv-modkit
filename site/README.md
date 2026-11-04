@@ -47,5 +47,9 @@ in the HTTP request). ROM bytes, imported game tables, extracted meshes, and
 game configs are excluded. Custom labels, dragged part positions and camera
 positions are browser-local and are not included in presets.
 
+Use **Save edits** to download a JSON file and **Open edits** to load it again.
+In game mode these buttons save and open builder configs; demo presets stay in
+their separate demo format. Neither file contains the ROM.
+
 One finger or mouse drag orbits; pinch zooms and pans. Select a named part row
 to edit on touch devices. Desktop users can also double-click a part.
