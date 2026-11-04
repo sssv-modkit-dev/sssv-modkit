@@ -1,5 +1,4 @@
-# Space Station Silicon Valley (N64)
-# Modkit
+# Space Station Silicon Valley (N64) - Modkit
 
 ![SSSV Modkit — Ceruleanish Ear Bear edition](docs/images/releases/ceruleanish-ear-bear-v2.png)
 
