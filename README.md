@@ -1,6 +1,6 @@
 # Space Station Silicon Valley (N64) - Modkit
 
-![SSSV Modkit — Ceruleanish Ear Bear edition](docs/images/releases/ceruleanish-ear-bear-v2.png)
+![SSSV Modkit — Auburn Flamehound edition](docs/images/releases/auburn-flamehound-v3.png)
 
 ## Welcome
 Welcome to the sssv-modkit public repository!

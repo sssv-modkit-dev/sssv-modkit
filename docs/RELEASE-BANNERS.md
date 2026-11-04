@@ -1,5 +1,7 @@
 # Release banners
 
+The README uses `docs/images/releases/auburn-flamehound-v3.png`, an original low-poly flamehound illustration generated with OpenAI image tools on 2026-11-04. The v3 label identifies the banner edition, not a software release. It contains no extracted game artwork. Earlier Ceruleanish Ear Bear banners remain archived.
+
 Generate a minimal banner from the verified local game-head branding render:
 
 ```sh
