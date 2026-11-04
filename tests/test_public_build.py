@@ -14,6 +14,11 @@ with tempfile.TemporaryDirectory() as directory:
     command = [sys.executable, str(ROOT / 'src/build_viewer.py'), '--public', '--out', str(output)]
     subprocess.run(command, cwd=temp, check=True, capture_output=True)
     assert (temp / 'play.html').is_file() and (temp / 'play.js').is_file()
+    assert (temp/'levels.html').is_file()
+    for asset in ('rom.js','selection.js','loader.js','runtime.js','levels.css'):
+        assert (temp/'levels'/asset).is_file()
+    subprocess.run(['node','--check',str(temp/'levels/runtime.js')],check=True,capture_output=True)
+    assert b'/*EDITOR*/' not in (temp/'levels/runtime.js').read_bytes()
     first = output.read_bytes()
     subprocess.run(command, cwd=temp, check=True, capture_output=True)
     assert first == output.read_bytes()

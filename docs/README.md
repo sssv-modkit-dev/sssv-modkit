@@ -4,6 +4,7 @@
 
 - [Getting started](guides/GETTING-STARTED.md): local inputs, table generation and your first patch.
 - [Config guide](guides/CONFIGS.md): available edits, examples and combining configs.
+- [Level editor](guides/LEVEL-EDITOR.md): local-ROM stages, named selection, group editing, project files and patch builds.
 - [Viewer guide](guides/VIEWER.md): building the page, inspecting parts and exporting edits.
 - [Deform preview](DEFORM-TRYOUT.md): compare a preview with the builder and game.
 - [Glossary](GLOSSARY.md): parts, variants, rigs, poses and coordinate spaces.
