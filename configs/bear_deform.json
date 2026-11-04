@@ -1,0 +1,22 @@
+{
+  "_note": "Bear deformation example with strong bends. Run this config on its own with --dry-run first; normals are unchanged, so inspect shading in game.",
+  "animal": "bear",
+  "deform": [
+    {
+      "symbol": "D_040077C0_CF1F0",
+      "ops": [
+        { "type": "taper",   "axis": "y", "from": 1.0, "to": 0.3 },
+        { "type": "bend",    "axis": "y", "toward": "z", "degrees": 90 },
+        { "type": "inflate", "amount": 1.5, "axes": ["x", "z"], "axis": "y", "range": [0, 0.5] }
+      ]
+    },
+{
+  "symbol": "D_04007BC0_CF5F0",
+        "ops": [
+        { "type": "taper",   "axis": "y", "from": 1.0, "to": 0.3 },
+        { "type": "bend",    "axis": "y", "toward": "z", "degrees": 90 },
+        { "type": "inflate", "amount": 1.5, "axes": ["x", "z"], "axis": "y", "range": [0, 0.5] }
+      ]
+}
+  ]
+}

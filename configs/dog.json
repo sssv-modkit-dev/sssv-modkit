@@ -1,0 +1,8 @@
+{
+  "animal": "dog",
+  "recolor": {
+    "FFFF80FF": "E0BFEE",
+    "FFFF00FF": "E0BFEE",
+    "C86432FF": "050201"
+  }
+}

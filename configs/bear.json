@@ -1,0 +1,23 @@
+{
+  "animal": "bear",
+  "recolor": {
+    "B03F00FF": "004080",
+    "AD6B52FF": "F8F7D6",
+    "141414FF": "FCFCFC"
+  },
+  "mesh": [
+    {
+      "symbol": "D_040082C0_CFCF0",
+      "scale": [
+        1,
+        1.75,
+        1
+      ],
+      "move": [
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}
