@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/viewer/**'
+      - 'src/web/**'
       - 'src/build_viewer.py'
       - 'tests/**'
       - 'src/check.py'

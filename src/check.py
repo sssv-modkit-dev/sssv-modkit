@@ -18,6 +18,8 @@ def main():
         ast.parse(path.read_text(encoding='utf-8-sig'), filename=str(path.relative_to(ROOT)))
     print('Python syntax: %d active tool/test files.' % len(paths), flush=True)
     commands = [
+        ['node', '--check', 'src/web/play.js'],
+        ['node', 'tests/test_web_play.js'],
         ['node', '--check', 'src/release_banner.js'],
         ['node', 'tests/test_release_banner.js'],
         [sys.executable, 'tests/test_release_banner.py'],

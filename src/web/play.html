@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Play · SSSV Modkit</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#141821;color:#eaf0fa;font:16px/1.6 system-ui,sans-serif}main{max-width:1000px;margin:auto;padding:24px}a{color:#ffbd78}nav{display:flex;gap:24px}h1{margin:24px 0 0}p{max-width:75ch}button,input,select{font:inherit}button,select{padding:8px 16px;background:#293344;color:inherit;border:1px solid #8998ac;border-radius:6px}button:disabled{opacity:.5}label{display:block;margin:16px 0 8px}#screen{height:min(70vh,660px);min-height:320px;background:#080b10;margin-top:24px}#game{width:100%;height:100%}#status{color:#ffcf99}small{display:block}fieldset{border:1px solid #59647a;border-radius:8px;padding:16px}input{max-width:100%}
+</style></head><body><main>
+<nav aria-label="Modkit"><a href="index.html">Parts Lab</a><a href="play.html" aria-current="page">Play</a><a href="https://github.com/sssv-modkit-dev/sssv-modkit">Source &amp; guides</a></nav>
+<h1>Play your build</h1><p>Choose your own N64 ROM, including a patched modkit build, and play it here. Nothing from the game is included with this page.</p>
+<fieldset id="setup"><legend>Local ROM</legend><label for="rom">Your .z64, .v64 or .n64 file</label><input id="rom" type="file" accept=".z64,.v64,.n64"><label for="core">Emulator</label><select id="core"><option value="mupen64plus_next">Mupen64Plus Next</option><option value="parallel_n64">ParaLLEl N64 (alternative)</option></select><p><button id="start" disabled>Load game</button> <button id="reset" type="button">Choose another ROM</button></p><small>ROM bytes are read locally. Loading a game downloads EmulatorJS 4.2.3 and its emulator core from cdn.emulatorjs.org. That third-party code runs in this page. Internet access and WebGL are required.</small></fieldset>
+<p id="status" role="status" aria-live="polite">Choose a ROM to begin. Browser emulation is experimental; SSSV compatibility and performance need testing.</p>
+<div id="screen"><div id="game"></div></div>
+<p>Use the emulator's controller settings to see or change keys, connect a gamepad, or enable touch controls. Click inside the game to focus it. Use its menu for fullscreen, saves and screenshots.</p>
+<p>Parts Lab exports edit JSON, not a playable ROM. Build your patch with the <a href="https://github.com/sssv-modkit-dev/sssv-modkit/blob/main/docs/guides/GETTING-STARTED.md">local modkit</a>, then select the resulting ROM here. Level editing remains a private prototype.</p>
+<small>Powered by <a href="https://emulatorjs.org/docs/systems/nintendo-64/">EmulatorJS</a> and its N64 cores. No ROM is uploaded by this launcher.</small>
+</main><script src="play.js"></script></body></html>
