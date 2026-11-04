@@ -53,3 +53,18 @@ their separate demo format. Neither file contains the ROM.
 
 One finger or mouse drag orbits; pinch zooms and pans. Select a named part row
 to edit on touch devices. Desktop users can also double-click a part.
+
+## Browser play
+
+The public build also writes `play.html` and `play.js`. Select a local uncompressed
+N64 ROM or a patched build; the launcher passes a browser blob URL to EmulatorJS
+4.2.3. It fetches the loader and N64 core from the upstream CDN only after Load
+game is clicked. No ROM is bundled or uploaded by the launcher. The CDN code runs
+in the same page and can access the chosen ROM, so this is not an isolated offline
+sandbox. Threads are disabled because GitHub Pages lacks COOP/COEP headers.
+
+The upstream [N64 core example](https://emulatorjs.org/docs/systems/nintendo-64/)
+and [CDN versioning](https://emulatorjs.org/docs/cdn/) document the integration.
+Game compatibility, mobile performance, controller behaviour and save persistence
+still require direct testing. Parts Lab JSON must first be built into a ROM with
+the local builder. The private level editor is not bundled in the public site.

@@ -13,6 +13,7 @@ with tempfile.TemporaryDirectory() as directory:
     output = temp / 'index.html'
     command = [sys.executable, str(ROOT / 'src/build_viewer.py'), '--public', '--out', str(output)]
     subprocess.run(command, cwd=temp, check=True, capture_output=True)
+    assert (temp / 'play.html').is_file() and (temp / 'play.js').is_file()
     first = output.read_bytes()
     subprocess.run(command, cwd=temp, check=True, capture_output=True)
     assert first == output.read_bytes()
