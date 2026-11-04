@@ -11,6 +11,7 @@ The public modkit provides config-driven edits to the owner's US 1.0 ROM and a l
 | Builder | Recolour, colour-word exclusions/edits, scale/move, deform, explicit vertex edits; SHA1, expected-byte, conflict, CRC and IPS safeguards | Exact-config dry-run and cold-boot inspection of a chosen edit |
 | Viewer | Modular sources; parts sheets, variants, picking, config import/export, themes, local ROM caching, deform preview, pose JSON import | Browser interaction pass using locally generated inputs |
 | Deform | Python, live JS and standalone JS; saved and fresh synthetic parity suites | Same-config preview/builder vertex coverage and game shading |
+| Level editor | Browser-local ROM decoding, named categories/type picker, rectangle selection, group movement/duplication, history, source-bound projects and Python ROM/IPS builder | Portal hook/return trip, collision and progression; animal previews remain approximate |
 | Assembly | Pose-transform import and rendering in the viewer | Recover/verify external pose-generation tools and compare one animal against the same game state |
 | Custom characters | Existing vertex edits can reshape current parts | Audit a donor rig and geometry budget; no arbitrary mesh/rig importer exists |
 | Stage shuffle | Synthetic logic prototype | Real stage data and ROM write operations are not implemented |

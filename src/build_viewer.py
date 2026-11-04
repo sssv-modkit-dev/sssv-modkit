@@ -65,7 +65,7 @@ else:
 for marker,value in [('/*VIEWER_CSS*/',css),('/*VIEWER_JS*/',js),('/*VIEWER_ICON*/',icon)]:
     if marker not in html:raise SystemExit('missing template marker '+marker)
     html=html.replace(marker,value)
-html=html.replace('<!--PUBLIC_NAV-->', '<nav class="panel" aria-label="Modkit"><a href="index.html">Parts Lab</a> · <a href="play.html">Play your ROM</a></nav>' if args.public else '')
+html=html.replace('<!--PUBLIC_NAV-->', '<nav class="panel" aria-label="Modkit"><a href="index.html">Parts Lab</a> · <a href="levels.html">Levels</a> · <a href="play.html">Play your ROM</a></nav>' if args.public else '')
 out.parent.mkdir(parents=True,exist_ok=True)
 out.write_text(html,encoding='utf-8')
 print(('Public Parts Lab: 3 original demo models, no game data' if args.public else f'{len(T)} animals, {sum(len(v["p"]) for v in T.values())} parts')+f' -> {out}')
@@ -73,3 +73,12 @@ print(('Public Parts Lab: 3 original demo models, no game data' if args.public e
 if args.public:
     for name in ('play.html', 'play.js'):
         (out.parent/name).write_bytes((here/'web'/name).read_bytes())
+
+    (out.parent/'levels.html').write_bytes((here/'web/levels.html').read_bytes())
+    levels_out=out.parent/'levels'
+    levels_out.mkdir(exist_ok=True)
+    for name in ('levels.css','rom.js','selection.js','loader.js'):
+        (levels_out/name).write_bytes((here/'levels'/name).read_bytes())
+    runtime=(here/'levels/runtime.js').read_text(encoding='utf-8')
+    editor=(here/'levels/editor.js').read_text(encoding='utf-8')
+    (levels_out/'runtime.js').write_text(runtime.replace('/*EDITOR*/',editor),encoding='utf-8')

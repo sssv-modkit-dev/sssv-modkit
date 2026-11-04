@@ -6,6 +6,9 @@ on:
     paths:
       - 'src/viewer/**'
       - 'src/web/**'
+      - 'src/levels/**'
+      - 'src/build_levels.py'
+      - 'src/level_rnc*.py'
       - 'src/build_viewer.py'
       - 'tests/**'
       - 'src/check.py'
