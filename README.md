@@ -1,7 +1,6 @@
 # Space Station Silicon Valley (N64) - Modkit
 
-![SSSV Modkit — Auburn Flamehound edition](docs/images/releases/auburn-flamehound-v3.png)
-@Codex @Claude <-- I asked for a recolored head from the game meshes, not an AI generated one...
+![SSSV Modkit — Auburnish Ear Bear edition](docs/images/releases/auburnish-ear-bear-v3.png)
 
 ## Welcome
 Welcome to the sssv-modkit public repository!
