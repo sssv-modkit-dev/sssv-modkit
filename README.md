@@ -80,16 +80,18 @@ For details, see [AI development details](docs/DEVELOPMENT-NOTES.md):
 | Preview parts and import/export edit configs | Implemented in the browser viewer |
 | Try bundled and original demo creatures online | Implemented; no ROM needed |
 | Build an IPS patch and a patched ROM | Implemented, with ROM/version and conflicting-edit checks |
-| Import pose transforms in the viewer | Partial; assembly accuracy needs more checking |
+| Assemble animals from pose transforms | Implemented; the five bundled demo animals ship poses captured from the running game. Imported poses for other animals need their own checks |
 | Import entirely new character models or rigs | Not implemented |
 | Shuffle stages | Prototype only; cannot write a playable stage shuffle to the ROM |
 
 ### Animal edits
 
-![Original bear on the left and a bear with tapered, bent arms on the right](docs/images/features/bear-deform-comparison.png)
+![Bear, dog and fox in the Parts Lab: originals on the top row; recoloured, with bigger bear arms, thicker dog legs and a longer fox tail, on the bottom row](docs/images/features/parts-lab-before-after.png)
 
-Original on the left, edited ROM on the right. The bear's arms and shoulders are
-tapered and bent. This build was checked in game; each new edit still needs testing.
+Originals on top, edited below, as previewed in the online Parts Lab (no ROM
+needed). A ROM built from a bear arm edit was
+[checked in game](docs/images/features/bear-deform-comparison.png); each new edit
+still needs testing.
 
 ### Parts Lab
 
