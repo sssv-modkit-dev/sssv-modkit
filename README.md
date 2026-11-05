@@ -34,7 +34,7 @@ There is no finished mod campaign (yet) or full game download here (ever).
 
 | What you want to do | Where | What you need |
 | --- | --- | --- |
-| Try out the tools | [Edit models: Parts Lab demo](https://sssv-modkit-dev.github.io/sssv-modkit/) | Nothing; it opens with three original demo creatures. |
+| Try out the tools | [Edit models: Parts Lab demo](https://sssv-modkit-dev.github.io/sssv-modkit/parts_lab.html) | Nothing; it opens with five bundled animals and three original demo creatures. |
 | Edit levels | [Level editor demo](https://sssv-modkit-dev.github.io/sssv-modkit/levels.html) ([guide](docs/guides/LEVEL-EDITOR.md)) | Your own stock or compatible modded ROM, opened locally. |
 | Play in the browser | [Browser play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html) | Your own uncompressed ROM or patched build. Experimental; compatibility and performance are still being tested. |
 | Make a local build | [Getting started](docs/guides/GETTING-STARTED.md) | Your own ROM ([details](rom/README.md)); open the patched ROM in your emulator. |
@@ -78,7 +78,7 @@ For details, see [AI development details](docs/DEVELOPMENT-NOTES.md):
 | Taper, bend, twist and inflate parts | Implemented; a bear deform has been checked in game, but other edits need their own checks |
 | Edit individual vertices | Implemented |
 | Preview parts and import/export edit configs | Implemented in the browser viewer |
-| Try original demo creatures online | Implemented; no ROM needed |
+| Try bundled and original demo creatures online | Implemented; no ROM needed |
 | Build an IPS patch and a patched ROM | Implemented, with ROM/version and conflicting-edit checks |
 | Import pose transforms in the viewer | Partial; assembly accuracy needs more checking |
 | Import entirely new character models or rigs | Not implemented |

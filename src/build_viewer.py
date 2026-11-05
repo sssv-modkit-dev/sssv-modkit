@@ -6,14 +6,14 @@ from pathlib import Path
 here=Path(__file__).resolve().parent
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('table',nargs='?',type=Path,help='animal table JSON (default: search locally)')
-parser.add_argument('output',nargs='?',type=Path,help='output HTML (default: viewers/parts_viewer.html; public: site/dist/index.html)')
+parser.add_argument('output',nargs='?',type=Path,help='output HTML (default: viewers/parts_viewer.html; public: site/dist/parts_lab.html)')
 parser.add_argument('--animals-dir',type=Path,help='generate the table first from external animal C source files; requires a local ROM')
 parser.add_argument('--public',action='store_true',help='Build original demos only; never read a ROM or animal table')
 parser.add_argument('--out',type=Path,help='Override output HTML path')
 parser.add_argument('--labels',type=Path,help='Embed a private sssv-viewer-labels-v1 part-name file (never used in public builds)')
 args=parser.parse_args()
 if args.public and (args.table or args.animals_dir or args.labels): parser.error('--public rejects private table/source/label inputs; use --out for output')
-out=args.out or args.output or here.parent/('site/dist/index.html' if args.public else 'viewers/parts_viewer.html')
+out=args.out or args.output or here.parent/('site/dist/parts_lab.html' if args.public else 'viewers/parts_viewer.html')
 if args.public:
     t={}
 else:
@@ -54,7 +54,12 @@ if args.labels:
 base=here/'viewer'
 html=(base/'index.template.html').read_text(encoding='utf-8')
 css=(base/'css'/'app.css').read_text(encoding='utf-8')
-js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')
+demo_animals=''
+if args.public:
+    # Real animals bundled for the public demo (no ROM read): appended after the three original creatures.
+    bundled=json.loads((here/'web/demo/animals.json').read_text(encoding='utf-8'))['models']
+    demo_animals='\nObject.assign(PARTS_DEMOS,'+json.dumps(bundled,separators=(',',':')).replace('<',r'\u003c')+');\nfor(const n of '+json.dumps(list(bundled))+')BUNDLED_ANIMALS.add(n);\n'
+js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+demo_animals+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')
 icon_path=next((base/'assets'/name for name in ('icon.png','icon.ico') if (base/'assets'/name).is_file()),None)
 if icon_path and not args.public:
     mime='image/png' if icon_path.suffix=='.png' else 'image/x-icon'
@@ -65,12 +70,13 @@ else:
 for marker,value in [('/*VIEWER_CSS*/',css),('/*VIEWER_JS*/',js),('/*VIEWER_ICON*/',icon)]:
     if marker not in html:raise SystemExit('missing template marker '+marker)
     html=html.replace(marker,value)
-html=html.replace('<!--PUBLIC_NAV-->', '<nav class="panel" aria-label="Modkit"><a href="index.html">Parts Lab</a> · <a href="levels.html">Levels</a> · <a href="play.html">Play your ROM</a></nav>' if args.public else '')
+html=html.replace('<!--PUBLIC_NAV-->', '<nav class="panel" aria-label="Modkit"><a href="index.html">Home</a> · <a href="parts_lab.html" aria-current="page">Parts Lab</a> · <a href="levels.html">Levels</a> · <a href="play.html">Play your ROM</a></nav>' if args.public else '')
 out.parent.mkdir(parents=True,exist_ok=True)
 out.write_text(html,encoding='utf-8')
-print(('Public Parts Lab: 3 original demo models, no game data' if args.public else f'{len(T)} animals, {sum(len(v["p"]) for v in T.values())} parts')+f' -> {out}')
+print(('Public Parts Lab: 8 demo models (bundled), no ROM read' if args.public else f'{len(T)} animals, {sum(len(v["p"]) for v in T.values())} parts')+f' -> {out}')
 
 if args.public:
+    (out.parent/'index.html').write_bytes((here/'web/index.html').read_bytes())
     for name in ('play.html', 'play.js'):
         (out.parent/name).write_bytes((here/'web'/name).read_bytes())
 

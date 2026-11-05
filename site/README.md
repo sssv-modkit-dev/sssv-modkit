@@ -14,7 +14,7 @@ python src/build_viewer.py --public
 python -m http.server 8765 --directory site/dist
 ```
 
-Deploy **only `site/dist`**. The generated `index.html` also works as a downloaded,
+Deploy **only `site/dist`**. The generated `parts_lab.html` (Parts Lab; `index.html` is the landing page) also works as a downloaded,
 offline file; clipboard sharing may require HTTPS or localhost. The public builder
 never searches for private inputs and rejects a positional animal table.
 The private builder now defaults to `viewers/parts_viewer.html`; an explicit old

@@ -53,7 +53,7 @@ console.log('Camera: rolled screen-plane pan and all-corner framing at 72 orient
 
 // Run the live input handlers with a minimal canvas, without a browser or ROM.
 vm.runInContext(`
-var yaw=0,pit=0,roll=0,dist=500,ctr=[0,0,0],sceneRadius=200,sceneBounds=null;
+var HOME_VIEW=[0.5,0],yaw=0,pit=0,roll=0,dist=500,ctr=[0,0,0],sceneRadius=200,sceneBounds=null;
 var held=new Set(),sheet=true,name='fixture',moveButton='alt',partOffsets={};
 var inspected=0,selected=0,rebuilt=0,buttons={},listeners={},captures=new Set();
 var cv={clientHeight:600,clientWidth:800,style:{},focus(){},

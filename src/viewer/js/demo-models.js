@@ -1,5 +1,7 @@
 // Independently authored procedural geometry. No game models, topology, or tables.
 // All dimensions and designs below are original contributions under LICENSE (CC0).
+// Names of bundled real animals (public build only): their parts have no pose, so they start as a part sheet.
+const BUNDLED_ANIMALS=new Set();
 const PARTS_DEMOS=(()=>{
   function part(s,center,size,rgba,round=false){
     const rings=round?8:4,levels=4,verts=[];
