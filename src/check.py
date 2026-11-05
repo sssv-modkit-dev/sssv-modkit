@@ -31,6 +31,7 @@ def main():
         ['node', '--check', 'src/build_demo_assets.js'],
         ['node', 'tests/test_parts_lab.js'],
         [sys.executable, 'tests/test_builder.py'],
+        [sys.executable, 'tests/make_build_fixtures.py'],
         [sys.executable, 'tests/test_demo_bundle.py'],
         [sys.executable, 'tests/test_public_build.py'],
         ['node', 'tests/test_camera.js'],
