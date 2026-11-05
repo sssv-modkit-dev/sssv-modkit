@@ -13,6 +13,8 @@ All trademarks and game content belong to their respective owners.
   includes in-game screenshots. This game content remains third-party material and is not
   covered by the project's CC0 dedication.
 - Patches (.ips) distributed with releases contain only the bytes this project changes.
+- Browser pages fetch third-party code from CDNs only when you use them: EmulatorJS (Play) from cdn.emulatorjs.org,
+  and Pyodide (the in-browser builder's Python runtime) from cdn.jsdelivr.net. That code runs in the page or worker.
 - The tools read your ROM locally; nothing is uploaded anywhere (the browser viewer runs entirely on your machine).
 - To the extent possible under law, sssv-modkit dev has waived all copyright and related rights
   in their original contributions under CC0 1.0 Universal (see `LICENSE`). Attribution is not required.

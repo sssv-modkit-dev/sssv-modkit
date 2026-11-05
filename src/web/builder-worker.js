@@ -1,0 +1,66 @@
+// Web Worker: builds a patched ROM and IPS in Pyodide from the user's ROM plus level/Parts JSON. See site/README.md.
+// In:  {type: 'build', id, rom: ArrayBuffer, level?: object|string, parts?: object|string, options?: {relocate, new_animals}}
+// Out: {type: 'progress', id, stage, detail, ms}, then {type: 'done', id, rom: ArrayBuffer, ips: ArrayBuffer, romSha1,
+//      sourceSha1, log, timings} or {type: 'error', id, message}. The ROM stays in this worker's memory only.
+// Pyodide (third-party) is downloaded from the jsDelivr CDN on the first build; Python sources come from ./py/.
+// Module worker (new Worker(url, {type: 'module'})): Pyodide 314 no longer loads in classic workers.
+import './builder-core.js';
+const core = self.SSSVBuilderCore;
+const pyBase = new URL(new URLSearchParams(self.location.search).get('py') || 'py/', self.location.href);
+let runtime = null;
+let queue = Promise.resolve();
+
+async function readSource(name) {
+  const response = await fetch(new URL(name, pyBase));
+  if (!response.ok) throw new Error('Could not load builder source ' + name + ' (HTTP ' + response.status + ')');
+  return response.text();
+}
+
+function loadRuntime(progress) {
+  if (!runtime) {
+    runtime = (async () => {
+      progress('runtime', 'Downloading Pyodide ' + core.PYODIDE_VERSION + ' (first build only)');
+      let pyodide;
+      try { pyodide = await import(core.PYODIDE_URL + 'pyodide.mjs'); }
+      catch (error) { throw new Error('Pyodide download failed (' + (error && error.message || error) + '). Check your connection or content blocker, then retry.'); }
+      return core.createRuntime(pyodide.loadPyodide, readSource, { indexURL: core.PYODIDE_URL });
+    })();
+    runtime.catch(() => { runtime = null; });   // allow a retry after a failed download
+  }
+  return runtime;
+}
+
+async function handle(message) {
+  const id = message.id;
+  const started = Date.now(), timings = {};
+  let stage = 'start', stageStart = started;
+  const progress = (next, detail) => {
+    const now = Date.now();
+    timings[stage] = (timings[stage] || 0) + now - stageStart;
+    stage = next; stageStart = now;
+    self.postMessage({ type: 'progress', id, stage: next, detail, ms: now - started });
+  };
+  try {
+    if (!(message.rom instanceof ArrayBuffer)) throw new Error('Expected the ROM as an ArrayBuffer');
+    if (message.level == null && message.parts == null) throw new Error('Give a level project or diff, a Parts config, or both');
+    const options = Object.assign({}, message.options);
+    if ('strict' in options || 'table' in options) throw new Error('Test-only build options are not accepted by the worker');
+    const rt = await loadRuntime(progress);
+    const out = core.runBuild(rt, { rom: message.rom, level: message.level, parts: message.parts, options }, progress);
+    progress('done', 'Build complete');
+    const rom = out.rom.buffer, ips = out.ips.buffer;
+    self.postMessage({ type: 'done', id, rom, ips, romSha1: out.romSha1, sourceSha1: out.sourceSha1, log: out.log,
+      timings: Object.assign(timings, { total: Date.now() - started }) }, [rom, ips]);
+  } catch (error) {
+    self.postMessage({ type: 'error', id, message: error && error.message || String(error) });
+  }
+}
+
+self.onmessage = event => {
+  const message = event.data || {};
+  if (message.type !== 'build') {
+    self.postMessage({ type: 'error', id: message.id, message: 'Unknown message type' });
+    return;
+  }
+  queue = queue.then(() => handle(message));   // one build at a time; Pyodide is single-threaded
+};

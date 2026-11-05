@@ -4,9 +4,6 @@ import argparse
 import json
 from pathlib import Path
 import struct
-import subprocess
-import sys
-import tempfile
 
 import level_rnc as rnc
 import level_rnc_pack as packer
@@ -58,7 +55,12 @@ def normalize_rom(data):
 
 
 def read_level_rom(path):
-    stock = normalize_rom(Path(path).read_bytes())
+    return check_level_rom(Path(path).read_bytes())
+
+
+def check_level_rom(data):
+    """Normalize byte order and check every stage's level table entry and spawn chunks. -> big-endian ROM bytes."""
+    stock = normalize_rom(data)
     for level in range(1, 37):
         start, end = struct.unpack_from('>II', stock, TABLE + (level-1)*8)
         if not 0 <= start < end <= len(stock):
@@ -190,6 +192,29 @@ def patch(stock, edited):
     return result
 
 
+def build_parts(orig, base, parts, table, dry_run=False, log=print):
+    """Stack a Parts Lab config (dict) on a level build in process; table is a path or a loaded animal table.
+    Prints the same report as make_animal_mods.py. Returns the patched ROM bytes, or None for a dry run."""
+    import make_animal_mods as animals
+    if not isinstance(table, dict):
+        with open(animals.find_table(str(table)), encoding='utf-8') as handle:
+            table = json.load(handle)
+    entries, _ = animals.config_entries(json.loads(json.dumps(parts)), 'Parts Lab attachment')
+    plan = animals.plan_edits(table, base, entries, log=log)
+    for name in sorted({c['animal'] for _, c in entries if 'animal' in c}):
+        touched = set(plan['touch'].get(name, ())) | {q['symbol'] for a2, q, m in plan['mesh'] + plan['deform'] if a2 == name}
+        for line in animals.variant_report(table, name, touched):
+            log(line)
+    if dry_run:
+        for o, (name, new, normal) in sorted(plan['vertices'].items()):
+            log(f'  vertex {o:#08x} xyz->{new} normal->{normal}  [{name}]')
+        animals.apply_plan(base, plan, log=lambda s: log('  ' + s))
+        for w, (old, new, name, why) in sorted(plan['words'].items()):
+            log(f'  {w:#08x} {old}->{new}  [{name}] {why}')
+        return None
+    return animals.finish_build(orig, base, plan, log=log)[0]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('edits', type=Path)
@@ -219,17 +244,10 @@ def main():
     if output.resolve() == args.rom.resolve():
         parser.error('Output must not overwrite the original ROM')
     if parts:
-        with tempfile.TemporaryDirectory(prefix='sssv-levels-') as directory:
-            base, config = Path(directory)/'base.z64', Path(directory)/'animal.json'
-            base.write_bytes(edited)
-            config.write_text(json.dumps(parts), encoding='utf-8')
-            command = [sys.executable, str(Path(__file__).with_name('make_animal_mods.py')), str(config), '--rom', str(args.rom), '--base', str(base), '--table', str(args.table), '--out', str(args.out), '--name', args.name]
-            subprocess.run(command + ['--dry-run'], check=True)
-            if args.dry_run:
-                print('Combined dry-run passed; no ROM or IPS written.')
-                return
-            subprocess.run(command, check=True)
-            edited = output.read_bytes()
+        edited = build_parts(romio.read_us10(romio.find_rom(str(args.rom))), edited, parts, args.table, args.dry_run)
+        if args.dry_run:
+            print('Combined dry-run passed; no ROM or IPS written.')
+            return
     ips = patch(stock, edited)
     output.write_bytes(edited)
     output.with_suffix('.ips').write_bytes(ips)

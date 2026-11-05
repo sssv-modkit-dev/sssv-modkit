@@ -24,6 +24,7 @@ The public modkit provides config-driven edits to the owner's US 1.0 ROM and a l
 - The public harness has synthetic tests and capture/recipe support. A historical one-frame run produced a black capture with a core error; that run did not establish scene correctness or state replay reliability.
 - Both projects have been published. Local source checks do not establish the current live remote state.
 - Claude, 2026-10-31: `deform` verified in game for the first time. A `bear_deform` build loaded on the Fat Bear Mountain stage from the cartridge; original and patched frames differ only around the bear, whose arms and shoulders are tapered and bent with no tearing. The effect looks milder than the config suggests. The crazy bear variant was not seen. Emulator capture (save state with forced level id); evidence in private `lab/`.
+- Claude, 2026-11-05: In-browser builder (`src/web/builder*.js`, `src/web_build.py`): a Pyodide 314.0.7 module worker runs the repo's Python. In Node it reproduces both golden build fixtures byte for byte, and a derived-table Parts build matches CPython. A level build on a synthetic 36-stage ROM matched `build_levels.py` byte for byte in headless Chrome 156 (5.9 s cold incl. CDN download, 1.8 s warm). Not yet run on a real ROM or wired into a page (ticket 14).
 
 ## Next tasks
 

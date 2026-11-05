@@ -14,6 +14,10 @@ with tempfile.TemporaryDirectory() as directory:
     command = [sys.executable, str(ROOT / 'src/build_viewer.py'), '--public', '--out', str(output)]
     subprocess.run(command, cwd=temp, check=True, capture_output=True)
     assert (temp / 'play.html').is_file() and (temp / 'play.js').is_file()
+    for asset in ('builder.js', 'builder-worker.js', 'builder-core.js'):
+        assert (temp / asset).is_file(), asset
+    for module in ('web_build.py', 'build_levels.py', 'make_animal_mods.py', 'animal_rom.py', 'romio.py'):
+        assert (temp / 'py' / module).is_file(), module
     assert (temp/'levels.html').is_file() and (temp/'index.html').is_file()
     assert b'parts_lab.html' in (temp/'index.html').read_bytes()
     for asset in ('rom.js','selection.js','palette.js','gallery.js','loader.js','runtime.js','levels.css'):
