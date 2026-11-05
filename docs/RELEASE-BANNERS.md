@@ -27,7 +27,7 @@ python src/make_release_banner.py --palette orange --out build/orange-banner.png
 Use `python3` instead of `python` if that is your Python 3 command. Both entry
 points accept the same options. Paths containing spaces should be quoted.
 The generator runs the browser headlessly with a temporary profile and embeds
-the local image and drawing code. The output is a 1500 x 500 PNG.
+the local image and drawing code. The output is a 1500 x 250 PNG.
 The command-line generator and interactive composer share `src/release_banner.js`
 for layout, typography, quotation marks and raster recolouring. The generator
 checks that rendering completed and the PNG dimensions match before saving.
@@ -53,7 +53,7 @@ Only the blue bear preset is currently wired in. It uses the existing crazy-bear
 head raster; see `src/viewer/assets/README.md` for provenance and camera setup.
 The viewer can render other animals from the owner's local ROM and private table,
 but those require verified part and camera presets before automatic banner use.
-The current 256 x 256 head export is enlarged in the 1500 x 500 composition.
+The current 256 x 256 head export is enlarged in the 1500 x 250 composition.
 
 ## Publication
 

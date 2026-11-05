@@ -55,8 +55,8 @@ def make_page(options, style):
         'style': style, 'recolor': options.recolor,
     }, ensure_ascii=True).replace('<', '\\u003c')
     return r'''<!doctype html><meta charset="utf-8">
-<style>html,body{margin:0;width:1500px;height:500px;overflow:hidden}canvas{display:block}</style>
-<canvas width="1500" height="500"></canvas><script>
+<style>html,body{margin:0;width:1500px;height:250px;overflow:hidden}canvas{display:block}</style>
+<canvas width="1500" height="250"></canvas><script>
 const settings=SETTINGS;
 SCRIPT
 const img=new Image();
@@ -82,7 +82,7 @@ def render(options, browser, output):
         page.write_text(make_page(options, style), encoding='utf-8')
         command = [browser, '--headless', '--disable-gpu', '--no-first-run',
                    '--no-default-browser-check', '--hide-scrollbars',
-                   '--force-device-scale-factor=1', '--window-size=1500,500',
+                   '--force-device-scale-factor=1', '--window-size=1500,250',
                    '--virtual-time-budget=3000', '--run-all-compositor-stages-before-draw',
                    '--user-data-dir=' + str(work / 'profile'), '--dump-dom',
                    '--screenshot=' + str(screenshot), page.as_uri()]
@@ -94,8 +94,8 @@ def render(options, browser, output):
             raise ValueError('Banner rendering did not complete; no output was written.')
         png = screenshot.read_bytes()
         if (png[:16] != b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR' or
-                len(png) < 24 or struct.unpack('>II', png[16:24]) != (1500, 500)):
-            raise ValueError('Browser returned an invalid banner size; expected 1500 x 500 PNG.')
+                len(png) < 24 or struct.unpack('>II', png[16:24]) != (1500, 250)):
+            raise ValueError('Browser returned an invalid banner size; expected 1500 x 250 PNG.')
         output.parent.mkdir(parents=True, exist_ok=True)
         # Exclusive creation also protects against a file appearing during rendering.
         with output.open('xb') as destination:
