@@ -2,42 +2,63 @@
 const romInput = document.getElementById('rom');
 const startButton = document.getElementById('start');
 const status = document.getElementById('status');
-let romUrl;
+let romUrl, started = false;
+const isBlobLike = b => !!b && typeof b === 'object' && typeof b.slice === 'function' && typeof b.size === 'number';
 romInput.addEventListener('change', () => {
   startButton.disabled = !romInput.files.length;
   status.textContent = romInput.files.length ? 'Ready. Load game downloads the emulator; your ROM stays local.' : 'Choose a ROM to begin.';
 });
 document.getElementById('reset').addEventListener('click', () => location.reload());
-startButton.addEventListener('click', async () => {
+async function startGame(blob, name) {
+  if (started) throw new Error('A game is already loading. Reload the page to choose another ROM.');
+  if (!isBlobLike(blob) || blob.size < 4096 || blob.size > 64 * 1024 * 1024) throw new Error('Choose an uncompressed N64 ROM between 4 KB and 64 MB.');
+  const magic = Array.from(new Uint8Array(await blob.slice(0, 4).arrayBuffer())).map(b => b.toString(16).padStart(2, '0')).join('');
+  if (!['80371240', '37804012', '40123780'].includes(magic)) throw new Error('Unrecognized N64 header. Unzip the ROM first; .z64, .v64 and .n64 byte orders are supported.');
+  if (!document.createElement('canvas').getContext('webgl2')) throw new Error('WebGL 2 is unavailable. Try a browser with hardware acceleration enabled.');
+  started = true;
+  romUrl = URL.createObjectURL(blob);
+  window.EJS_player = '#game';
+  window.EJS_language = 'en-US';
+  window.EJS_disableAutoLang = true;
+  window.EJS_core = document.getElementById('core').value;
+  window.EJS_gameUrl = romUrl;
+  window.EJS_gameName = String(name || blob.name || 'game').replace(/\.[^.]+$/, '');
+  window.EJS_pathtodata = 'https://cdn.emulatorjs.org/4.2.3/data/';
+  window.EJS_startOnLoaded = false;
+  window.EJS_threads = false; // GitHub Pages does not supply COOP/COEP headers.
+  window.EJS_ready = () => { status.textContent = 'Emulator ready. Press Start Game in the player.'; };
+  window.EJS_onGameStart = () => { status.textContent = 'Running. Use the player menu for controls and saves.'; };
+  const loader = document.createElement('script');
+  loader.src = window.EJS_pathtodata + 'loader.js';
+  loader.onerror = () => { status.textContent = 'Emulator download failed. Check your connection or content blocker, then press Choose another ROM to reload and retry.'; };
+  romInput.disabled = true;
   startButton.disabled = true;
-  try {
-    const file = romInput.files[0];
-    if (!file || file.size < 4096 || file.size > 64 * 1024 * 1024) throw new Error('Choose an uncompressed N64 ROM between 4 KB and 64 MB.');
-    const magic = Array.from(new Uint8Array(await file.slice(0, 4).arrayBuffer())).map(b => b.toString(16).padStart(2, '0')).join('');
-    if (!['80371240', '37804012', '40123780'].includes(magic)) throw new Error('Unrecognized N64 header. Unzip the ROM first; .z64, .v64 and .n64 byte orders are supported.');
-    if (!document.createElement('canvas').getContext('webgl2')) throw new Error('WebGL 2 is unavailable. Try a browser with hardware acceleration enabled.');
-    romUrl = URL.createObjectURL(file);
-    window.EJS_player = '#game';
-    window.EJS_language = 'en-US';
-    window.EJS_disableAutoLang = true;
-    window.EJS_core = document.getElementById('core').value;
-    window.EJS_gameUrl = romUrl;
-    window.EJS_gameName = file.name.replace(/\.[^.]+$/, '');
-    window.EJS_pathtodata = 'https://cdn.emulatorjs.org/4.2.3/data/';
-    window.EJS_startOnLoaded = false;
-    window.EJS_threads = false; // GitHub Pages does not supply COOP/COEP headers.
-    window.EJS_ready = () => { status.textContent = 'Emulator ready. Press Start Game in the player.'; };
-    window.EJS_onGameStart = () => { status.textContent = 'Running. Use the player menu for controls and saves.'; };
-    const loader = document.createElement('script');
-    loader.src = window.EJS_pathtodata + 'loader.js';
-    loader.onerror = () => { status.textContent = 'Emulator download failed. Check your connection or content blocker, then press Choose another ROM to reload and retry.'; };
-    romInput.disabled = true;
-    document.getElementById('core').disabled = true;
-    status.textContent = 'Downloading emulatorâ€¦ First load may take a moment.';
-    document.body.appendChild(loader);
-  } catch (error) {
-    status.textContent = error.message;
-    startButton.disabled = !romInput.files.length;
-  }
+  document.getElementById('core').disabled = true;
+  status.textContent = 'Downloading emulator… First load may take a moment.';
+  document.body.appendChild(loader);
+}
+async function startFrom(blob, name) {
+  startButton.disabled = true;
+  try { await startGame(blob, name); }
+  catch (error) { status.textContent = error.message; startButton.disabled = started || !romInput.files.length; }
+}
+startButton.addEventListener('click', () => { const file = romInput.files[0]; return startFrom(file, file && file.name); });
+// Builder entry: same-origin postMessage {type:'sssv-rom', name, buffer|blob}. Blobs cannot survive navigation, so
+// a builder opens play.html with window.open, waits for 'sssv-play-ready', then posts once.
+function toBlob(data) {
+  if (!data || typeof data !== 'object' || data.type !== 'sssv-rom') return null;
+  if (data.name !== undefined && (typeof data.name !== 'string' || data.name.length > 255)) return null;
+  if (data.buffer !== undefined && data.blob !== undefined) return null;
+  const tag = Object.prototype.toString.call(data.buffer);
+  if (tag === '[object ArrayBuffer]') return new Blob([data.buffer]);
+  if (data.buffer === undefined && isBlobLike(data.blob)) return data.blob;
+  return null;
+}
+window.addEventListener('message', event => {
+  if (event.origin !== location.origin || location.origin === 'null') return;
+  const blob = toBlob(event.data);
+  if (blob) startFrom(blob, event.data.name || 'game.z64');
 });
+window.SSSVPlay = { startGame: (blob, name) => startFrom(blob, name) };
+if (window.opener) window.opener.postMessage({ type: 'sssv-play-ready' }, location.origin);
 window.addEventListener('pagehide', () => { if (romUrl) URL.revokeObjectURL(romUrl); });
