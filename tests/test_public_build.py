@@ -29,6 +29,9 @@ with tempfile.TemporaryDirectory() as directory:
     assert 'PRIVATE_INPUT_CANARY' not in html
     assert 'let TABLE={};' in html
     assert 'wind-up robot' in html and 'sssv-parts-lab-demo-v1' in html
+    poses = json.loads(html.split('Object.assign(BUNDLED_POSES,')[1].split(');', 1)[0])
+    assert sorted(poses) == ['bear', 'dog', 'fox', 'seagull', 'sheep'], 'bundled animals must ship their assembly poses'
+    assert (temp / 'demo/poses/dog.json').is_file()
     assert '/*VIEWER_' not in html and '/*TABLE*/' not in html
     script = html.split('<script>')[1].split('</script>')[0]
     subprocess.run(['node', '--check', '-'], input=script, text=True, encoding='utf-8', check=True, capture_output=True)

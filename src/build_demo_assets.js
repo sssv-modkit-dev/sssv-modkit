@@ -2,6 +2,7 @@
 /* Build the public demo assets from the owner's local US 1.0 ROM (read-only).
  * Usage: node src/build_demo_assets.js ROM.z64 ANIMAL_TABLE.json [--sheet DIR]
  * Writes src/web/demo/: level-4.json, animals.json, heads/*.png.
+ * Not written here: poses/*.json (assembly poses captured from the running game with private tools; see docs/ARCHITECTURE.md).
  * Pages builds never run this; they copy the committed output (see src/build_viewer.py).
  * Make the table first: python src/animal_table.py --from-rom --rom ROM.z64 --out TABLE_PREFIX */
 const fs = require('fs'), path = require('path'), zlib = require('zlib'), crypto = require('crypto');

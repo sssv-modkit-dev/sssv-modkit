@@ -24,7 +24,7 @@ The owner's ROM feeds `src/animal_table.py --from-rom` (call-site tracing in `sr
 
 ## Geometry and assembly
 
-Parts sheets lay out individual display lists. They do not establish an animal's assembled shape. The viewer can import pose JSON containing part transforms; the original private pose-generation helpers are not included here.
+Parts sheets lay out individual display lists. They do not establish an animal's assembled shape. The viewer assembles an animal from pose JSON: `{animal, parts:[{dl, rows, T, mirror}]}`, one entry per drawn part, where a vertex maps to `v·rows + T` in game space (Z up). The five bundled demo animals ship poses in `src/web/demo/poses/`, which the public build embeds so they open assembled. Each pose is the modelview matrix of every part draw in one frame of the running US 1.0 game, in the draw order of that species' draw function. These matrices come from an emulator RAM dump. The animal's world position and yaw are removed, and it is turned to face the default camera. `mirror` is 1 where the matrix flips handedness, and matches the draw function's mirror flags. The capture and conversion tools are private and are not included here. Poses for other animals can still be imported in the viewer, but they are unchecked.
 
 In ROM mode the index records ordered part-draw events with constant joints, mirror flags and display lists traced from the draw code; variant labels come from a small built-in function index. The legacy C-source mode also records joint and scale expressions as source text. This supports inspection; it does not compile arbitrary character definitions or animation code.
 
