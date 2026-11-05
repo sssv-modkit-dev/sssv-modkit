@@ -16,7 +16,7 @@ with tempfile.TemporaryDirectory() as directory:
     assert (temp / 'play.html').is_file() and (temp / 'play.js').is_file()
     assert (temp/'levels.html').is_file() and (temp/'index.html').is_file()
     assert b'parts_lab.html' in (temp/'index.html').read_bytes()
-    for asset in ('rom.js','selection.js','gallery.js','loader.js','runtime.js','levels.css'):
+    for asset in ('rom.js','selection.js','palette.js','gallery.js','loader.js','runtime.js','levels.css'):
         assert (temp/'levels'/asset).is_file()
     for asset in ('level-4.json','animals.json','heads/dog.png','heads/sheep.png','heads/bear.png'):
         assert (temp/'demo'/asset).is_file(), asset

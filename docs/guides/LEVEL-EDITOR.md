@@ -11,8 +11,8 @@ is included in the site, and Levels makes no upload requests.
 - Choose a **Category**, then an object in the named **Objects** selector. The
   **Type** selector also shows names. Unknown identifiers retain a numeric label;
   some props vary by stage. Animal forms and states have separate identifiers.
-- The toolbar at the top left holds three tools: **Select** (1), **Box select** (2)
-  and **Move** (3); Escape returns to Select. Below them, **Snap** (#), **Height**
+- The toolbar at the top left holds four tools: **Select** (1), **Box select** (2),
+  **Move** (3) and **Add** (4); Escape returns to Select. Below them, **Snap** (#), **Height**
   (↕) and **Add** (+) toggles do the same as holding Ctrl, Shift and Ctrl.
 - Click an object, or use **Box select** and drag a rectangle. Ctrl-click
   toggles an object; Ctrl-box-select adds to the selection. Props are picked by the
@@ -35,6 +35,16 @@ is included in the site, and Levels makes no upload requests.
 - **Apply** changes the primary object's type, X/Y/Z, yaw, and portal target.
   **Duplicate prop** duplicates the selected props in place; move them afterward.
   Player starts and mixed animal/prop selections cannot be duplicated.
+- **Add** (4) opens the object palette. Choose **Animals** (head icons first, then
+  initial badges for species without a bundled icon) or **Props** (filter by category),
+  then click or tap the ground to place the object, or press **Place at target**.
+  Objects land on the horizontal plane at the camera target's height; Snap rounds to
+  64. A drag or pinch does not place anything, and each placement is one undo step.
+  The new object is selected, so use Move (3) to reposition it.
+- New records clone a stock record of the same type from any loaded level (so the
+  bundled demo has only that level's types) and otherwise start with zeroed extra
+  fields, which the palette says. Extra fields may carry level script links, so
+  review new switches, doors and portals. The player start cannot be added.
 - Undo/redo restores an entire move or duplication. Terrain is read-only. Deletion
   is unavailable because stage scripts refer to spawn indices.
 
@@ -65,6 +75,11 @@ The local builder accepts the same stock or modded ROM in any supported byte ord
 identity, recompresses edited records, repairs the header CRC, and verifies the IPS
 roundtrip. It writes a new `.z64` and `.ips`. Open the resulting ROM in **Play** or
 your emulator. Share patches rather than ROMs.
+
+New props are appended like duplicates. New **animals** are refused by default
+because appended animal spawns have not been checked in game; add `--new-animals`
+to `build_levels.py` to allow them. Stage scripts do not know about appended
+objects, so they appear but are not wired to switches or goals.
 
 If an edited stage no longer fits its original compressed slot, `--relocate`
 allows a level-only build to append the stage and update its table entry. Expanded
