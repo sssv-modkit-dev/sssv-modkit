@@ -168,15 +168,17 @@ cv.addEventListener('touchmove',e=>{e.preventDefault();if(!tch)return;const n=ti
  n.n=tch.n;tch=n;},{passive:false});
 cv.addEventListener('touchend',e=>{tch=e.touches.length?Object.assign(tinfo(e.touches),{n:e.touches.length}):null;});
 let fly=false;const keys={};
-function setFly(on){fly=on;$('mode').textContent='fly: '+(on?'on':'off');$('fly').style.display=on?'block':'none';
+/* WASD/QE always move the camera; the look button only switches dragging between orbit and fly-style mouse look. */
+function setFly(on){fly=on;$('mode').textContent='look: '+(on?'fly':'orbit');$('mode').setAttribute('aria-pressed',String(on));
  if(on){const e=EYE,dir=[cam.t[0]-e[0],cam.t[1]-e[1],cam.t[2]-e[2]].map(v=>v/cam.d);cam.d=60;cam.t=[e[0]+dir[0]*60,e[1]+dir[1]*60,e[2]+dir[2]*60];}}
 $('mode').onclick=()=>setFly(!fly);$('mn').onclick=()=>{const u=$('ui');u.classList.toggle('min');$('mn').innerHTML=u.classList.contains('min')?'+':'&ndash;';};
-window.addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'||e.target.tagName=='SELECT')return;const k=e.key.toLowerCase();if(k=='f'){setFly(!fly);return;}keys[k]=true;if(fly&&'wasdqe'.includes(k))e.preventDefault();});
+window.addEventListener('keydown',e=>{const t=e.target.tagName;if(t=='INPUT'||t=='SELECT'||t=='TEXTAREA'||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();keys[k]=true;if(k.length==1&&'wasdqe'.includes(k))e.preventDefault();});
+window.addEventListener('blur',()=>{for(const k of Object.keys(keys))delete keys[k];});
 window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 let lastT=performance.now();
-function flyStep(){const now=performance.now(),dt=Math.min(.05,(now-lastT)/1000);lastT=now;if(!fly)return;
- const sp=(keys.shift?2400:700)*dt,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cp=Math.cos(cam.pitch),spp=Math.sin(cam.pitch);
- const fw=[-cp*cy,-cp*sy,-spp],rt=[sy,-cy,0],m=[0,0,0],add=(v,k)=>{for(let j=0;j<3;j++)m[j]+=v[j]*k;};
+function flyStep(){const now=performance.now(),dt=Math.min(.05,(now-lastT)/1000);lastT=now;
+ const sp=(keys.shift?3.4:1)*Math.max(700,cam.d*.35)*dt,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cp=Math.cos(cam.pitch),spp=Math.sin(cam.pitch);
+ const fw=[-cp*cy,-cp*sy,-spp],rt=[-sy,cy,0],m=[0,0,0],add=(v,k)=>{for(let j=0;j<3;j++)m[j]+=v[j]*k;};
  if(keys.w)add(fw,1);if(keys.s)add(fw,-1);if(keys.d)add(rt,1);if(keys.a)add(rt,-1);if(keys.e)m[2]+=1;if(keys.q)m[2]-=1;
  for(let j=0;j<3;j++)cam.t[j]+=m[j]*sp;}
 cv.onwheel=e=>{e.preventDefault();cam.d*=Math.exp(e.deltaY*.001);};
