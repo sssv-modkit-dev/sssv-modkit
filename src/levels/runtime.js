@@ -27,7 +27,7 @@ const swP=gl.getAttribLocation(SW,'p'),swM=gl.getUniformLocation(SW,'m'),swT=gl.
 const aP=gl.getAttribLocation(P,'p'),aC=gl.getAttribLocation(P,'c'),uM=gl.getUniformLocation(P,'m'),uS=gl.getUniformLocation(P,'ps');
 function buf(a){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,a,gl.STATIC_DRAW);return b;}
 function hue(t){const h=((t*47)%360)/60,x=1-Math.abs(h%2-1);const r=[[1,x,0],[x,1,0],[0,1,x],[0,x,1],[x,0,1],[1,0,x]][Math.floor(h)%6];return r;}
-const AMOD={};for(const k in ANIM.models){const m=ANIM.models[k],n=m.p.length/3;let top=-1e9;for(let i=2;i<m.p.length;i+=3)top=Math.max(top,m.p[i]);AMOD[k]={p:m.p,c:m.c,n,top};}
+const AMOD={};for(const k in ANIM.models){const m=ANIM.models[k],n=m.p.length/3;let top=-1e9,hx=0,hy=0;for(let i=0;i<m.p.length;i+=3){hx=Math.max(hx,Math.abs(m.p[i]));hy=Math.max(hy,Math.abs(m.p[i+1]));top=Math.max(top,m.p[i+2]);}AMOD[k]={p:m.p,c:m.c,n,top,hx,hy};}
 const MODELS={};for(const k in MODEL){const m=MODEL[k];MODELS[k]={p:dec(m.p,Int16Array),c:dec(m.c,Uint8Array),n:m.n,zmin:m.zmin};}
 let EYE=[0,0,0],BX=[1,0,0],BY=[0,1,0],BZ=[0,0,1],ASP=1;
 let bxs,bxo,bxl,bxlo,msh,bxs0,L,mesh,lines,grid,spw,cam={yaw:.6,pitch:.8,d:8000,t:[2048,3072,0]},sel=-1;

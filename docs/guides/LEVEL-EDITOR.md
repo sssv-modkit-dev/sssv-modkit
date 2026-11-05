@@ -11,13 +11,19 @@ is included in the site, and Levels makes no upload requests.
 - Choose a **Category**, then an object in the named **Objects** selector. The
   **Type** selector also shows names. Unknown identifiers retain a numeric label;
   some props vary by stage. Animal forms and states have separate identifiers.
-- Click an object origin, or enable **Box select** and drag a rectangle. Ctrl-click
-  toggles an object; Ctrl-box-select adds to the selection. Rectangle selection
-  uses projected origins, including origins behind terrain; it is not mesh picking.
+- Click an object, or enable **Box select** and drag a rectangle. Ctrl-click
+  toggles an object; Ctrl-box-select adds to the selection. Props are picked by the
+  box drawn for them: a click inside several boxes takes the smallest, and a
+  rectangle selects every box it overlaps. Animals use the bounding box of their
+  drawn shape, so a placeholder's box also covers space behind it. Objects
+  hidden behind terrain can still be picked.
 - **Focus** frames the selection. Yellow rings mark selected origins.
 - Alt-drag moves the selection together, preserving spacing. Shift adjusts height;
   Ctrl snaps the primary object's position to 64 units. Out-of-range group moves
   are rejected together. Escape cancels the gesture.
+- Arrow keys nudge the selection 8 units (Shift: 64) along the world axis nearest the
+  camera view; Up moves away from the camera. PageUp/PageDown change height. Each
+  nudge is one undo step. Keys typed into a field do not nudge.
 - **Apply** changes the primary object's type, X/Y/Z, yaw, and portal target.
   **Duplicate prop** duplicates the selected props in place; move them afterward.
   Player starts and mixed animal/prop selections cannot be duplicated.
@@ -25,8 +31,11 @@ is included in the site, and Levels makes no upload requests.
   is unavailable because stage scripts refer to spawn indices.
 
 Orbit by dragging, pan with right-drag or Shift-drag outside Box select, and zoom
-with the wheel. F toggles fly mode; WASD/QE moves the camera. Touch gestures control
-the camera; rectangle selection and group dragging currently need a mouse.
+with the wheel. F toggles fly mode; WASD/QE moves the camera. On a touchscreen, tap
+an object to select it. With **Box select** or **Drag objects** on, one finger
+draws the rectangle or moves the selection; two fingers always pinch and pan the
+camera. The touch-only **Add to selection**, **Height** and **Snap 64** toggles
+stand in for Ctrl and Shift.
 
 ## Save and build
 
