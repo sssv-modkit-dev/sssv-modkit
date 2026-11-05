@@ -64,6 +64,26 @@ game is clicked. No ROM is bundled or uploaded by the launcher. The CDN code run
 in the same page and can access the chosen ROM, so this is not an isolated offline
 sandbox. Threads are disabled because GitHub Pages lacks COOP/COEP headers.
 
+### Builder entry (in-memory ROM)
+
+`play.js` exposes `window.SSSVPlay.startGame(blob, name)`, which runs the same
+validation (size, all three byte orders, WebGL 2) and start path as the file picker.
+A blob cannot survive a page navigation, so a builder on another page should open
+Play and post the ROM once Play reports ready:
+
+```js
+const w = window.open('play.html');
+addEventListener('message', e => {
+  if (e.origin !== location.origin || e.source !== w || e.data?.type !== 'sssv-play-ready') return;
+  w.postMessage({type: 'sssv-rom', name: 'patched.z64', blob: romBlob}, location.origin);
+});
+```
+
+Play posts `{type: 'sssv-play-ready'}` to its opener when loaded. It accepts
+`{type: 'sssv-rom', name, buffer | blob}` (an ArrayBuffer or a Blob, not both) only
+from its own origin and ignores any other message. One game starts per page load.
+The ROM stays in memory and is never persisted.
+
 The upstream [N64 core example](https://emulatorjs.org/docs/systems/nintendo-64/)
 and [CDN versioning](https://emulatorjs.org/docs/cdn/) document the integration.
 Game compatibility, mobile performance, controller behaviour and save persistence
