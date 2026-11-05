@@ -77,8 +77,14 @@ print(('Public Parts Lab: 8 demo models (bundled), no ROM read' if args.public e
 
 if args.public:
     (out.parent/'index.html').write_bytes((here/'web/index.html').read_bytes())
-    for name in ('play.html', 'play.js'):
+    for name in ('play.html', 'play.js', 'builder.js', 'builder-worker.js', 'builder-core.js'):
         (out.parent/name).write_bytes((here/'web'/name).read_bytes())
+    # Pyodide builder: the worker loads these repo sources from py/ (list kept in builder-core.js).
+    core=(here/'web/builder-core.js').read_text(encoding='utf-8')
+    modules=re.findall(r"'(\w+\.py)'",re.search(r'PY_MODULES = \[(.*?)\]',core,re.S).group(1))
+    (out.parent/'py').mkdir(exist_ok=True)
+    for name in modules:
+        (out.parent/'py'/name).write_bytes((here/name).read_bytes())
 
     (out.parent/'levels.html').write_bytes((here/'web/levels.html').read_bytes())
     levels_out=out.parent/'levels'

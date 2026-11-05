@@ -6,6 +6,8 @@ The owner's ROM feeds `src/animal_table.py --from-rom` (call-site tracing in `sr
 
 `src/make_animal_mods.py` reads that index and JSON edit configs, checks the original ROM, plans expected-byte edits, and produces an IPS patch and optionally a patched ROM under `build/`. It repairs the header CRCs and reapplies the IPS to verify the output byte for byte. The original ROM is preserved.
 
+The public site can run the same Python in the browser: `src/web/builder-worker.js` loads Pyodide and the repository's build modules, derives the animal table from the user's ROM in memory, and returns a patched ROM and IPS identical to the command-line output. Nothing ROM-derived is shipped.
+
 `src/build_viewer.py` bundles the HTML template, CSS, live JavaScript, icon and private index into `viewers/parts_viewer.html`. The user supplies geometry by loading their ROM in the browser. Generated pages contain derived metadata and stay private.
 
 ## Sources
@@ -19,6 +21,8 @@ The owner's ROM feeds `src/animal_table.py --from-rom` (call-site tracing in `sr
 | Standalone deform math | `src/viewer/js/deform.js` |
 | Viewer layout and styles | `src/viewer/index.template.html`, `src/viewer/css/app.css` |
 | HTML bundling | `src/build_viewer.py` |
+| Level builds (spawn edits, RNC repack) | `src/build_levels.py`, `src/level_rnc.py`, `src/level_rnc_pack.py` |
+| In-browser builds (Pyodide worker running the Python above) | `src/web_build.py`, `src/web/builder*.js` |
 | Synthetic verification | `src/check.py`, `tests/` |
 | Stage-shuffle prototype | `src/sssv_logic.py` |
 

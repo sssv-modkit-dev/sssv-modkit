@@ -78,6 +78,19 @@ python tests/test_live_deform.py
 These compare synthetic coordinates, bounds, clamp counts and rejected inputs.
 They do not establish real-ROM vertex selection or matching game shading.
 
+The in-browser builder (Pyodide) has a Node smoke test. Pyodide is not a repository
+dependency; install the version pinned in `src/web/builder-core.js` anywhere and point
+the test at it, otherwise `check.py` reports it as skipped:
+
+```text
+npm install --prefix /tmp/pyodide pyodide@314.0.7
+SSSV_PYODIDE=/tmp/pyodide/node_modules/pyodide node tests/test_pyodide_build.js
+```
+
+It rebuilds `tests/fixtures/builds` byte for byte through the same entry the worker uses,
+compares a derived-table Parts build and a worker level build with CPython and the CLI,
+and drives the worker message protocol. It does not run a browser or a real ROM.
+
 To check bundling without replacing the current generated page:
 
 ```text

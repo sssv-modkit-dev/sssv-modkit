@@ -86,23 +86,27 @@ def expand_args(args):
             if k not in seen: seen.add(k); out.append((p, soft))
     return out
 
+def config_entries(cfg, p, soft=False):
+    """One parsed config or pack (a dict) -> ([(p, animal_config)], pack_name_or_None); None if soft and it is not a config."""
+    if not isinstance(cfg, dict) or ('animal' not in cfg and 'animals' not in cfg and 'code_patch' not in cfg):
+        if soft: return None
+        raise SystemExit(f'{p}: needs an "animal" key (single config), a "code_patch" list or an "animals" list (pack)')
+    if cfg.get('mouse'): raise SystemExit(f'{p}: the "mouse" key was removed; use configs/mouse.json (an ordinary animal config) instead')
+    entries = cfg['animals'] if 'animals' in cfg else [cfg]
+    for e in entries:
+        if not isinstance(e, dict) or ('animal' not in e and 'code_patch' not in e): raise SystemExit(f'{p}: every entry in "animals" needs an "animal" key (or a "code_patch" list)')
+    return [(p, e) for e in entries], (cfg.get('name') or None) if 'animals' in cfg else None
+
 def load_configs(args):
     """-> ([(source_path, animal_config)], pack_name_or_None)"""
     animals, pname = [], None
     for p, soft in expand_args(args):
         try: cfg = json.load(open(p, encoding='utf-8'))
         except ValueError as e: raise SystemExit(f'{p}: not valid JSON ({e})')
-        if not isinstance(cfg, dict) or ('animal' not in cfg and 'animals' not in cfg and 'code_patch' not in cfg):
-            if soft: print(f'skipping {p} (no "animal" or "animals" key)'); continue
-            raise SystemExit(f'{p}: needs an "animal" key (single config), a "code_patch" list or an "animals" list (pack)')
-        if cfg.get('mouse'): raise SystemExit(f'{p}: the "mouse" key was removed; use configs/mouse.json (an ordinary animal config) instead')
-        if 'animals' in cfg:
-            if cfg.get('name') and not pname: pname = cfg['name']
-            entries = cfg['animals']
-        else: entries = [cfg]
-        for e in entries:
-            if not isinstance(e, dict) or ('animal' not in e and 'code_patch' not in e): raise SystemExit(f'{p}: every entry in "animals" needs an "animal" key (or a "code_patch" list)')
-            animals.append((p, e))
+        got = config_entries(cfg, p, soft)
+        if got is None: print(f'skipping {p} (no "animal" or "animals" key)'); continue
+        if got[1] and not pname: pname = got[1]
+        animals += got[0]
     if not animals: raise SystemExit('no usable configs found')
     return animals, pname
 
@@ -375,6 +379,15 @@ def apply_plan(base, plan, log=print):
         log(f'code_patch {o:#08x}: {ex.hex().upper()} -> {wr.hex().upper()}' + (f'  ({note})' if note else ''))
     return rom, nvert
 
+def finish_build(orig, base, plan, log=print):
+    """Apply a checked plan to base, fix the header CRC, diff against orig and self-test the IPS. -> (rom bytes, ips, moved vertex count, (crc1, crc2))."""
+    if len(base) != len(orig): raise SystemExit('--base ROM has a different size than the original')
+    rom, nvert = apply_plan(base, plan, log=log)
+    crcs = fix_crc(rom)
+    ips = make_ips(orig, rom)
+    if apply_ips(orig, ips) != bytes(rom): raise SystemExit('IPS self-test failed; nothing written')
+    return bytes(rom), ips, nvert, crcs
+
 def main():
     ap = argparse.ArgumentParser(description='Build an IPS patch (and optionally a patched .z64) from animal configs. The config format is in this file\'s docstring.')
     ap.add_argument('configs', nargs='+', help='config files, folders, wildcards or pack files')
@@ -408,10 +421,7 @@ def main():
         for w, (old, new, an, why) in sorted(plan['words'].items()): print(f'  {w:#08x} {old}->{new}  [{an}] {why}')
         print('dry run: nothing written')
         return
-    rom, nvert = apply_plan(base, plan)
-    c1, c2 = fix_crc(rom)
-    ips = make_ips(orig, rom)
-    if apply_ips(orig, ips) != bytes(rom): raise SystemExit('IPS self-test failed; nothing written')
+    rom, ips, nvert, (c1, c2) = finish_build(orig, base, plan)
     os.makedirs(a.out, exist_ok=True)
     with open(os.path.join(a.out, name + '.ips'), 'wb') as f: f.write(ips)
     if not a.no_rom:

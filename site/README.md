@@ -90,6 +90,40 @@ Game compatibility, mobile performance, controller behaviour and save persistenc
 still require direct testing. Parts Lab JSON must first be built into a ROM with
 the local builder. The private level editor is not bundled in the public site.
 
+## In-browser builder (Pyodide)
+
+`builder.js` builds a patched ROM and IPS in the browser from the user's ROM plus a
+level project/diff JSON and/or a Parts config (single config or pack). A Web Worker
+(`builder-worker.js`, an ES module worker) runs the repository's own Python (`py/*.py`, copied from `src/`)
+in [Pyodide](https://pyodide.org/) 314.0.7, which it downloads from the jsDelivr CDN
+on the first build (about 12 MB, then cached). That third-party code runs in the worker.
+Output matches `build_levels.py` / `make_animal_mods.py` byte for byte, with the same
+checks: animal edits need the unmodified US 1.0 ROM, and the animal table is derived
+from that ROM in memory (`animal_table.py --from-rom`); nothing ROM-derived is shipped.
+The ROM is never uploaded or persisted.
+
+```js
+const result = await SSSVBuilder.build(
+  {rom: romFile, level: projectFile, parts: partsFile, relocate: false, newAnimals: false},
+  {onProgress: ({stage, detail, ms}) => show(detail)});
+// result: {rom: Blob, ips: Blob, romSha1, sourceSha1, log: [lines], timings: {stage: ms}}
+```
+
+`rom` is a File, Blob, ArrayBuffer or typed array (copied, not detached); `level` and
+`parts` are a File/Blob, JSON text or a parsed object (at least one is required).
+A project's attached Parts config is used automatically; giving `parts` as well is
+an error. Errors reject with the CLI's message. Progress stages: `runtime` (first
+build only), `rom`, `levels`, `table`, `animals`, `ips`, `done`. Builds run one at a
+time in one warm worker; `SSSVBuilder.terminate()` frees it. Set
+`SSSVBuilder.workerUrl` before the first build if the files live elsewhere; the
+worker reads Python from `py/` beside itself, or from `?py=<dir>/` on its URL.
+
+Worker protocol: post `{type: 'build', id, rom: ArrayBuffer, level?, parts?, options?:
+{relocate, new_animals}}`; it replies `{type: 'progress', id, stage, detail, ms}`, then
+`{type: 'done', id, rom: ArrayBuffer, ips: ArrayBuffer, romSha1, sourceSha1, log,
+timings}` (buffers transferred) or `{type: 'error', id, message}`. Hand the ROM blob
+to Play with `SSSVPlay.startGame(result.rom, 'patched.z64')` on the same page.
+
 ## Levels
 
 The public build includes `levels.html` and the `levels/` source bundle. It opens the
