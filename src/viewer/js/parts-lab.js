@@ -95,6 +95,14 @@ $('demo-share').onclick=async()=>{
 };
 const exportGameConfig=$('exp').onclick,importGameConfig=$('impf').onchange;
 $('exp').onclick=()=>demoMode?downloadJSON(demoPreset(),name+'.parts-lab.json'):exportGameConfig();
+// Build & Play (public builds only, where handoff.js and play.html ship): hand the game config and the ROM loaded here
+// (in memory, as a Blob) to play.html, which builds the patched ROM in the browser.
+if(window.SSSVHandoff){$('build-play').hidden=false;$('build-play').onclick=()=>{
+  const say=t=>{(demoMode?$('demo-status'):$('msg')).textContent=t};
+  if(demoMode||!cur||!dv.byteLength){say('Build & Play needs a game config: open your animal table and US 1.0 ROM first. Demo presets are not ROM patches.');return}
+  try{SSSVHandoff.openPlay({parts:gameConfig(),partsName:name+'.json',rom:new Blob([dv.buffer]),romName:'ROM loaded in Parts Lab',source:'Parts Lab'});say('Opened Play with '+name+' and your loaded ROM. Press Build & Play there.')}
+  catch(e){say(e.message)}
+}}
 $('impf').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{if(f.size>1000000)throw new Error('Config is too large.');const value=JSON.parse(await f.text());

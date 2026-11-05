@@ -124,6 +124,18 @@ Worker protocol: post `{type: 'build', id, rom: ArrayBuffer, level?, parts?, opt
 timings}` (buffers transferred) or `{type: 'error', id, message}`. Hand the ROM blob
 to Play with `SSSVPlay.startGame(result.rom, 'patched.z64')` on the same page.
 
+Build panel: `play.html` has a "Build from your edits" panel (`play-build.js`). It takes
+the ROM plus a level project/diff and/or a Parts config, shows the worker's progress
+stages, starts the patched ROM in the emulator, and offers Download IPS and Download ROM.
+The build log is in a collapsible area. Wrong-ROM messages from the CLI get a hint added.
+Relocate and new animals are under "Advanced"; new animals are not game-verified.
+Levels and Parts Lab (public build) have a Build & Play button. `handoff.js` opens
+`play.html` with `window.open`, waits for its same-origin `sssv-play-ready`, then posts
+`{type: 'sssv-build', level?, parts?, levelName?, partsName?, rom?, romName?, source}` once.
+`rom` is the ROM already loaded on that page, sent as an in-memory Blob. If it is
+missing, the user picks the ROM on Play. Nothing is written to storage. The handoff needs
+http(s) (not `file://`) and is blocked if pop-ups are not allowed.
+
 ## Levels
 
 The public build includes `levels.html` and the `levels/` source bundle. It opens the

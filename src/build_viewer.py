@@ -59,7 +59,9 @@ if args.public:
     # Real animals bundled for the public demo (no ROM read): appended after the three original creatures.
     bundled=json.loads((here/'web/demo/animals.json').read_text(encoding='utf-8'))['models']
     demo_animals='\nObject.assign(PARTS_DEMOS,'+json.dumps(bundled,separators=(',',':')).replace('<',r'\u003c')+');\nfor(const n of '+json.dumps(list(bundled))+')BUNDLED_ANIMALS.add(n);\n'
-js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+demo_animals+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')
+# Public builds also embed handoff.js so Build & Play can pass the config to play.html, which ships beside it.
+handoff=(here/'web/handoff.js').read_text(encoding='utf-8')+'\n' if args.public else ''
+js=handoff+(base/'js'/'demo-models.js').read_text(encoding='utf-8')+demo_animals+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')
 icon_path=next((base/'assets'/name for name in ('icon.png','icon.ico') if (base/'assets'/name).is_file()),None)
 if icon_path and not args.public:
     mime='image/png' if icon_path.suffix=='.png' else 'image/x-icon'
@@ -77,7 +79,7 @@ print(('Public Parts Lab: 8 demo models (bundled), no ROM read' if args.public e
 
 if args.public:
     (out.parent/'index.html').write_bytes((here/'web/index.html').read_bytes())
-    for name in ('play.html', 'play.js', 'builder.js', 'builder-worker.js', 'builder-core.js'):
+    for name in ('play.html', 'play.js', 'play-build.js', 'handoff.js', 'builder.js', 'builder-worker.js', 'builder-core.js'):
         (out.parent/name).write_bytes((here/'web'/name).read_bytes())
     # Pyodide builder: the worker loads these repo sources from py/ (list kept in builder-core.js).
     core=(here/'web/builder-core.js').read_text(encoding='utf-8')
