@@ -2,7 +2,7 @@
 
 ## Local data flow
 
-The owner's ROM and external animal C source files feed `src/animal_table.py`. It writes a private animal index containing display-list locations, colour words, vertex groups, bounds, and draw/variant metadata.
+The owner's ROM feeds `src/animal_table.py --from-rom` (call-site tracing in `src/animal_rom.py`; external animal C source files are an optional legacy input). It writes a private animal index containing display-list locations, colour words, vertex groups, bounds, and draw/variant metadata.
 
 `src/make_animal_mods.py` reads that index and JSON edit configs, checks the original ROM, plans expected-byte edits, and produces an IPS patch and optionally a patched ROM under `build/`. It repairs the header CRCs and reapplies the IPS to verify the output byte for byte. The original ROM is preserved.
 
@@ -13,7 +13,7 @@ The owner's ROM and external animal C source files feed `src/animal_table.py`. I
 | Responsibility | Source |
 |---|---|
 | ROM lookup | `src/sssv_paths.py` |
-| Animal index and draw-event extraction | `src/animal_table.py` |
+| Animal index and draw-event extraction | `src/animal_table.py`, `src/animal_rom.py` |
 | Config planning, CRCs and IPS output | `src/make_animal_mods.py` |
 | Viewer UI, rendering and live deform math | `src/viewer/js/app.js` |
 | Standalone deform math | `src/viewer/js/deform.js` |
@@ -26,7 +26,7 @@ The owner's ROM and external animal C source files feed `src/animal_table.py`. I
 
 Parts sheets lay out individual display lists. They do not establish an animal's assembled shape. The viewer can import pose JSON containing part transforms; the original private pose-generation helpers are not included here.
 
-The index extracts ordered part-draw events, joint expressions, scale expressions and section markers from animal C source files. This supports inspection; it does not compile arbitrary character definitions or animation code.
+In ROM mode the index records ordered part-draw events with constant joints, mirror flags and display lists traced from the draw code; variant labels come from a small built-in function index. The legacy C-source mode also records joint and scale expressions as source text. This supports inspection; it does not compile arbitrary character definitions or animation code.
 
 Current mesh/deform operations change positions without changing vertex or triangle counts. Explicit vertex edits can also change the last four normal/colour bytes with expected-value checks. Mesh/deform operations leave those bytes unchanged, so large shape changes can produce different game shading from the viewer's face-normal preview.
 
