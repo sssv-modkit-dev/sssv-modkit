@@ -56,9 +56,9 @@ html=(base/'index.template.html').read_text(encoding='utf-8')
 css=(base/'css'/'app.css').read_text(encoding='utf-8')
 demo_animals=''
 if args.public:
-    # Real animals bundled for the public demo (no ROM read): merged ahead of the three original creatures.
+    # Real animals bundled for the public demo (no ROM read): appended after the three original creatures.
     bundled=json.loads((here/'web/demo/animals.json').read_text(encoding='utf-8'))['models']
-    demo_animals='\nObject.assign(PARTS_DEMOS,Object.assign('+json.dumps(bundled,separators=(',',':')).replace('<',r'\u003c')+',PARTS_DEMOS));\nfor(const n of '+json.dumps(list(bundled))+')BUNDLED_ANIMALS.add(n);\n'
+    demo_animals='\nObject.assign(PARTS_DEMOS,'+json.dumps(bundled,separators=(',',':')).replace('<',r'\u003c')+');\nfor(const n of '+json.dumps(list(bundled))+')BUNDLED_ANIMALS.add(n);\n'
 js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+demo_animals+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')
 icon_path=next((base/'assets'/name for name in ('icon.png','icon.ico') if (base/'assets'/name).is_file()),None)
 if icon_path and not args.public:

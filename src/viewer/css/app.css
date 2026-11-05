@@ -129,3 +129,4 @@ a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,selec
 #demo-picker button[aria-pressed=true]{border-color:var(--ac);background:var(--ac-soft)}
 #demo-picker img,#demo-picker .ph{width:36px;height:36px;object-fit:contain;image-rendering:pixelated;border-radius:6px}
 #demo-picker .ph{display:grid;place-items:center;background:var(--pn);color:var(--ac);font-weight:700;font-size:15px}
+#demo-picker small{font-size:8px;color:var(--mut)}

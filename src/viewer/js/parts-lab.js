@@ -58,11 +58,11 @@ function buildDemoPicker(){
     const b=document.createElement('button'),ph=document.createElement('span'),img=new Image();
     b.type='button';b.dataset.model=n;b.title=n;ph.className='ph';ph.textContent=n[0].toUpperCase();
     img.alt='';img.src='demo/heads/'+encodeURIComponent(n)+'.png';img.onload=()=>ph.replaceWith(img);
-    b.append(ph,n);b.onclick=()=>{$('an').value=n;pick(n);markDemoPicker()};
+    b.append(ph,n,...(BUNDLED_ANIMALS.has(n)?[Object.assign(document.createElement('small'),{textContent:'parts view'})]:[]));b.onclick=()=>{$('an').value=n;pick(n);markDemoPicker()};
     return b;
   }));
 }
-function markDemoPicker(){$('variant-label').textContent=BUNDLED_ANIMALS.has(name)?'Bundled demo · drag to orbit':'Original CC0 demo · drag to orbit';$('demo-assemble').hidden=BUNDLED_ANIMALS.has(name);$('demo-status').textContent=BUNDLED_ANIMALS.has(name)?'Bundled demo animal, shown as a part sheet. No ROM is loaded.':'Original CC0 demo geometry. No game assets included.';for(const b of $('demo-picker').children)b.setAttribute('aria-pressed',String(b.dataset.model===name))}
+function markDemoPicker(){$('variant-label').textContent=BUNDLED_ANIMALS.has(name)?'Parts view · drag to orbit':'Original CC0 demo · drag to orbit';$('demo-assemble').hidden=BUNDLED_ANIMALS.has(name);$('demo-status').textContent=BUNDLED_ANIMALS.has(name)?'Parts view: this animal has no assembly pose, so its parts are laid out flat. No ROM is loaded.':'Original CC0 demo geometry. No game assets included.';for(const b of $('demo-picker').children)b.setAttribute('aria-pressed',String(b.dataset.model===name))}
 function startDemos(model=DEFAULT_DEMO){
   demoMode=true;TABLE=PARTS_DEMOS;dv=new DataView(new ArrayBuffer(0));pose=null;
   document.body.classList.add('demo-mode');
@@ -73,7 +73,7 @@ function startDemos(model=DEFAULT_DEMO){
 function demoPreset(){return validateDemoPreset({format:'sssv-parts-lab-demo-v1',model:name,mesh,palette:map,deform:deformOn?deform:{},exploded:sheet})}
 function applyDemoPreset(raw){const p=validateDemoPreset(raw);startDemos(p.model);mesh=p.mesh;map=p.palette;deform=p.deform;deformOn=Object.keys(deform).length>0;sheet=p.exploded;all=!sheet;SH=sheetLayout(visibleParts());ui();rebuild(true);info()}
 function downloadJSON(value,filename){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-const DEFAULT_DEMO=Object.hasOwn(PARTS_DEMOS,'bear')?'bear':Object.keys(PARTS_DEMOS)[0];
+const DEFAULT_DEMO=Object.keys(PARTS_DEMOS).find(n=>!BUNDLED_ANIMALS.has(n));
 $('demo-start').onclick=()=>startDemos();
 $('demo-assemble').onclick=()=>{assembled=false;all=true;sheet=false;ui();rebuild(true);info()};
 $('demo-explode').onclick=()=>{assembled=false;all=false;sheet=true;SH=sheetLayout(visibleParts());ui();rebuild(true);info()};

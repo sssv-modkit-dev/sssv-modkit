@@ -1,7 +1,7 @@
 
 let TABLE=/*TABLE*/null;
 let romTable=TABLE,demoMode=false;
-const HOME_VIEW=[0.5,0]; // front, turned about a third of the way to the left
+const HOME_VIEW=[0.5,0]; // front, turned ~29° so the model's left side (-X) faces the viewer
 
 function readPart(p,B){return p.demo||parseDL(dv,p.r,B)}
 //#PURE-START
