@@ -16,14 +16,16 @@ See the [ROM folder instructions](../../rom/README.md).
 
 ## 2. Generate the animal table
 
-Supply a local directory of animal C source files outside this repository.
-The parser expects the game's display-list symbols, draw calls and section markers;
-it cannot generate the table from a ROM alone. These source files are not included.
-Replace the source path below with your animal-source directory:
+The table is built from your ROM alone:
 
 ```sh
-python src/animal_table.py /path/to/animal-sources src/animal_table
+python src/animal_table.py --from-rom --out src/animal_table
 ```
+
+`src/animal_rom.py` explains how: it reads the animal draw code in the ROM, recovers each
+body-part draw call (display list, joints, mirror flag) and finds the model bank each animal uses.
+The older mode, `python src/animal_table.py /path/to/animal-sources src/animal_table`, still
+accepts a directory of external animal C source files, but nothing needs it any more.
 
 The generator reads your ROM from `--rom FILE`, `SSSV_ROM` or `rom/` and writes
 `src/animal_table.json` and `src/animal_table.md`. These are private, locally

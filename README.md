@@ -24,7 +24,7 @@ There is no finished mod campaign (yet) or full game download here (ever).
 - [Try Parts Lab in your browser](https://sssv-modkit-dev.github.io/sssv-modkit/): change colours and shapes, then save your edits. It opens with three original demo creatures.
 - [Edit levels in your browser](https://sssv-modkit-dev.github.io/sssv-modkit/levels.html): open your stock or compatible modded ROM locally, select named objects by category or drag a selection box, then export your edits. [Level editor guide](docs/guides/LEVEL-EDITOR.md).
 - [Play your ROM in the browser](https://sssv-modkit-dev.github.io/sssv-modkit/play.html): select your own uncompressed ROM or patched build. Experimental; gameplay compatibility and performance are still being tested.
-- [Make a local build](docs/guides/GETTING-STARTED.md): build a patch using your own US 1.0 ROM and the required local animal C source files, then open the patched ROM in your emulator.
+- [Make a local build](docs/guides/GETTING-STARTED.md): build a patch using your own US 1.0 ROM and the animal table generated from it, then open the patched ROM in your emulator.
 
 ### Is this a decompilation / recompilation?
 
@@ -49,8 +49,8 @@ The research lives in a separate private repository. This public repository hold
 the modding tools, example edits, and instructions, without the ROM or extracted
 game files.
 
-The current animal-table generator also needs external
-animal C source files; it cannot work from a ROM alone.
+The animal-table generator works from your ROM alone
+(`python src/animal_table.py --from-rom`).
 
 ### Was this made using AI?
 

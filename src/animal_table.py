@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Build per-animal tables (display lists, SETPRIMCOLOR words, vertex groups, bounding boxes) from external animal C source files and a ROM.
 Read-only: never writes ROM bytes.
-Usage: python animal_table.py ANIMALS_DIR [OUT_PREFIX] [--rom FILE]
-  ANIMALS_DIR is a local directory of animal C source files; writes <OUT_PREFIX>.json and <OUT_PREFIX>.md (default animal_table)
+Usage: python animal_table.py --from-rom [--out OUT_PREFIX] [--rom FILE]     (ROM only, no C source; see animal_rom.py)
+       python animal_table.py ANIMALS_DIR [OUT_PREFIX] [--rom FILE]            (legacy: external animal C source files)
+  Writes <OUT_PREFIX>.json and <OUT_PREFIX>.md (default animal_table)
 Seg base for each symbol D_<seg2><off6>_<ROM> is derived as ROM - off (so no guessing); seg1 = 0x398D0."""
 import argparse, os, re, sys, json, struct
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -135,15 +136,25 @@ def write(result, outp):
 
 def main():
     global ROM
-    ap = argparse.ArgumentParser(description='Build animal_table.json/.md from external animal C source files and your US 1.0 ROM (read-only).')
-    ap.add_argument('animals_dir', help='a local directory of animal C source files')
+    ap = argparse.ArgumentParser(description='Build animal_table.json/.md from your US 1.0 ROM (read-only), optionally with external animal C source files.')
+    ap.add_argument('animals_dir', nargs='?', help='legacy: a local directory of animal C source files (omit with --from-rom)')
     ap.add_argument('out_prefix', nargs='?', default='animal_table')
+    ap.add_argument('--from-rom', action='store_true', help='build from the ROM alone (no C source)')
+    ap.add_argument('--out', help='output prefix (same as OUT_PREFIX)')
     ap.add_argument('--rom', help='unmodified US 1.0 .z64 (default: env SSSV_ROM, then ./rom or <repo>/rom)')
     a = ap.parse_args()
-    if not os.path.isdir(a.animals_dir): raise SystemExit(f'animals directory not found: {a.animals_dir}')
+    out = a.out or a.out_prefix
+    if a.from_rom:
+        if a.animals_dir and not a.out: out = a.animals_dir   # `--from-rom PREFIX`
+    elif not a.animals_dir or not os.path.isdir(a.animals_dir):
+        raise SystemExit(f'animals directory not found: {a.animals_dir} (or use --from-rom)')
     ROM = read_us10(find_rom(a.rom, quiet=True))
-    result = build(a.animals_dir)
-    write(result, a.out_prefix)
+    if a.from_rom:
+        from animal_rom import build_from_rom
+        result = build_from_rom(ROM, parse_dl)
+    else:
+        result = build(a.animals_dir)
+    write(result, out)
     print('animals:', len(result), ' valid DLs:', sum(1 for d in result.values() for p in d['parts'] if p['ended']),
           ' total Gfx symbols:', sum(len(d['parts']) for d in result.values()))
 

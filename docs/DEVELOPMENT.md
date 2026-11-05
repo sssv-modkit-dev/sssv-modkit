@@ -95,7 +95,7 @@ maps responsibilities; the [documentation index](README.md) links user guides.
 | Config and patch safety | Builder docstring and affected planner | Synthetic checks; exact-config dry-run and patch self-test when needed |
 | Deform math | Python `plan_deform`, live and standalone JS, DEFORM-TRYOUT.md | Saved and fresh parity; browser/game checks for integration |
 | Viewer interaction | `src/viewer/`, `src/build_viewer.py` | Syntax, rebuild, browser inspection |
-| Animal/variant index | `src/animal_table.py`, GLOSSARY.md | Targeted synthetic checks and local index inspection |
+| Animal/variant index | `src/animal_table.py`, `src/animal_rom.py`, GLOSSARY.md | `python tests/test_animal_rom.py` and local index inspection |
 | Custom mesh or rig | ARCHITECTURE.md, donor draw events and private research | Verified budgets, transforms and runtime evidence before ROM writes |
 | Emulator scenes and states | Separate harness README and recipes | Synthetic harness tests, followed by real scene/state verification |
 | Documentation | User guides and linked CLI entry points | Link/anchor checks, example syntax, whitespace and publication scan |
