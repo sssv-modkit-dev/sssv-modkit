@@ -96,7 +96,7 @@ the local builder. The private level editor is not bundled in the public site.
 level project/diff JSON and/or a Parts config (single config or pack). A Web Worker
 (`builder-worker.js`, an ES module worker) runs the repository's own Python (`py/*.py`, copied from `src/`)
 in [Pyodide](https://pyodide.org/) 314.0.7, which it downloads from the jsDelivr CDN
-on the first build (about 12 MB, then cached). That third-party code runs in the worker.
+on the first build (about 6–7 MB over the network, about 12 MB unpacked, then cached). That third-party code runs in the worker.
 Output matches `build_levels.py` / `make_animal_mods.py` byte for byte, with the same
 checks: animal edits need the unmodified US 1.0 ROM, and the animal table is derived
 from that ROM in memory (`animal_table.py --from-rom`); nothing ROM-derived is shipped.
