@@ -10,11 +10,12 @@ with tempfile.TemporaryDirectory() as directory:
     temp = Path(directory)
     # A private-input canary must never be read, even if present in cwd.
     (temp / 'animal_table.json').write_text('PRIVATE_INPUT_CANARY: invalid JSON')
-    output = temp / 'index.html'
+    output = temp / 'parts_lab.html'
     command = [sys.executable, str(ROOT / 'src/build_viewer.py'), '--public', '--out', str(output)]
     subprocess.run(command, cwd=temp, check=True, capture_output=True)
     assert (temp / 'play.html').is_file() and (temp / 'play.js').is_file()
-    assert (temp/'levels.html').is_file()
+    assert (temp/'levels.html').is_file() and (temp/'index.html').is_file()
+    assert b'parts_lab.html' in (temp/'index.html').read_bytes()
     for asset in ('rom.js','selection.js','gallery.js','loader.js','runtime.js','levels.css'):
         assert (temp/'levels'/asset).is_file()
     for asset in ('level-4.json','animals.json','heads/dog.png','heads/sheep.png','heads/bear.png'):

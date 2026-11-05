@@ -83,7 +83,7 @@ button,select,.panel{transition:background-color .15s,border-color .15s,color .1
 .brandbar{flex:1;min-width:0;margin-bottom:0}
 .theme-dock{position:static;align-self:flex-start;margin:2px 0 5px 2px;opacity:.85}
 #gallery-action{order:0;margin:6px 0 9px}#gallery-toggle{width:100%;min-width:0;text-align:center;font-size:11px;padding:8px}
-#rom-panel{order:1;opacity:.7}#animal-field{order:2}#variant-field{order:3}#gallery-list{order:4}#parts-panel{order:5}#view-settings{order:6}#side .help{order:8;margin-top:auto}
+#rom-panel{order:0;opacity:.85}#animal-field{order:2}#variant-field{order:3}#gallery-list{order:4}#parts-panel{order:5}#view-settings{order:6}#side .help{order:8;margin-top:auto}
 #parts{max-height:none;overflow:visible;border:0;padding:0}#parts-panel{flex:none}#parts .row{font-size:10px;padding:4px 5px;cursor:pointer}
 .parts-section-title{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--ac);border-bottom:1px solid var(--bd);padding:8px 3px 4px;margin-bottom:3px}
 #view-settings h4{font-size:11px;color:var(--ac);margin-bottom:8px}.setting-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;color:var(--fg);padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--bd) 40%,transparent)}.setting-row select{width:auto;min-height:26px;padding:3px 5px;font-size:10px}.setting-row input[type=color]{width:32px;height:24px;border:0;padding:0;background:transparent}
@@ -123,3 +123,9 @@ a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,selec
 #nav-hint{width:calc(100% - 24px);text-align:center;opacity:.8}
 
 #axes{top:105px;left:10px;width:82px;height:82px}
+
+#demo-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:6px 0}
+#demo-picker button{display:flex;flex-direction:column;align-items:center;gap:2px;margin:0;padding:5px 2px;font-size:10px;line-height:1.2;min-width:0;overflow-wrap:anywhere}
+#demo-picker button[aria-pressed=true]{border-color:var(--ac);background:var(--ac-soft)}
+#demo-picker img,#demo-picker .ph{width:36px;height:36px;object-fit:contain;image-rendering:pixelated;border-radius:6px}
+#demo-picker .ph{display:grid;place-items:center;background:var(--pn);color:var(--ac);font-weight:700;font-size:15px}

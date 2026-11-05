@@ -1,6 +1,8 @@
 
 let TABLE=/*TABLE*/null;
 let romTable=TABLE,demoMode=false;
+const HOME_VIEW=[0.5,0]; // front, turned about a third of the way to the left
+
 function readPart(p,B){return p.demo||parseDL(dv,p.r,B)}
 //#PURE-START
 function vtx(dv,b,off,i){const o=b+off+16*i;if(o<0||o+16>dv.byteLength||dv.getUint16(o+6))return null;const q=[dv.getInt16(o),dv.getInt16(o+2),dv.getInt16(o+4)];q.o=o;q.c=[dv.getUint8(o+12)/255,dv.getUint8(o+13)/255,dv.getUint8(o+14)/255];return q}
@@ -129,7 +131,7 @@ if(rows.every(r=>r.note))throw new Error('none of those parts belong to the anim
 console.table(rows);deform=nd;deformCache.clear();deformOn=true;ui();rebuild(false);info()
 }catch(e){alert('Deform preview: '+e.message)}};
 const $=id=>document.getElementById(id);
-let pickTris=[],hoverSym=null,returnMode=null,partNames={},partOffsets={},labelOffsets={},selectedSym=null,moveButton="alt",showGrid=false,showLabels=false,backgroundOverride=null;let mesh={},dv=null,cur=null,name='',bases={},parsed=[],map={},sel=0,variant='',all=false,sheet=false,SH={},useVC=true,yaw=0,pit=-Math.PI/4,roll=0,dist=1,ctr=[0,0,0],nv=0,dirty=false,gallery=false,galleryData=[],galleryLayout=[];
+let pickTris=[],hoverSym=null,returnMode=null,partNames={},partOffsets={},labelOffsets={},selectedSym=null,moveButton="alt",showGrid=false,showLabels=false,backgroundOverride=null;let mesh={},dv=null,cur=null,name='',bases={},parsed=[],map={},sel=0,variant='',all=false,sheet=false,SH={},useVC=true,yaw=HOME_VIEW[0],pit=HOME_VIEW[1],roll=0,dist=1,ctr=[0,0,0],nv=0,dirty=false,gallery=false,galleryData=[],galleryLayout=[];
 let sceneBounds=null,sceneRadius=1;
 const cv=$('cv'),gl=cv.getContext('webgl',{alpha:true});
 if(!gl){$('demo-status').textContent='WebGL is unavailable. Enable hardware acceleration or try another browser.';throw new Error('WebGL unavailable')}
@@ -189,7 +191,7 @@ const sources=gallery?galleryData.flatMap((A,ai)=>A.parts.map(P=>({P,offset:gall
 for(const S of (assembled&&!gallery&&poseOk()?asmSources():sources)){const P=S.P,E=gallery?null:mesh[P.sym],DF=!gallery&&deformOn?deformFor(P,E):null,of=S.local||[0,0,0],T=v=>{let w=applyMesh(v,E,P.bb);if(DF)w=deformPoint(DF,v,w);return S.xf?S.xf(w):w.map((x,k)=>(x+of[k])*(S.scale||1)+S.offset[k])};
 for(const t0 of P.tris){const ord=S.flip?[0,2,1]:[0,1,2],t={c:t0.c,v:ord.map(i=>T(t0.v[i]))};if(!gallery)pickTris.push({v:t.v,sym:P.sym});const o=t.c<0?'808080FF':P.cols[t.c].rgba,col=t.c<0?[.5,.5,.5]:hex2(gallery?o:(map[o]||o)),[a,b,c]=t.v;
 let n=[(b[1]-a[1])*(c[2]-a[2])-(b[2]-a[2])*(c[1]-a[1]),(b[2]-a[2])*(c[0]-a[0])-(b[0]-a[0])*(c[2]-a[2]),(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])];
-const l=Math.hypot(...n)||1;n=n.map(x=>x/l);if(!gallery&&hoverSym===P.sym)col.splice(0,3,...col.map(v=>Math.min(1,v*.55+.45)));const vcol=t.c<0&&useVC&&hoverSym!==P.sym;for(const [i,v] of t.v.entries()){d.push(...v,...(vcol?t0.v[ord[i]].c:col),...n);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],v[k]);mx[k]=Math.max(mx[k],v[k])}}}}
+const l=Math.hypot(...n)||1;n=n.map(x=>x/l);if(!gallery&&hoverSym===P.sym)col.splice(0,3,...col.map(v=>Math.min(1,v*.55+.45)));const vcol=t.c<0&&useVC&&hoverSym!==P.sym&&Array.isArray(t0.v[0].c);for(const [i,v] of t.v.entries()){d.push(...v,...(vcol?t0.v[ord[i]].c:col),...n);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],v[k]);mx[k]=Math.max(mx[k],v[k])}}}}
 nv=d.length/9;gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(d),gl.STATIC_DRAW);
 sceneBounds=nv?[mn,mx]:null;if(nv)sceneRadius=Math.max(1,Math.hypot(...mx.map((v,k)=>(v-mn[k])/2)));if(fit)frameCamera();need();updateFloatingLabels()}
 function ui(){const L=$('parts');L.innerHTML='';if(gallery){$('animal-field').style.display='none';$('variant-field').style.display='none';$('edit-side').classList.add('gallery-hidden');$('rom-panel').style.display='none';$('gallery-action').style.margin='8px 0';$('parts-panel').style.display='none';$('palette-panel').style.display='none';$('vc').parentElement.parentElement.style.display='none';$('info').style.display='none';$('mesh').style.display='none';$('actions').style.display='none';return}else{$('animal-field').style.display='';$('variant-field').style.display='';$('edit-side').classList.remove('gallery-hidden');$('rom-panel').style.display='';$('parts-panel').style.display='';$('palette-panel').style.display='';$('vc').parentElement.parentElement.style.display='';$('info').style.display='';$('mesh').style.display='';$('actions').style.display='flex'}
@@ -262,7 +264,7 @@ V.onchange=()=>{
   ui();
   rebuild(true);
   info();
-};map={};mesh={};deform={};deformOn=false;deformCache.clear();assembled=false;sel=0;all=demoMode;sheet=!demoMode;SH=sheetLayout(visibleParts());$('an').value=n;ui();rebuild(true);info()}
+};map={};mesh={};deform={};deformOn=false;deformCache.clear();assembled=false;sel=0;all=demoMode&&!BUNDLED_ANIMALS.has(n);sheet=!all;SH=sheetLayout(visibleParts());$('an').value=n;ui();rebuild(true);info()}
 const ROM_DB='sssv-modkit-viewer';
 function openRomDB(){return new Promise((resolve,reject)=>{
   if(!('indexedDB' in window)){reject(new Error('IndexedDB unavailable'));return}
@@ -375,7 +377,7 @@ cv.addEventListener('pointerleave',()=>{hoverSym=null;$('hover-part').style.disp
 
 function cameraView(view){
   held.clear();roll=0;
-  [yaw,pit]=({front:[0,0],right:[-Math.PI/2,0],top:[0,Math.PI/2],reset:[0,-Math.PI/4]})[view];
+  [yaw,pit]=({front:[0,0],right:[-Math.PI/2,0],top:[0,Math.PI/2],reset:HOME_VIEW})[view];
   frameCamera();
 }
 $('camera-reset').onclick=()=>cameraView('reset');
