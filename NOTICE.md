@@ -4,7 +4,10 @@ This is an **unofficial fan project**. It is not affiliated with, endorsed by, o
 original developer or publisher of Space Station Silicon Valley or its rights holders.
 All trademarks and game content belong to their respective owners.
 
-- This repository contains no ROM, patched ROM, or extracted model, texture, or audio files.
+- This repository contains no ROM, patched ROM, or audio files. With the owner's approval it ships one small
+  public demo set under `src/web/demo/`: the stage 4 level data and texture atlas with its prop models, five
+  animals' parts (bear, dog, fox, sheep, seagull) and four head icons rendered from them (see `site/README.md`).
+  These remain third-party material and are not covered by the CC0 dedication.
   You must supply your own legally obtained copy of the US 1.0 ROM (see `rom/README.md`).
 - The bear branding and release banners include renders of game geometry. Documentation also
   includes in-game screenshots. This game content remains third-party material and is not

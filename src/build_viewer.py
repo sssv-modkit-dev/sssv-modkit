@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build a portable single-file viewer from modular sources and the ROM-derived table."""
-import argparse,base64,hashlib,json,re,subprocess,sys
+import argparse,base64,hashlib,json,re,shutil,subprocess,sys
 from urllib.parse import quote
 from pathlib import Path
 here=Path(__file__).resolve().parent
@@ -77,8 +77,14 @@ if args.public:
     (out.parent/'levels.html').write_bytes((here/'web/levels.html').read_bytes())
     levels_out=out.parent/'levels'
     levels_out.mkdir(exist_ok=True)
-    for name in ('levels.css','rom.js','selection.js','loader.js'):
+    for name in ('levels.css','rom.js','selection.js','gallery.js','loader.js'):
         (levels_out/name).write_bytes((here/'levels'/name).read_bytes())
     runtime=(here/'levels/runtime.js').read_text(encoding='utf-8')
     editor=(here/'levels/editor.js').read_text(encoding='utf-8')
     (levels_out/'runtime.js').write_text(runtime.replace('/*EDITOR*/',editor),encoding='utf-8')
+    # Bundled demo level, its models and head icons (generated once by build_demo_assets.js; no ROM is read here).
+    demo_out=out.parent/'demo'
+    shutil.copytree(here/'web/demo',demo_out,dirs_exist_ok=True)
+    if icon_path:
+        (demo_out/'heads').mkdir(exist_ok=True)
+        shutil.copyfile(icon_path,demo_out/'heads/bear.png')

@@ -15,8 +15,10 @@ with tempfile.TemporaryDirectory() as directory:
     subprocess.run(command, cwd=temp, check=True, capture_output=True)
     assert (temp / 'play.html').is_file() and (temp / 'play.js').is_file()
     assert (temp/'levels.html').is_file()
-    for asset in ('rom.js','selection.js','loader.js','runtime.js','levels.css'):
+    for asset in ('rom.js','selection.js','gallery.js','loader.js','runtime.js','levels.css'):
         assert (temp/'levels'/asset).is_file()
+    for asset in ('level-4.json','animals.json','heads/dog.png','heads/sheep.png','heads/bear.png'):
+        assert (temp/'demo'/asset).is_file(), asset
     subprocess.run(['node','--check',str(temp/'levels/runtime.js')],check=True,capture_output=True)
     assert b'/*EDITOR*/' not in (temp/'levels/runtime.js').read_bytes()
     first = output.read_bytes()

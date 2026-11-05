@@ -3,7 +3,8 @@
 The public playground uses the same WebGL renderer and editing controls as the private viewer.
 Its three demo creatures are independently authored procedural geometry in
 `src/viewer/js/demo-models.js`, covered by the project's CC0 dedication.
-No game geometry, textures, extracted table, pose, or ROM is bundled.
+No ROM, extracted table or pose is bundled. The owner has approved a small set of game assets
+for the public demos (see **Bundled demo assets** below); they are not CC0.
 
 Build from the repository root:
 
@@ -71,9 +72,24 @@ the local builder. The private level editor is not bundled in the public site.
 
 ## Levels
 
-The public build includes `levels.html` and the `levels/` source bundle. Choose
+The public build includes `levels.html` and the `levels/` source bundle. It opens the
+bundled demo level (no ROM needed); the **Levels** button opens a gallery of level cards.
+For every level, use **Open local ROM** and choose
 your own stock or compatible modded US ROM; stage records, ground textures, and supported prop meshes
 are decoded locally. Named categories, rectangle selection, group movement,
 undo/redo and project files are described in [the editor guide](../docs/guides/LEVEL-EDITOR.md).
 No game data is read during the public build. Animal shapes are approximate,
 terrain is read-only, and portal hooks remain separate.
+
+## Bundled demo assets
+
+Committed under `src/web/demo/` and copied to `dist/demo/` (owner-approved, 2026-11-05;
+third-party game content, see `NOTICE.md`):
+
+- `level-4.json`: stage 4 (terrain, texture atlas, spawn records, and the 26 prop meshes that stage uses).
+- `animals.json`: bear, dog, fox, sheep and seagull parts (base variants) in Parts Lab demo shape.
+- `heads/dog.png`, `fox.png`, `sheep.png`, `seagull.png`: 128 px head icons rendered from those parts.
+  `heads/bear.png` is the existing `src/viewer/assets/icon.png`, copied at build time.
+
+Regenerate with your own ROM: `python src/animal_table.py --from-rom --out TABLE`, then
+`node src/build_demo_assets.js rom/sssv.z64 TABLE.json`. Pages builds never read a ROM.
