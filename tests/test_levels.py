@@ -50,6 +50,9 @@ rejects(lambda: levels.edit_records(data,22,{'delete':[0]},'props'))
 rejects(lambda: levels.edit_records(data,22,{'set':[{'index':True,'bytes':changed.hex()}]},'props'))
 rejects(lambda: levels.edit_records(data,22,{'set':[{'index':0,'bytes':'00'}]},'props'))
 rejects(lambda: levels.edit_records(b'\0\0',16,{'add':[{'bytes':'00'*16}]},'animals'))
+grown = levels.edit_records(b'\0\0',16,{'add':[{'bytes':'00'*16}]},'animals',new_animals=True)
+assert struct.unpack_from('>H',grown)[0] == 1 and len(grown) == 18
+rejects(lambda: levels.edit_records(b'\0\0',16,{'add':[{'bytes':'00'*22}]},'animals',new_animals=True))
 stock=b'synthetic stock'
 diff={'format':'sssv-editor-diff','version':1,'rom_sha1':levels.romio.sha1(stock),'levels':{}}
 assert levels.validate(diff,stock)[0] == diff
