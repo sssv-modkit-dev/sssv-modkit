@@ -22,7 +22,7 @@ const ctx = {fillRect() {}, measureText: () => ({width: 10000}),
   fillText: (...args) => text.push(args)};
 const canvas = {getContext: () => ctx};
 draw(canvas, {name: '日本語', version: 'LABEL', accent: '#6496c8', style: 'japanese'}, null);
-assert.deepStrictEqual([canvas.width, canvas.height], [1500, 500]);
+assert.deepStrictEqual([canvas.width, canvas.height], [1500, 250]);
 assert.strictEqual(text[1][0], '「日本語」 edition');
 assert.strictEqual(text[1][3], 890);
 assert.strictEqual(Object.keys(quotes).length, 5);

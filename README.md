@@ -5,52 +5,56 @@
 ## Welcome
 Welcome to the sssv-modkit public repository!
 
-**WORK IN PROGRESS**
+**WORK IN PROGRESS** (_last updated: 2026-11-05_)
 
-Changelog and mod blog coming soon.
+## Contents
+
+- [What is this?](#what-is-this)
+- [How do I play this?](#how-do-i-play-this)
+- [Is this a decompilation / recompilation?](#is-this-a-decompilation--recompilation)
+- [Was this made using AI?](#was-this-made-using-ai)
+- [Features](#features)
+- [Credits](#credits)
+- [License](#license)
 
 ## FAQs
 
 ### What is this?
 
 This is a fan-made modding project for Space Station Silicon Valley on the Nintendo 64.
-It lets you change animal colours and reshape their existing body parts, preview
-your edits in a browser, and build a patch to play in the game.
+It provides:
+
+- tools to recolor and modify animals, previewed in your browser;
+- a level editor;
+- ROM patch scripts that turn your edits into a patch for your own ROM.
 
 There is no finished mod campaign (yet) or full game download here (ever).
 
 ### How do I play this?
 
-- [Try Parts Lab in your browser](https://sssv-modkit-dev.github.io/sssv-modkit/): change colours and shapes, then save your edits. It opens with three original demo creatures.
-- [Edit levels in your browser](https://sssv-modkit-dev.github.io/sssv-modkit/levels.html): open your stock or compatible modded ROM locally, select named objects by category or drag a selection box, then export your edits. [Level editor guide](docs/guides/LEVEL-EDITOR.md).
-- [Play your ROM in the browser](https://sssv-modkit-dev.github.io/sssv-modkit/play.html): select your own uncompressed ROM or patched build. Experimental; gameplay compatibility and performance are still being tested.
-- [Make a local build](docs/guides/GETTING-STARTED.md): build a patch using your own US 1.0 ROM and the animal table generated from it, then open the patched ROM in your emulator.
+| What you want to do | Where | What you need |
+| --- | --- | --- |
+| Try out the tools | [Edit models: Parts Lab demo](https://sssv-modkit-dev.github.io/sssv-modkit/) | Nothing; it opens with three original demo creatures. |
+| Edit levels | [Level editor demo](https://sssv-modkit-dev.github.io/sssv-modkit/levels.html) ([guide](docs/guides/LEVEL-EDITOR.md)) | Your own stock or compatible modded ROM, opened locally. |
+| Play in the browser | [Browser play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html) | Your own uncompressed ROM or patched build. Experimental; compatibility and performance are still being tested. |
+| Make a local build | [Getting started](docs/guides/GETTING-STARTED.md) | Your own US 1.0 ROM; open the patched ROM in your emulator. |
+
+You can try the online demos in your phone's browser, but mobile controls and
+compatibility still need testing. The build tools run on a computer with Python,
+and the local viewer needs a browser with WebGL. Playing a patched ROM depends on
+your N64 emulator and device. There is no standalone phone app or native PC
+version, and original hardware and most emulators have not been tested, so
+support is not guaranteed.
 
 ### Is this a decompilation / recompilation?
 
-No.
+No. This project makes **ROM patches**.
 
-A **decompilation** project works backwards from a compiled game to recreate source
-code.
-
-A **recompilation** takes code for one system and builds it to run on another,
-such as turning an N64 game into a native PC application.
-
-This project makes **ROM patches**.
-It edits the original N64 ROM. It does not recreate
-the whole game's source code or turn the game into a native PC port.
-
-LLMs help investigate how the game stores and uses its data, and write the tools
-for editing it. Ghidra is used to inspect the compiled game; an MCP connection
-lets the coding tools work with that analysis. Findings are checked against ROM
-data and emulator behaviour. An AI explanation alone is not proof.
-
-The research lives in a separate private repository. This public repository holds
-the modding tools, example edits, and instructions, without the ROM or extracted
-game files.
-
-The animal-table generator works from your ROM alone
-(`python src/animal_table.py --from-rom`).
+| Approach | In one sentence |
+| --- | --- |
+| Decompilation | Works backwards from a compiled game to recreate its source code. |
+| Recompilation | Takes code for one system and builds it to run on another, such as an N64 game as a native PC application. |
+| ROM patch (this project) | Edits the original N64 ROM, without recreating the game's source or making a native PC port. |
 
 ### Was this made using AI?
 
@@ -60,26 +64,10 @@ Most of the code is AI-written or generated, with only minor tweaks such as
 renaming file paths done by the developer.
 
 Claude and OpenAI coding tools have been used throughout development.
+For details, see [AI development details](docs/DEVELOPMENT-NOTES.md):
 
-### What did the AI work on vs. what did the mod developer work on?
-
-The AI tools handled most of the code, reverse-engineering work, debugging,
-tests, and first drafts of the documentation.
-
-I choose what to build, set the direction, try the results in the viewer and
-game, and give feedback on what needs to change. I also make small manual edits
-and decide what goes into the public repository. This is a project I direct
-with AI tools; I am not presenting the code as mostly hand-written.
-
-### Can I play it on my device or phone?
-
-The build tools run on a computer with Python. The local viewer needs a browser
-with WebGL. You can try the online demo in your phone's browser, but mobile
-controls and compatibility still need testing.
-
-Playing a patched ROM depends on your N64 emulator and device. There is no
-standalone phone app or native PC version. Original hardware and every emulator
-have not been tested, so support is not guaranteed.
+- [What the AI tools did](docs/DEVELOPMENT-NOTES.md#what-the-ai-tools-did)
+- [What the Developer did](docs/DEVELOPMENT-NOTES.md#what-the-developer-did)
 
 ## Features
 

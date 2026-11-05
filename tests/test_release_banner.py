@@ -59,7 +59,7 @@ class BannerTests(unittest.TestCase):
             self.assertEqual(output.read_bytes(), b'keep existing output')
 
     def test_failed_render_never_creates_output(self):
-        for ready, size in ((False, (1500, 500)), (True, (800, 600))):
+        for ready, size in ((False, (1500, 250)), (True, (800, 600))):
             with self.subTest(ready=ready, size=size), tempfile.TemporaryDirectory() as directory:
                 output = Path(directory) / 'output.png'
 

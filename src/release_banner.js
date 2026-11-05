@@ -39,27 +39,27 @@
   }
   function draw(canvas, settings, head) {
     const ctx = canvas.getContext('2d');
-    canvas.width = 1500; canvas.height = 500;
-    ctx.fillStyle = '#111b29'; ctx.fillRect(0, 0, 1500, 500);
-    ctx.fillStyle = settings.accent; ctx.fillRect(70, 76, 32, 3);
-    ctx.font = '500 21px system-ui'; ctx.fillText('SSSV MODKIT', 70, 120);
+    canvas.width = 1500; canvas.height = 250;
+    ctx.fillStyle = '#111b29'; ctx.fillRect(0, 0, 1500, 250);
+    ctx.fillStyle = settings.accent; ctx.fillRect(70, 38, 32, 3);
+    ctx.font = '500 18px system-ui'; ctx.fillText('SSSV MODKIT', 70, 70);
     const pair = quotes[settings.style];
     const title = pair[0] + settings.name + pair[1] + ' edition';
-    let size = 60;
+    let size = 48;
     do {
       ctx.font = `italic 500 ${size}px system-ui`;
       if (ctx.measureText(title).width <= 890 || size <= 12) break;
       size--;
     } while (true);
-    ctx.fillText(title, 70, 265, 890);
-    ctx.fillStyle = '#9ba9b9'; ctx.font = '400 21px system-ui';
-    ctx.fillText(settings.version, 70, 335, 890);
-    ctx.fillStyle = '#26384b'; ctx.fillRect(70, 382, 890, 1);
-    ctx.fillStyle = settings.accent; ctx.fillRect(70, 382, 64, 2);
+    ctx.fillText(title, 70, 135, 890);
+    ctx.fillStyle = '#9ba9b9'; ctx.font = '400 18px system-ui';
+    ctx.fillText(settings.version, 70, 175, 890);
+    ctx.fillStyle = '#26384b'; ctx.fillRect(70, 205, 890, 1);
+    ctx.fillStyle = settings.accent; ctx.fillRect(70, 205, 64, 2);
     if (head) {
       const image = recolor(head, settings.accent, settings.recolor || 'original');
-      const scale = Math.min(340 / image.width, 340 / image.height);
-      ctx.drawImage(image, 1230 - image.width * scale / 2, 250 - image.height * scale / 2,
+      const scale = Math.min(200 / image.width, 200 / image.height);
+      ctx.drawImage(image, 1230 - image.width * scale / 2, 125 - image.height * scale / 2,
         image.width * scale, image.height * scale);
     }
   }
