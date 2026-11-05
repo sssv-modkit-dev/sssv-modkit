@@ -11,16 +11,24 @@ is included in the site, and Levels makes no upload requests.
 - Choose a **Category**, then an object in the named **Objects** selector. The
   **Type** selector also shows names. Unknown identifiers retain a numeric label;
   some props vary by stage. Animal forms and states have separate identifiers.
-- Click an object, or enable **Box select** and drag a rectangle. Ctrl-click
+- The toolbar at the top left holds three tools: **Select** (1), **Box select** (2)
+  and **Move** (3); Escape returns to Select. Below them, **Snap** (#), **Height**
+  (↕) and **Add** (+) toggles do the same as holding Ctrl, Shift and Ctrl.
+- Click an object, or use **Box select** and drag a rectangle. Ctrl-click
   toggles an object; Ctrl-box-select adds to the selection. Props are picked by the
   box drawn for them: a click inside several boxes takes the smallest, and a
   rectangle selects every box it overlaps. Animals use the bounding box of their
   drawn shape, so a placeholder's box also covers space behind it. Objects
   hidden behind terrain can still be picked.
-- **Focus** frames the selection. Yellow rings mark selected origins.
-- Alt-drag moves the selection together, preserving spacing. Shift adjusts height;
-  Ctrl snaps the primary object's position to 64 units. Out-of-range group moves
-  are rejected together. Escape cancels the gesture.
+- **Focus** frames the selection. Yellow rings mark selected origins. An info card
+  stays beside the primary selected object (name, index, type, position, yaw and
+  prop box) until the selection changes; it docks at the bottom when the object is
+  off screen.
+- With **Move**, or Alt-drag in any tool, drag the selection together, preserving
+  spacing. The grabbed point stays under the cursor on the horizontal plane at the
+  primary object's height. Shift (or **Height**) adjusts height; Ctrl (or **Snap**)
+  snaps the primary object's position to 64 units. Out-of-range group moves are
+  rejected together. Escape cancels the gesture.
 - Arrow keys nudge the selection 8 units (Shift: 64) along the world axis nearest the
   camera view; Up moves away from the camera. PageUp/PageDown change height. Each
   nudge is one undo step. Keys typed into a field do not nudge.
@@ -30,12 +38,13 @@ is included in the site, and Levels makes no upload requests.
 - Undo/redo restores an entire move or duplication. Terrain is read-only. Deletion
   is unavailable because stage scripts refer to spawn indices.
 
-Orbit by dragging, pan with right-drag or Shift-drag outside Box select, and zoom
-with the wheel. F toggles fly mode; WASD/QE moves the camera. On a touchscreen, tap
-an object to select it. With **Box select** or **Drag objects** on, one finger
-draws the rectangle or moves the selection; two fingers always pinch and pan the
-camera. The touch-only **Add to selection**, **Height** and **Snap 64** toggles
-stand in for Ctrl and Shift.
+WASD moves the camera at any time (Q/E down/up, Shift faster); keys typed into a
+field are ignored. Orbit by dragging, pan with right-drag or Shift-drag in Select,
+and zoom with the wheel. The **look** button switches dragging between orbiting
+the target and fly-style looking around in place. On a touchscreen, tap an object
+to select it. With **Box select** or **Move**, one finger draws the rectangle or
+moves the selection; two fingers always pinch and pan the camera. Use the
+toolbar toggles in place of Ctrl and Shift.
 
 ## Save and build
 

@@ -19,6 +19,33 @@ const LevelSelection = (() => {
   function hitsRect(item,start,end){const r=item.rect;if(!r)return inRectangle(item.origin,start,end);return r[0]<=Math.max(start[0],end[0])&&r[2]>=Math.min(start[0],end[0])&&r[1]<=Math.max(start[1],end[1])&&r[3]>=Math.min(start[1],end[1]);}
   // Arrow keys move along the world axis nearest the camera's view (up = away from camera); PageUp/PageDown move height.
   function nudge(key,yaw,step){const f=[Math.cos(yaw),Math.sin(yaw)],axis=v=>Math.abs(v[0])>=Math.abs(v[1])?[Math.sign(v[0]),0]:[0,Math.sign(v[1])],up=axis(f),right=axis([f[1],-f[0]]);const d={ArrowUp:[...up,0],ArrowDown:[-up[0],-up[1],0],ArrowRight:[...right,0],ArrowLeft:[-right[0],-right[1],0],PageUp:[0,0,1],PageDown:[0,0,-1]}[key];return d?d.map(v=>v*step+0):null;}
-  return {animalNames,propNames,categories,name,category,project,inRectangle,translate,corners,screenRect,pickAt,hitsRect,nudge};
+  /* Inverse of a column-major 4x4 matrix (same layout as project), or null when singular. */
+  function invert(m){const a=Array.from(m),inv=new Array(16);
+    inv[0]=a[5]*a[10]*a[15]-a[5]*a[11]*a[14]-a[9]*a[6]*a[15]+a[9]*a[7]*a[14]+a[13]*a[6]*a[11]-a[13]*a[7]*a[10];
+    inv[4]=-a[4]*a[10]*a[15]+a[4]*a[11]*a[14]+a[8]*a[6]*a[15]-a[8]*a[7]*a[14]-a[12]*a[6]*a[11]+a[12]*a[7]*a[10];
+    inv[8]=a[4]*a[9]*a[15]-a[4]*a[11]*a[13]-a[8]*a[5]*a[15]+a[8]*a[7]*a[13]+a[12]*a[5]*a[11]-a[12]*a[7]*a[9];
+    inv[12]=-a[4]*a[9]*a[14]+a[4]*a[10]*a[13]+a[8]*a[5]*a[14]-a[8]*a[6]*a[13]-a[12]*a[5]*a[10]+a[12]*a[6]*a[9];
+    inv[1]=-a[1]*a[10]*a[15]+a[1]*a[11]*a[14]+a[9]*a[2]*a[15]-a[9]*a[3]*a[14]-a[13]*a[2]*a[11]+a[13]*a[3]*a[10];
+    inv[5]=a[0]*a[10]*a[15]-a[0]*a[11]*a[14]-a[8]*a[2]*a[15]+a[8]*a[3]*a[14]+a[12]*a[2]*a[11]-a[12]*a[3]*a[10];
+    inv[9]=-a[0]*a[9]*a[15]+a[0]*a[11]*a[13]+a[8]*a[1]*a[15]-a[8]*a[3]*a[13]-a[12]*a[1]*a[11]+a[12]*a[3]*a[9];
+    inv[13]=a[0]*a[9]*a[14]-a[0]*a[10]*a[13]-a[8]*a[1]*a[14]+a[8]*a[2]*a[13]+a[12]*a[1]*a[10]-a[12]*a[2]*a[9];
+    inv[2]=a[1]*a[6]*a[15]-a[1]*a[7]*a[14]-a[5]*a[2]*a[15]+a[5]*a[3]*a[14]+a[13]*a[2]*a[7]-a[13]*a[3]*a[6];
+    inv[6]=-a[0]*a[6]*a[15]+a[0]*a[7]*a[14]+a[4]*a[2]*a[15]-a[4]*a[3]*a[14]-a[12]*a[2]*a[7]+a[12]*a[3]*a[6];
+    inv[10]=a[0]*a[5]*a[15]-a[0]*a[7]*a[13]-a[4]*a[1]*a[15]+a[4]*a[3]*a[13]+a[12]*a[1]*a[7]-a[12]*a[3]*a[5];
+    inv[14]=-a[0]*a[5]*a[14]+a[0]*a[6]*a[13]+a[4]*a[1]*a[14]-a[4]*a[2]*a[13]-a[12]*a[1]*a[6]+a[12]*a[2]*a[5];
+    inv[3]=-a[1]*a[6]*a[11]+a[1]*a[7]*a[10]+a[5]*a[2]*a[11]-a[5]*a[3]*a[10]-a[9]*a[2]*a[7]+a[9]*a[3]*a[6];
+    inv[7]=a[0]*a[6]*a[11]-a[0]*a[7]*a[10]-a[4]*a[2]*a[11]+a[4]*a[3]*a[10]+a[8]*a[2]*a[7]-a[8]*a[3]*a[6];
+    inv[11]=-a[0]*a[5]*a[11]+a[0]*a[7]*a[9]+a[4]*a[1]*a[11]-a[4]*a[3]*a[9]-a[8]*a[1]*a[7]+a[8]*a[3]*a[5];
+    inv[15]=a[0]*a[5]*a[10]-a[0]*a[6]*a[9]-a[4]*a[1]*a[10]+a[4]*a[2]*a[9]+a[8]*a[1]*a[6]-a[8]*a[2]*a[5];
+    const det=a[0]*inv[0]+a[1]*inv[4]+a[2]*inv[8]+a[3]*inv[12];if(!det||!Number.isFinite(det))return null;return inv.map(v=>v/det);}
+  /* World X/Y where the ray under a screen point meets the horizontal plane at height z, or null if it misses (sky, behind the camera, near-parallel). */
+  function groundPoint(m,width,height,point,z){const inv=invert(m);if(!inv)return null;const nx=point[0]/width*2-1,ny=1-point[1]/height*2;
+    const un=nz=>{const w=inv[3]*nx+inv[7]*ny+inv[11]*nz+inv[15];if(!w)return null;return [0,1,2].map(i=>(inv[i]*nx+inv[4+i]*ny+inv[8+i]*nz+inv[12+i])/w);};
+    const a=un(-1),b=un(1);if(!a||!b)return null;const dz=b[2]-a[2];if(Math.abs(dz)<1e-9)return null;const t=(z-a[2])/dz;if(t<0||t>1)return null;return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];}
+  /* Object drag: the X/Y offset that keeps the grabbed ground point under the cursor (null: caller falls back to screen scaling). */
+  function dragDelta(m,width,height,start,now,z){const a=groundPoint(m,width,height,start,z),b=groundPoint(m,width,height,now,z);return a&&b?[b[0]-a[0],b[1]-a[1]]:null;}
+  /* Fallback when the ray misses the plane: screen right is (-sin yaw, cos yaw), screen down is towards the camera (cos yaw, sin yaw). */
+  function screenDelta(dx,dy,yaw,scale){const c=Math.cos(yaw),s=Math.sin(yaw);return [(-dx*s+dy*c)*scale,(dx*c+dy*s)*scale];}
+  return {animalNames,propNames,categories,name,category,project,inRectangle,translate,corners,screenRect,pickAt,hitsRect,nudge,invert,groundPoint,dragDelta,screenDelta};
 })();
 if(typeof module!=='undefined')module.exports=LevelSelection;
