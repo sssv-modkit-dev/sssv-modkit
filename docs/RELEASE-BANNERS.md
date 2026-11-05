@@ -1,6 +1,6 @@
 # Release banners
 
-The README uses `docs/images/releases/auburn-flamehound-v3.png`, an original low-poly flamehound illustration generated with OpenAI image tools on 2026-11-04. The v3 label identifies the banner edition, not a software release. It contains no extracted game artwork. Earlier Ceruleanish Ear Bear banners remain archived.
+The README uses `docs/images/releases/auburnish-ear-bear-v3.png`, the verified game-head bear render with its fur and ear tips recoloured to the orange palette by this generator (`--name "Auburnish Ear Bear" --version "EDITION SERIES" --palette orange --recolor both --quote-style japanese`). The v3 label identifies the banner edition, not a software release. The AI-made Auburn Flamehound illustration (`auburn-flamehound-v3.png`) is superseded and is not a game render; earlier Ceruleanish Ear Bear banners remain archived.
 
 Generate a minimal banner from the verified local game-head branding render:
 
@@ -57,7 +57,7 @@ The current 256 x 256 head export is enlarged in the 1500 x 500 composition.
 
 ## Publication
 
-The selected README banner is `docs/images/releases/ceruleanish-ear-bear-v3.png`.
+The selected README banner is `docs/images/releases/auburnish-ear-bear-v3.png`.
 Future concepts remain local in build; no version numbers or releases are implied.
 Review images under docs/PREPUBLISH.md. Game-head renders remain third-party game
 content, outside the CC0 dedication; see NOTICE.md. Never publish ROMs, extracted
