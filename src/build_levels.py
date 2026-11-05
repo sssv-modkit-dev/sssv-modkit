@@ -73,7 +73,7 @@ def read_level_rom(path):
     return stock
 
 
-def edit_records(data, size, spec, kind):
+def edit_records(data, size, spec, kind, new_animals=False):
     if not isinstance(spec, dict) or set(spec) - {'set', 'add'}:
         raise ValueError('Only set/add operations are supported; deletion shifts script indices')
     count = struct.unpack_from('>H', data)[0]
@@ -98,8 +98,8 @@ def edit_records(data, size, spec, kind):
                 seen.add(index)
                 records[index] = record
             else:
-                if kind != 'props':
-                    raise ValueError('Only props can be duplicated')
+                if kind != 'props' and not new_animals:
+                    raise ValueError('New animal records need --new-animals (appended spawns are not game-verified)')
                 records.append(record)
     if len(records) > 65535:
         raise ValueError('Too many spawn records')
@@ -131,7 +131,7 @@ def validate(document, stock):
     return document, parts
 
 
-def build(diff, stock, relocate=False):
+def build(diff, stock, relocate=False, new_animals=False):
     diff, _ = validate(diff, stock)
     rom = bytearray(stock)
     for level, lists in sorted(diff['levels'].items(), key=lambda kv: int(kv[0])):
@@ -146,7 +146,7 @@ def build(diff, stock, relocate=False):
             for kind, (wanted, size) in LISTS.items():
                 if cid == wanted and kind in lists:
                     found.add(kind)
-                    edited = edit_records(data, size, lists[kind], kind)
+                    edited = edit_records(data, size, lists[kind], kind, new_animals)
                     if edited != data:
                         stored = packer.pack_best(edited)
                         if rnc.unpack(stored, 0)[0] != edited:
@@ -198,6 +198,7 @@ def main():
     parser.add_argument('--name', default='level-edits')
     parser.add_argument('--dry-run', action='store_true', help='Validate and compress without writing outputs')
     parser.add_argument('--relocate', action='store_true', help='Allow level-only ROM expansion')
+    parser.add_argument('--new-animals', action='store_true', help='Allow appended animal spawn records (not game-verified)')
     parser.add_argument('--table', type=Path, help='Animal table for attached production animal config')
     args = parser.parse_args()
     if not args.name or Path(args.name).name != args.name or args.name in ('.', '..'):
@@ -208,7 +209,7 @@ def main():
         parser.error('Level edits support modded ROMs; attached animal builds still require the stock ROM for their expected-byte safeguards')
     if parts and (not args.table or args.relocate):
         parser.error('Animal attachments require --table and an in-place level build')
-    edited = build(diff, stock, relocate=args.relocate)
+    edited = build(diff, stock, relocate=args.relocate, new_animals=args.new_animals)
     if args.dry_run and not parts:
         patch(stock, edited)
         print('Dry-run passed: source identity, level compression, CRC and IPS roundtrips; no output written.')

@@ -77,7 +77,7 @@ if args.public:
     (out.parent/'levels.html').write_bytes((here/'web/levels.html').read_bytes())
     levels_out=out.parent/'levels'
     levels_out.mkdir(exist_ok=True)
-    for name in ('levels.css','rom.js','selection.js','gallery.js','loader.js'):
+    for name in ('levels.css','rom.js','selection.js','palette.js','gallery.js','loader.js'):
         (levels_out/name).write_bytes((here/'levels'/name).read_bytes())
     runtime=(here/'levels/runtime.js').read_text(encoding='utf-8')
     editor=(here/'levels/editor.js').read_text(encoding='utf-8')
