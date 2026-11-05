@@ -37,7 +37,7 @@ There is no finished mod campaign (yet) or full game download here (ever).
 | Try out the tools | [Edit models: Parts Lab demo](https://sssv-modkit-dev.github.io/sssv-modkit/) | Nothing; it opens with three original demo creatures. |
 | Edit levels | [Level editor demo](https://sssv-modkit-dev.github.io/sssv-modkit/levels.html) ([guide](docs/guides/LEVEL-EDITOR.md)) | Your own stock or compatible modded ROM, opened locally. |
 | Play in the browser | [Browser play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html) | Your own uncompressed ROM or patched build. Experimental; compatibility and performance are still being tested. |
-| Make a local build | [Getting started](docs/guides/GETTING-STARTED.md) | Your own US 1.0 ROM; open the patched ROM in your emulator. |
+| Make a local build | [Getting started](docs/guides/GETTING-STARTED.md) | Your own ROM ([details](rom/README.md)); open the patched ROM in your emulator. |
 
 You can try the online demos in your phone's browser, but mobile controls and
 compatibility still need testing. The build tools run on a computer with Python,
