@@ -8,53 +8,13 @@ is included in the site, and Level Editor makes no upload requests.
 
 ## Select and edit
 
-- Choose a **Category**, then an object in the named **Objects** selector. The
-  **Type** selector also shows names. Unknown identifiers retain a numeric label;
-  some props vary by stage. Animal forms and states have separate identifiers.
-- The toolbar at the top left holds four tools: **Select** (1), **Box select** (2),
-  **Move** (3) and **Add** (4); Escape returns to Select. Below them, **Snap** (#), **Height**
-  (↕) and **Add** (+) toggles do the same as holding Ctrl, Shift and Ctrl.
-- Click an object, or use **Box select** and drag a rectangle. Ctrl-click
-  toggles an object; Ctrl-box-select adds to the selection. Props are picked by the
-  box drawn for them: a click inside several boxes takes the smallest, and a
-  rectangle selects every box it overlaps. Animals use the bounding box of their
-  drawn shape, so a placeholder's box also covers space behind it. Objects
-  hidden behind terrain can still be picked.
-- **Focus** frames the selection. Yellow rings mark selected origins. An info card
-  stays beside the primary selected object (name, index, type, position, yaw and
-  prop box) until the selection changes; it docks at the bottom when the object is
-  off screen.
-- With **Move**, or Alt-drag in any tool, drag the selection together, preserving
-  spacing. The grabbed point stays under the cursor on the horizontal plane at the
-  primary object's height. Shift (or **Height**) adjusts height; Ctrl (or **Snap**)
-  snaps the primary object's position to 64 units. Out-of-range group moves are
-  rejected together. Escape cancels the gesture.
-- Arrow keys nudge the selection 8 units (Shift: 64) along the world axis nearest the
-  camera view; Up moves away from the camera. PageUp/PageDown change height. Each
-  nudge is one undo step. Keys typed into a field do not nudge.
-- **Apply** changes the primary object's type, X/Y/Z, yaw, and portal target.
-  **Duplicate prop** duplicates the selected props in place; move them afterward.
-  Player starts and mixed animal/prop selections cannot be duplicated.
-- **Add** (4) opens the object palette. Choose **Animals** (head icons first, then
-  initial badges for species without a bundled icon) or **Props** (filter by category),
-  then click or tap the ground to place the object, or press **Place at target**.
-  Objects land on the horizontal plane at the camera target's height; Snap rounds to
-  64. A drag or pinch does not place anything, and each placement is one undo step.
-  The new object is selected, so use Move (3) to reposition it.
-- New records clone a stock record of the same type from any loaded level (so the
-  bundled demo has only that level's types) and otherwise start with zeroed extra
-  fields, which the palette says. Extra fields may carry level script links, so
-  review new switches, doors and portals. The player start cannot be added.
-- Undo/redo restores an entire move or duplication. Terrain is read-only. Deletion
-  is unavailable because stage scripts refer to spawn indices.
-
-WASD moves the camera at any time (Q/E down/up, Shift faster); keys typed into a
-field are ignored. Orbit by dragging, pan with right-drag or Shift-drag in Select,
-and zoom with the wheel. The **look** button switches dragging between orbiting
-the target and fly-style looking around in place. On a touchscreen, tap an object
-to select it. With **Box select** or **Move**, one finger draws the rectangle or
-moves the selection; two fingers always pinch and pan the camera. Use the
-toolbar toggles in place of Ctrl and Shift.
+- **Select (1)**: click an object; click empty space to clear; drag empty space to select a rectangle. Ctrl/Shift adds. The **Objects** panel lists every spawn grouped by type and reflects selection.
+- **Move (3)** or Alt-drag moves the selection. Ctrl snaps to 64 units; Shift changes height. Arrow keys nudge, PageUp/PageDown adjust height. Escape cancels a gesture. Modifier hints are available in the tool tooltip.
+- Use the visual **Change type** picker and paired X/Y/Z/yaw sliders and number fields, then **Apply**. **Focus** frames the selection. **Duplicate prop** copies selected props except player starts.
+- The separate **Add objects** panel offers animal and prop tiles. Choose **Place objects (4)** and a type, then click the ground or **Place at target**. New records copy stock extra fields where available, otherwise use zeros. Player starts cannot be added.
+- **Delete** or Del fully removes only appended objects added by this editor or loaded project, with undo/redo. Original spawns cannot be deleted because scripts refer to their indices. Mixed selections containing originals cannot be deleted. No tombstones are written; original indices stay unchanged. Appended objects are not wired to scripts.
+- Terrain is read-only. Hold the right mouse button to look around and fly using WASD/QE (Shift faster). Pan with Shift-left-drag or the middle button; zoom with the wheel. Touch supports tap selection, selection drags and two-finger pinch/pan.
+- **Info** contains level stats, display-save information and camera controls. Phone portrait panels collapse automatically when entering that layout; resizing or rotating updates the layout.
 
 ## Save and build
 

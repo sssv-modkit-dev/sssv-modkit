@@ -43,6 +43,7 @@ def main():
         [sys.executable, 'tests/test_demo_bundle.py'],
         [sys.executable, 'tests/test_public_build.py'],
         [sys.executable, 'tests/test_vendor_manifest.py'],
+        [sys.executable, 'tests/test_level_startup.py'],
         ['node', 'tests/test_camera.js'],
         ['node', 'tests/test_deform_parity.js'],
         [sys.executable, 'tests/test_live_deform.py'],

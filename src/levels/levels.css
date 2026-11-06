@@ -42,3 +42,30 @@ label{margin-right:8px}
 .card small{color:#9fb0c8;font-size:11px}.card .card-animals{min-height:2.4em}.card-thumb canvas{display:block;width:100%;height:auto;border-radius:4px}.card-thumb{width:100%}
 .card-heads{display:flex;gap:4px;min-height:28px}.card-heads img{border-radius:6px;background:#0d1424}
 #gallery-rom{margin:12px 0 0}.card-rom{max-width:340px;cursor:pointer}
+
+#add-panel,#objects-panel{position:absolute;z-index:4;background:#121b29ee;border:1px solid #ffffff26;border-radius:9px;padding:8px;box-sizing:border-box}
+#add-panel{left:62px;bottom:10px;width:340px;max-height:48vh;overflow:auto}#add-panel #palette{position:static;width:100%;max-height:38vh;border:0;padding:4px 0}
+#objects-panel{right:334px;top:10px;width:220px;max-height:70vh;overflow:auto}summary{cursor:pointer;font-weight:600;padding:5px}#object-tree button{display:block;width:100%;text-align:left;margin:2px 0}button[aria-pressed=true]{border-color:#ffdd67;background:#79601f66}
+.visual-picker{display:grid;grid-template-columns:repeat(3,1fr);max-height:220px;overflow:auto;gap:3px}.visual-picker button{font-size:10px;overflow-wrap:anywhere}.visual-picker .pal-art{margin:auto}#editor input[type=range]{width:170px;vertical-align:middle}#editor input[type=number]{width:65px}.choice-picker{display:flex;flex-wrap:wrap;gap:3px}.choice-picker button{font-size:11px}
+@media(max-width:1100px){#objects-panel{top:auto;bottom:10px;right:334px;max-height:32vh}#ui{max-width:calc(100% - 410px)}}
+@media(max-width:850px){#objects-panel{right:10px;bottom:10px;width:220px;max-height:28vh}#editor{bottom:30vh;max-height:32vh}#add-panel{width:min(320px,calc(100% - 310px));max-height:40vh}#ui{max-width:calc(100% - 350px);max-height:26vh}}
+body.phone-portrait #ui{left:62px;right:8px;max-width:none;max-height:22vh}body.phone-portrait #editor,body.phone-portrait #objects-panel,body.phone-portrait #add-panel{left:8px;right:8px;width:auto;max-height:23vh}body.phone-portrait #editor{top:auto;bottom:8px}body.phone-portrait #objects-panel{top:auto;bottom:25vh}body.phone-portrait #add-panel{bottom:50vh}body.phone-portrait #palette{max-height:15vh}body.phone-portrait #ed-info{font-size:10px;max-width:90vw;white-space:pre-wrap}
+
+/* Keep controls readable at both desktop and portrait widths. */
+#editor{box-sizing:border-box;width:314px}
+#editor label:has(input[type=range]){display:grid;grid-template-columns:28px minmax(0,1fr) 72px;align-items:center;gap:4px;margin-right:0}
+#editor input[type=range],#editor input[type=number]{box-sizing:border-box;width:100%;min-width:0}
+#pal-grid{min-height:0}
+.choice-picker[hidden]{display:none}
+.display-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;padding:6px 0;border-top:1px solid #ffffff1a}
+.display-row>strong{flex-basis:100%;color:#9fb0c8}
+.display-row label{margin:0;display:flex;align-items:center;gap:4px}
+body.phone-portrait{height:auto;overflow:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:8px}
+body.phone-portrait #c{height:55vh;flex:none;order:0}
+body.phone-portrait #ui,body.phone-portrait #add-panel,body.phone-portrait #objects-panel,body.phone-portrait #editor{position:relative;inset:auto;margin:0 8px;width:calc(100% - 16px);max-width:none;max-height:none;box-sizing:border-box;flex:none}
+body.phone-portrait #ui{order:1}
+body.phone-portrait #add-panel{order:2}
+body.phone-portrait #objects-panel{order:3}
+body.phone-portrait #editor{order:4}
+body.phone-portrait #palette{max-height:38vh}
+body.phone-portrait #ed-overlay{height:55vh}
