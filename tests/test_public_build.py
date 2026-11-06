@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory() as directory:
     command = [sys.executable, str(ROOT / 'src/build_viewer.py'), '--public', '--out', str(output)]
     subprocess.run(command, cwd=temp, check=True, capture_output=True)
     assert (temp / 'play.html').is_file() and (temp / 'play.js').is_file()
-    for asset in ('builder.js', 'builder-worker.js', 'builder-core.js'):
+    for asset in ('builder.js', 'builder-worker.js', 'builder-core.js', 'play-build.js', 'handoff.js'):
         assert (temp / asset).is_file(), asset
     for module in ('web_build.py', 'build_levels.py', 'make_animal_mods.py', 'animal_rom.py', 'romio.py'):
         assert (temp / 'py' / module).is_file(), module
@@ -33,6 +33,7 @@ with tempfile.TemporaryDirectory() as directory:
     assert 'PRIVATE_INPUT_CANARY' not in html
     assert 'let TABLE={};' in html
     assert 'wind-up robot' in html and 'sssv-parts-lab-demo-v1' in html
+    assert 'SSSVHandoff' in html and 'id="build-play"' in html  # Build & Play hands off to play.html
     poses = json.loads(html.split('Object.assign(BUNDLED_POSES,')[1].split(');', 1)[0])
     assert sorted(poses) == ['bear', 'dog', 'fox', 'seagull', 'sheep'], 'bundled animals must ship their assembly poses'
     assert (temp / 'demo/poses/dog.json').is_file()

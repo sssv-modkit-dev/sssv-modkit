@@ -22,6 +22,7 @@ document.getElementById('level-rom').addEventListener('change',async event=>{
   try{
     status.textContent='Checking your local ROM…';
     const data=await LevelRom.decode(await file.arrayBuffer(),message=>status.textContent=message);
+    window.SSSVLevelRom=file;  // in memory only: Build & Play hands it to play.html (handoff.js)
     enterEditor(data,false);
   }catch(error){status.textContent=error.message;input.disabled=false;input.value='';}
 });

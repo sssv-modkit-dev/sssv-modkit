@@ -96,7 +96,7 @@ the local builder. The private level editor is not bundled in the public site.
 level project/diff JSON and/or a Parts config (single config or pack). A Web Worker
 (`builder-worker.js`, an ES module worker) runs the repository's own Python (`py/*.py`, copied from `src/`)
 in [Pyodide](https://pyodide.org/) 314.0.7, which it downloads from the jsDelivr CDN
-on the first build (about 12 MB, then cached). That third-party code runs in the worker.
+on the first build (about 6–7 MB over the network, about 12 MB unpacked, then cached). That third-party code runs in the worker.
 Output matches `build_levels.py` / `make_animal_mods.py` byte for byte, with the same
 checks: animal edits need the unmodified US 1.0 ROM, and the animal table is derived
 from that ROM in memory (`animal_table.py --from-rom`); nothing ROM-derived is shipped.
@@ -123,6 +123,18 @@ Worker protocol: post `{type: 'build', id, rom: ArrayBuffer, level?, parts?, opt
 `{type: 'done', id, rom: ArrayBuffer, ips: ArrayBuffer, romSha1, sourceSha1, log,
 timings}` (buffers transferred) or `{type: 'error', id, message}`. Hand the ROM blob
 to Play with `SSSVPlay.startGame(result.rom, 'patched.z64')` on the same page.
+
+Build panel: `play.html` has a "Build from your edits" panel (`play-build.js`). It takes
+the ROM plus a level project/diff and/or a Parts config, shows the worker's progress
+stages, starts the patched ROM in the emulator, and offers Download IPS and Download ROM.
+The build log is in a collapsible area. Wrong-ROM messages from the CLI get a hint added.
+Relocate and new animals are under "Advanced"; new animals are not game-verified.
+Levels and Parts Lab (public build) have a Build & Play button. `handoff.js` opens
+`play.html` with `window.open`, waits for its same-origin `sssv-play-ready`, then posts
+`{type: 'sssv-build', level?, parts?, levelName?, partsName?, rom?, romName?, source}` once.
+`rom` is the ROM already loaded on that page, sent as an in-memory Blob. If it is
+missing, the user picks the ROM on Play. Nothing is written to storage. The handoff needs
+http(s) (not `file://`) and is blocked if pop-ups are not allowed.
 
 ## Levels
 

@@ -313,8 +313,9 @@ setTheme(themeMode);
 $('theme-select').onchange=()=>setTheme($('theme-select').value);
 $('vc').onchange=()=>{useVC=$('vc').checked;rebuild(false)};
 $('rst').onclick=()=>{map={};mesh={};deform={};deformOn=false;deformCache.clear();partOffsets[name]={};ui();rebuild(true);info()};
-$('exp').onclick=()=>{if(!cur)return;const r={};for(const o in map)r[o]=map[o].slice(6)==o.slice(6)?map[o].slice(0,6):map[o];
-const ms=Object.keys(mesh).filter(k=>mesh[k].s.some(x=>x!=1)||mesh[k].m.some(x=>x!=0)||mesh[k].o).map(k=>(o=>{if(mesh[k].o)o.about=[0,0,0];return o})({symbol:k,scale:mesh[k].s,move:mesh[k].m})),o={animal:name,recolor:r};if(ms.length)o.mesh=ms;
+function gameConfig(){const r={};for(const o in map)r[o]=map[o].slice(6)==o.slice(6)?map[o].slice(0,6):map[o];
+const ms=Object.keys(mesh).filter(k=>mesh[k].s.some(x=>x!=1)||mesh[k].m.some(x=>x!=0)||mesh[k].o).map(k=>(o=>{if(mesh[k].o)o.about=[0,0,0];return o})({symbol:k,scale:mesh[k].s,move:mesh[k].m})),o={animal:name,recolor:r};if(ms.length)o.mesh=ms;return o}
+$('exp').onclick=()=>{if(!cur)return;const o=gameConfig();
 const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));a.download=name+'.json';a.click()};
 $('imp').onclick=()=>$('impf').click();
 // Render a transparent square directly from the current WebGL geometry. Restore
