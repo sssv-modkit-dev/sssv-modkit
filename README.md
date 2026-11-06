@@ -105,26 +105,24 @@ For details, see [AI development details](docs/DEVELOPMENT-NOTES.md):
 ![Bear, dog and fox in the Parts Lab: originals on the top row; recoloured, with bigger bear arms, thicker dog legs and a longer fox tail, on the bottom row](docs/images/features/parts-lab-before-after.png)
 
 Originals on top, edited below, as previewed in the online Parts Lab (no ROM
-needed). A ROM built from a bear arm edit was
-[checked in game](docs/images/features/bear-deform-comparison.png); each new edit
-still needs testing.
+needed). Each new edit still needs testing in game.
 
 #### In development
 
 ![Private level viewer showing textured terrain and Save view and Open view controls](docs/images/features/level-viewer-prototype.jpg)
 
-The level viewer can save and reopen its camera and display settings. Moving
-objects and saving level edits still need an editor UI.
+This older research capture shows saved camera and display settings. The public
+[level editor](docs/guides/LEVEL-EDITOR.md) now supports object editing and project files.
 
-These are research prototypes. They are not included in the public builder yet.
+Minimap and HUD changes remain research prototypes.
 
 | Feature | Status |
 | --- | --- |
-| Level viewer | Private prototype with textured terrain, props, and rough animal previews |
-| Level editing | Command-line spawn edits can produce a ROM and IPS patch; editor UI and in-game verification of the edited build are still needed |
+| Level viewer | Public local-ROM viewer with textured terrain, props, and rough animal previews |
+| Level editing | Public object editor with project files and ROM/IPS builds; edited builds still need their own in-game verification |
 | Minimap | In-game prototype checked on Level 1; other levels and patch combinations need testing |
 | HUD texture changes | Restyled HUD checked in a patched ROM; public editing controls still needed |
-| Play in the browser | Planned; emulator integration and game compatibility need testing |
+| Play in the browser | Experimental launcher and Build & Play implemented; game compatibility and performance still need testing |
 
 | Minimap prototype | HUD texture prototype |
 | --- | --- |
