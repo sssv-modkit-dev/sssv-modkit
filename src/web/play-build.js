@@ -98,6 +98,30 @@
   $('b-ips').addEventListener('click', () => state.result && download(state.result.ips, 'sssv-patch.ips'));
   $('b-out').addEventListener('click', () => state.result && download(state.result.rom, 'sssv-patched.z64'));
 
+  // After a handoff, grey out a file picker the editor already filled and show what was loaded, with a Replace button
+  // that re-enables the picker. Built with DOM nodes (no innerHTML): names come from the other window.
+  function lockInput(id, name) {
+    const input = $(id);
+    if (!input) return;
+    let chip = $(id + '-loaded');
+    if (!name) { input.disabled = false; input.style.opacity = ''; if (chip) chip.remove(); return; }
+    input.disabled = true; input.style.opacity = '.45';
+    if (!chip) {
+      chip = document.createElement('span'); chip.id = id + '-loaded'; chip.className = 'loaded';
+      chip.style.cssText = 'display:inline-flex;gap:8px;align-items:center;margin-left:8px;color:#b8e0a8';
+      input.insertAdjacentElement('afterend', chip);
+    }
+    chip.textContent = '';
+    const label = document.createElement('span'); label.textContent = 'Loaded: ' + name;
+    const again = document.createElement('button'); again.type = 'button'; again.textContent = 'Replace';
+    again.addEventListener('click', () => {
+      lockInput(id, null);
+      if (id === 'b-rom') { const setup = $('setup'); if (setup) { setup.disabled = false; setup.style.opacity = ''; setup.title = ''; } }
+      input.value = ''; input.click();
+    });
+    chip.append(label, ' ', again);
+  }
+
   // Handoff from level-editor.html / model-editor.html (handoff.js). JSON arrives as a parsed object or text; the ROM, if the
   // editor had one loaded, as a Blob or ArrayBuffer. Anything malformed is ignored.
   const isDocument = v => (typeof v === 'string' && v.length > 0 && v.length <= 8e6) || (!!v && typeof v === 'object' && !Array.isArray(v) && !isBlobLike(v));
@@ -121,6 +145,11 @@
     received.hidden = false;
     received.textContent = 'Received from ' + source + ': ' + [level && 'level edits', parts && 'Parts config', rom && 'its loaded ROM'].filter(Boolean).join(', ') + '.';
     status(state.rom ? describeInputs() + '. Press Build & Play.' : 'Now choose your ROM, then press Build & Play.');
+    lockInput('b-rom', rom && state.romName);
+    lockInput('b-level', level && state.levelName);
+    lockInput('b-parts', parts && state.partsName);
+    const setup = $('setup');
+    if (setup && rom) { setup.disabled = true; setup.style.opacity = '.5'; setup.title = 'The ROM came from ' + source + '; Build & Play starts it.'; }
     update();
     const fieldset = $('build');
     if (fieldset && fieldset.scrollIntoView) fieldset.scrollIntoView({ block: 'start' });
