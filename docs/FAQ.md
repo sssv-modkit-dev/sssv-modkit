@@ -5,9 +5,9 @@
 No. sssv-modkit is not affiliated with, endorsed by or part of any SSSV decompilation
 or recompilation project.
 
-For transparency: early prototypes (2026-11-04) read the animal C source files
-(animals.c and related files) from a public community decompilation, to find where
-each animal's display lists are drawn. Since 2026-11-05 the animal table is built
+For transparency: early prototypes (2026-11-04) read files from a public community decompilation: the animal C
+source (animals.c and related files), to find where each animal's display lists are
+drawn, and animals.h, for the list of animal ID numbers and names. Since 2026-11-05 the animal table is built
 from your ROM alone (`src/animal_table.py --from-rom`). The current tools need no
 decompilation files, and none ship with this project. Some identifiers keep that
 address-based style (for example `D_04000420_C7E50`: segment address plus ROM offset)
