@@ -10,13 +10,13 @@ with tempfile.TemporaryDirectory() as directory:
     temp = Path(directory)
     # A private-input canary must never be read, even if present in cwd.
     (temp / 'animal_table.json').write_text('PRIVATE_INPUT_CANARY: invalid JSON')
-    output = temp / 'model_editor.html'
+    output = temp / 'model-editor.html'
     command = [sys.executable, str(ROOT / 'src/build_viewer.py'), '--public', '--out', str(output)]
     subprocess.run(command, cwd=temp, check=True, capture_output=True)
     assert output.is_file()
     redirect = (temp / 'parts_lab.html').read_text(encoding='utf-8')
-    assert '<meta http-equiv="refresh" content="0; url=model_editor.html">' in redirect
-    assert '<link rel="canonical" href="model_editor.html">' in redirect
+    assert '<meta http-equiv="refresh" content="0; url=model-editor.html">' in redirect
+    assert '<link rel="canonical" href="model-editor.html">' in redirect
     redirect_script = redirect.split('<script>')[1].split('</script>')[0]
     subprocess.run(['node', '-e', """
 const vm = require('node:vm');
@@ -24,7 +24,7 @@ const assert = require('node:assert/strict');
 for (const [search, hash] of [['', ''], ['?demo=fox&color=blue', '#pose=2'], ['', '#shared'], ['?x=%23%26', '']]) {
     let target;
     vm.runInNewContext(process.argv[1], {location: {search, hash, replace: value => {target = value;}}});
-    assert.equal(target, 'model_editor.html' + search + hash);
+    assert.equal(target, 'model-editor.html' + search + hash);
 }
 """, redirect_script], check=True, capture_output=True)
     assert (temp / 'play.html').is_file() and (temp / 'play.js').is_file()
@@ -32,8 +32,22 @@ for (const [search, hash] of [['', ''], ['?demo=fox&color=blue', '#pose=2'], [''
         assert (temp / asset).is_file(), asset
     for module in ('web_build.py', 'build_levels.py', 'make_animal_mods.py', 'animal_rom.py', 'romio.py'):
         assert (temp / 'py' / module).is_file(), module
-    assert (temp/'levels.html').is_file() and (temp/'index.html').is_file()
-    assert b'model_editor.html' in (temp/'index.html').read_bytes()
+    assert (temp/'level-editor.html').is_file() and (temp/'index.html').is_file()
+    level_redirect = (temp / 'levels.html').read_text(encoding='utf-8')
+    assert '<meta http-equiv="refresh" content="0; url=level-editor.html">' in level_redirect
+    assert '<link rel="canonical" href="level-editor.html">' in level_redirect
+    level_redirect_script = level_redirect.split('<script>')[1].split('</script>')[0]
+    subprocess.run(['node', '-e', """
+const vm = require('node:vm');
+const assert = require('node:assert/strict');
+for (const [search, hash] of [['', ''], ['?rom=1&x=%23%26', '#stage=2'], ['', '#shared'], ['?rom=1', '']]) {
+    let target;
+    vm.runInNewContext(process.argv[1], {location: {search, hash, replace: value => {target = value;}}});
+    assert.equal(target, 'level-editor.html' + search + hash);
+}
+""", level_redirect_script], check=True, capture_output=True)
+    assert b'level-editor.html' in (temp/'index.html').read_bytes()
+    assert b'model-editor.html' in (temp/'index.html').read_bytes()
     for asset in ('rom.js','selection.js','palette.js','gallery.js','loader.js','runtime.js','levels.css'):
         assert (temp/'levels'/asset).is_file()
     for asset in ('level-4.json','animals.json','heads/dog.png','heads/sheep.png','heads/bear.png'):

@@ -49,7 +49,7 @@ assert heads == ['dog.png', 'fox.png', 'seagull.png', 'sheep.png'], heads
 for p in (DEMO / 'heads').glob('*.png'):
     assert p.read_bytes()[:8] == b'\x89PNG\r\n\x1a\n' and p.stat().st_size < 10_000
 
-html = (ROOT / 'src/web/levels.html').read_text(encoding='utf-8')
+html = (ROOT / 'src/web/level-editor.html').read_text(encoding='utf-8')
 assert 'id="gallery"' in html and 'gallery.js' in html and '<select id="lv" hidden' in html
 assert 'level-rom' in html, 'local ROM chooser must remain'
 

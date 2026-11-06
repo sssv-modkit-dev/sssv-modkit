@@ -6,14 +6,14 @@ from pathlib import Path
 here=Path(__file__).resolve().parent
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('table',nargs='?',type=Path,help='animal table JSON (default: search locally)')
-parser.add_argument('output',nargs='?',type=Path,help='output HTML (default: viewers/parts_viewer.html; public: site/dist/model_editor.html)')
+parser.add_argument('output',nargs='?',type=Path,help='output HTML (default: viewers/parts_viewer.html; public: site/dist/model-editor.html)')
 parser.add_argument('--animals-dir',type=Path,help='generate the table first from external animal C source files; requires a local ROM')
 parser.add_argument('--public',action='store_true',help='Build original demos only; never read a ROM or animal table')
 parser.add_argument('--out',type=Path,help='Override output HTML path')
 parser.add_argument('--labels',type=Path,help='Embed a private sssv-viewer-labels-v1 part-name file (never used in public builds)')
 args=parser.parse_args()
 if args.public and (args.table or args.animals_dir or args.labels): parser.error('--public rejects private table/source/label inputs; use --out for output')
-out=args.out or args.output or here.parent/('site/dist/model_editor.html' if args.public else 'viewers/parts_viewer.html')
+out=args.out or args.output or here.parent/('site/dist/model-editor.html' if args.public else 'viewers/parts_viewer.html')
 if args.public:
     t={}
 else:
@@ -75,7 +75,7 @@ else:
 for marker,value in [('/*VIEWER_CSS*/',css),('/*VIEWER_JS*/',js),('/*VIEWER_ICON*/',icon)]:
     if marker not in html:raise SystemExit('missing template marker '+marker)
     html=html.replace(marker,value)
-html=html.replace('<!--PUBLIC_NAV-->', '<nav class="panel" aria-label="Modkit"><a href="index.html">Home</a> · <a href="model_editor.html" aria-current="page">Model Editor</a> · <a href="levels.html">Levels</a> · <a href="play.html">Play your ROM</a></nav>' if args.public else '')
+html=html.replace('<!--PUBLIC_NAV-->', '<nav class="panel" aria-label="Modkit"><a href="index.html">Home</a> Â· <a href="model-editor.html" aria-current="page">Model Editor</a> Â· <a href="level-editor.html">Level Editor</a> Â· <a href="play.html">Play your ROM</a></nav>' if args.public else '')
 out.parent.mkdir(parents=True,exist_ok=True)
 out.write_text(html,encoding='utf-8')
 print(('Public Model Editor: 8 demo models (bundled), no ROM read' if args.public else f'{len(T)} animals, {sum(len(v["p"]) for v in T.values())} parts')+f' -> {out}')
@@ -92,7 +92,8 @@ if args.public:
     for name in modules:
         (out.parent/'py'/name).write_bytes((here/name).read_bytes())
 
-    (out.parent/'levels.html').write_bytes((here/'web/levels.html').read_bytes())
+    (out.parent/'level-editor.html').write_bytes((here/'web/level-editor.html').read_bytes())
+    (out.parent/'levels.html').write_bytes((here/'web/level-editor-redirect.html').read_bytes())
     levels_out=out.parent/'levels'
     levels_out.mkdir(exist_ok=True)
     for name in ('levels.css','rom.js','selection.js','palette.js','gallery.js','loader.js'):

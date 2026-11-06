@@ -1,6 +1,6 @@
 # Model Editor
 
-[Open Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/model_editor.html)
+[Open Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/model-editor.html)
 
 Preview animal parts, experiment with their colours and shapes, and save edits
 for a ROM build. The public demo includes five bundled animals with captured
@@ -33,7 +33,7 @@ Existing geometry edits preserve vertex and triangle counts. Importing entirely
 new models or rigs is not implemented. Preview appearance still needs checking
 in the game, particularly deformation coverage and shading.
 
-The site also includes a [level editor](LEVEL-EDITOR.md) and experimental
+The site also includes a [Level Editor](LEVEL-EDITOR.md) and experimental
 [browser play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html).
 Game compatibility and performance still need direct testing.
 
