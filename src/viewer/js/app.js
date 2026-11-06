@@ -191,17 +191,12 @@ const sources=gallery?galleryData.flatMap((A,ai)=>A.parts.map(P=>({P,offset:gall
 for(const S of (assembled&&!gallery&&poseOk()?asmSources():sources)){const P=S.P,E=gallery?null:mesh[P.sym],DF=!gallery&&deformOn?deformFor(P,E):null,of=S.local||[0,0,0],T=v=>{let w=applyMesh(v,E,P.bb);if(DF)w=deformPoint(DF,v,w);return S.xf?S.xf(w):w.map((x,k)=>(x+of[k])*(S.scale||1)+S.offset[k])};
 for(const t0 of P.tris){const ord=S.flip?[0,2,1]:[0,1,2],t={c:t0.c,v:ord.map(i=>T(t0.v[i]))};if(!gallery)pickTris.push({v:t.v,sym:P.sym});const o=t.c<0?'808080FF':P.cols[t.c].rgba,col=t.c<0?[.5,.5,.5]:hex2(gallery?o:(map[o]||o)),[a,b,c]=t.v;
 let n=[(b[1]-a[1])*(c[2]-a[2])-(b[2]-a[2])*(c[1]-a[1]),(b[2]-a[2])*(c[0]-a[0])-(b[0]-a[0])*(c[2]-a[2]),(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])];
-const l=Math.hypot(...n)||1;n=n.map(x=>x/l);if(!gallery&&hoverSym===P.sym)col.splice(0,3,...col.map(v=>Math.min(1,v*.55+.45)));const vcol=t.c<0&&useVC&&hoverSym!==P.sym&&Array.isArray(t0.v[0].c);for(const [i,v] of t.v.entries()){d.push(...v,...(vcol?t0.v[ord[i]].c:col),...n);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],v[k]);mx[k]=Math.max(mx[k],v[k])}}}}
+const l=Math.hypot(...n)||1;n=n.map(x=>x/l);if(!gallery&&(hoverSym===P.sym||selectedSym===P.sym))col.splice(0,3,...col.map(v=>Math.min(1,v*.55+.45)));const vcol=t.c<0&&!map['808080FF']&&useVC&&hoverSym!==P.sym&&selectedSym!==P.sym&&Array.isArray(t0.v[0].c);for(const [i,v] of t.v.entries()){d.push(...v,...(vcol?t0.v[ord[i]].c:col),...n);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],v[k]);mx[k]=Math.max(mx[k],v[k])}}}}
 nv=d.length/9;gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(d),gl.STATIC_DRAW);
 sceneBounds=nv?[mn,mx]:null;if(nv)sceneRadius=Math.max(1,Math.hypot(...mx.map((v,k)=>(v-mn[k])/2)));if(fit)frameCamera();need();updateFloatingLabels()}
 function ui(){const L=$('parts');L.innerHTML='';if(gallery){$('animal-field').style.display='none';$('variant-field').style.display='none';$('edit-side').classList.add('gallery-hidden');$('rom-panel').style.display='none';$('gallery-action').style.margin='8px 0';$('parts-panel').style.display='none';$('palette-panel').style.display='none';$('vc').parentElement.parentElement.style.display='none';$('info').style.display='none';$('mesh').style.display='none';$('actions').style.display='none';return}else{$('animal-field').style.display='';$('variant-field').style.display='';$('edit-side').classList.remove('gallery-hidden');$('rom-panel').style.display='';$('parts-panel').style.display='';$('palette-panel').style.display='';$('vc').parentElement.parentElement.style.display='';$('info').style.display='';$('mesh').style.display='';$('actions').style.display='flex'}
 const mk=(t,on,f)=>{const r=document.createElement('button');r.type='button';r.className='row'+(on?' on':'');r.setAttribute('aria-pressed',String(on));r.innerHTML='<span>'+t+'</span>';r.onclick=f;L.appendChild(r)};
-const modeTitle=document.createElement('div');modeTitle.className='parts-section-title';modeTitle.textContent='DISPLAY MODES';L.appendChild(modeTitle);
-mk('▦  Parts sheet (exploded grid)',sheet,()=>{assembled=false;sheet=!sheet;all=false;if(sheet)SH=sheetLayout(visibleParts());ui();rebuild(true);info()});
-if(!demoMode)mk('◈  All parts overlaid (shared origin)',all,()=>{assembled=false;all=!all;sheet=false;ui();rebuild(true);info()});
-mk(demoMode?'◉  Assembled creature':'◉  Assembled (needs pose JSON)',demoMode?all||assembled&&poseOk():assembled&&poseOk(),()=>{if(demoMode){assembled=poseOk();all=!assembled;sheet=false;ui();rebuild(true);info();return}if(!poseOk()){poseIn.click();return}assembled=!assembled;all=false;sheet=false;ui();rebuild(true);info()});
-const hasDef=Object.keys(deform).length;mk('\u25B3  Deform preview: '+(deformOn?'ON':hasDef?'off':demoMode?'use Bend / Twist':'load a config...')+(hasDef&&!demoMode?'  (shift+click = load another)':''),deformOn,e=>{if(demoMode&&!hasDef)return;if(!demoMode&&(e.shiftKey||!hasDef)){defIn.click();return}deformOn=!deformOn;ui();rebuild(false);info()});
-const partsTitle=document.createElement('div');partsTitle.className='parts-section-title';partsTitle.textContent='INDIVIDUAL PARTS';L.appendChild(partsTitle);
+
 cur.p.forEach((p,i)=>{
   if(variant&&!(p.v||[]).includes(variant))return;
   mk((partLabel(name,p.s)?labelHTML(partLabel(name,p.s))+' · ':'')+(demoMode?p.s+' · '+parsed[i].tris.length+' triangles':p.r.toString(16).toUpperCase()+' &nbsp;'+parsed[i].tris.length+' tris &nbsp;j '+p.j)+
@@ -210,13 +205,13 @@ cur.p.forEach((p,i)=>{
     !all&&!sheet&&i==sel,
     ()=>{rememberView();assembled=false;sel=i;all=false;sheet=false;ui();rebuild(true);info()});
 });
-const pal=[...new Set(parsed.flatMap(P=>P.cols.map(c=>c.rgba)))],D=$('pal');D.innerHTML='';
+const pal=[...new Set(parsed.flatMap(P=>[...P.cols.map(c=>c.rgba),...(noOwnColour(P)?['808080FF']:[])]))],D=$('pal');D.innerHTML='';
 for(const o of pal){const r=document.createElement('div');r.className='row';const cur2=map[o]||o;
 r.innerHTML='<div class="sw" style="background:#'+o.slice(0,6)+'"></div><span>'+colourName(o)+' (Original)<br>#'+o.slice(0,6)+(cur2!==o?' → #'+cur2.slice(0,6):'')+'</span>';
 const inp=document.createElement('input');inp.type='color';inp.value='#'+cur2.slice(0,6).toLowerCase();
 inp.oninput=()=>{const n=inp.value.slice(1).toUpperCase()+o.slice(6);if(n==o)delete map[o];else map[o]=n;rebuild(false)};r.appendChild(inp);D.appendChild(r)}}
 function meshUI(){const D=$('mesh');D.innerHTML='';if(gallery)return;const P=parsed[sel];if(all||sheet||!P){D.innerHTML='<h4>Mesh editing</h4><div class="mut">Select an individual part below to edit its scale and position. Choose a part row to enter single-part mode.</div>';return}const sym=cur.p[sel].s,E=mesh[sym]||{s:[1,1,1],m:[0,0,0],o:false};
-D.innerHTML='<h4>Mesh edit · '+sym+'</h4><div class="mut">Scale is logarithmic, so 1× sits in the middle. Movement is in the part’s local axes. Changes export as vertex edits.</div>';
+D.innerHTML='<h4>'+labelHTML(sym)+(partLabel(name,sym)?' · '+labelHTML(partLabel(name,sym)):'')+'</h4>';const reset=document.createElement('button');reset.textContent='Reset';reset.onclick=()=>{delete mesh[sym];delete deform[sym];deformCache.clear();rebuild(false);info()};D.appendChild(reset);
 const axes=['X','Y','Z'];
 for(const [lab,key] of [['Scale','s'],['Move','m']]){const group=document.createElement('div');group.className='mesh-group';group.innerHTML='<div class="mesh-group-title">'+lab+'</div>';
 [0,1,2].forEach(k=>{const row=document.createElement('div');row.className='axis-edit';const tag=document.createElement('span');tag.className='axis-tag '+axes[k].toLowerCase();tag.textContent=axes[k];const i=document.createElement('input');i.type='range';const val=document.createElement('span');val.className='axis-value';
@@ -224,7 +219,7 @@ if(key==='s'){i.min='-100';i.max='100';i.step='1';i.value=String(Math.round(Math
 i.setAttribute('aria-label',lab+' '+axes[k]);i.oninput=()=>{const e=mesh[sym]||(mesh[sym]={s:[1,1,1],m:[0,0,0],o:false});if(key==='s'){e.s[k]=Math.pow(10,Number(i.value)/100);val.textContent=e.s[k].toFixed(2)+'×'}else{e.m[k]=Number(i.value);val.textContent=String(e.m[k])}rebuild(false)};row.append(tag,i,val);group.appendChild(row)});D.appendChild(group)}
 const l=document.createElement('label');l.innerHTML='<input type="checkbox"> Scale about bone origin (0,0,0), useful for parts sharing a bone';l.firstChild.checked=!!E.o;
 l.firstChild.onchange=()=>{(mesh[sym]||(mesh[sym]={s:[1,1,1],m:[0,0,0],o:false})).o=l.firstChild.checked;rebuild(false)};D.appendChild(l)}
-function info(){meshUI();if(gallery){$('info').textContent='Gallery mode: each animal is shown as an exploded parts sheet. These are browsing layouts, not assembled animals.';return}const P=parsed[sel];$('info').innerHTML=all||sheet||!P?'':'Part '+cur.p[sel].s+(noOwnColour(P)?'<br><b>No prim colour</b>: triangles without one use the mesh vertex colours (toggle in the side panel)':'')+'<br>'+P.cols.map(c=>c.rgba+' @'+c.rom.toString(16).toUpperCase()+(map[c.rgba]?' &rarr; '+map[c.rgba]:'')).join('<br>')}
+function info(){meshUI();$('info').textContent=''}
 function buildGallery(){
   galleryData=[];galleryLayout=[];
   for(const [animal,A] of Object.entries(TABLE)){
@@ -243,8 +238,8 @@ function buildGallery(){
   const L=$('gallery-list');L.innerHTML='';galleryData.forEach((A,i)=>{const r=document.createElement('div');r.className='row';r.innerHTML='<span>'+A.name.charAt(0).toUpperCase()+A.name.slice(1)+' <small>('+A.parts.length+' parts)</small></span>';r.onclick=()=>{setGallery(false);pick(A.name)};L.appendChild(r);const secs=TABLE[A.name].s||[];for(const sec of secs){const sub=document.createElement('div');sub.className='row variant-item';sub.textContent='↳ '+sec.replaceAll('_',' ');sub.onclick=()=>{setGallery(false);pick(A.name);$('variant').value=sec;$('variant').onchange()};L.appendChild(sub)}});
 }
 function animalEmoji(n){const x=n.toLowerCase();for(const [key,emoji] of [['bear','🐻'],['dog','🐕'],['fox','🦊'],['mouse','🐭'],['rat','🐀'],['penguin','🐧'],['elephant','🐘'],['lion','🦁'],['sheep','🐑'],['camel','🐪'],['turtle','🐢'],['bird','🐦'],['frog','🐸'],['rabbit','🐇'],['hippo','🦛'],['gorilla','🦍'],['fish','🐟'],['hyena','🐕'],['vulture','🦅']])if(x.includes(key))return emoji;return '🐾'}
-function setGallery(on){returnMode=null;hoverSym=null;$('back-to-sheet').hidden=true;gallery=on;$('gallery-toggle').textContent=gallery?'← RETURN TO EDITOR':'🖼️ ALL ANIMALS GALLERY';$('gallery-list').style.display=gallery?'block':'none';$('variant').disabled=gallery;$('an').disabled=gallery;$('animal-label').firstChild.textContent=gallery?'Animal Gallery':name.charAt(0).toUpperCase()+name.slice(1);$('variant-label').textContent=gallery?galleryData.length+' animals · exploded parts sheets':(variant||'All Variants');ui();info();rebuild(true)}
-function pick(n){returnMode=null;hoverSym=null;$('back-to-sheet').hidden=true;gallery=false;$('gallery-toggle').textContent='🖼️ ALL ANIMALS GALLERY';$('gallery-list').style.display='none';$('variant').disabled=false;$('an').disabled=false;name=n;$('animal-label').firstChild.textContent=n.charAt(0).toUpperCase()+n.slice(1);$('variant-label').textContent='All Variants';cur=TABLE[n];bases={};for(const k in cur.b)bases[k]=parseInt(cur.b[k],16);
+function setGallery(on){returnMode=null;hoverSym=null;$('back-to-sheet').hidden=true;gallery=on;$('gallery-toggle').textContent=gallery?'← RETURN TO EDITOR':'Animals contact sheet';$('gallery-list').style.display=gallery?'block':'none';$('variant').disabled=gallery;$('an').disabled=gallery;$('animal-label').firstChild.textContent=gallery?'Animals contact sheet':name.charAt(0).toUpperCase()+name.slice(1);$('variant-label').textContent=gallery?galleryData.length+' animals · exploded parts sheets':(variant||'All Variants');ui();info();rebuild(true)}
+function pick(n){if(cur)modelEdits.put((demoMode?'demo:':'rom:')+name,{mesh,map,deform,deformOn});selectedSym=null;returnMode=null;hoverSym=null;$('back-to-sheet').hidden=true;gallery=false;$('gallery-toggle').textContent='Animals contact sheet';$('gallery-list').style.display='none';$('variant').disabled=false;$('an').disabled=false;name=n;$('animal-label').firstChild.textContent=n.charAt(0).toUpperCase()+n.slice(1);$('variant-label').textContent='All Variants';cur=TABLE[n];bases={};for(const k in cur.b)bases[k]=parseInt(cur.b[k],16);
 parsed=cur.p.map(p=>Object.assign(
   readPart(p,bases),
   {sym:p.s,sections:p.v||[],textures:p.t||[]}
@@ -264,7 +259,7 @@ V.onchange=()=>{
   ui();
   rebuild(true);
   info();
-};map={};mesh={};deform={};deformOn=false;deformCache.clear();if(demoMode)pose=BUNDLED_POSES[n]||null;assembled=demoMode&&poseOk();sel=0;all=demoMode&&!BUNDLED_ANIMALS.has(n);sheet=!all&&!assembled;SH=sheetLayout(visibleParts());$('an').value=n;ui();rebuild(true);info()}
+};const saved=modelEdits.get((demoMode?'demo:':'rom:')+n);map=saved.map||{};mesh=saved.mesh||{};deform=saved.deform||{};deformOn=!!saved.deformOn;deformCache.clear();if(demoMode)pose=BUNDLED_POSES[n]||null;assembled=demoMode&&poseOk();sel=0;all=demoMode&&!BUNDLED_ANIMALS.has(n);sheet=!all&&!assembled;SH=sheetLayout(visibleParts());$('an').value=n;buildDemoPicker();ui();rebuild(true);info()}
 const ROM_DB='sssv-modkit-viewer';
 function openRomDB(){return new Promise((resolve,reject)=>{
   if(!('indexedDB' in window)){reject(new Error('IndexedDB unavailable'));return}
@@ -364,7 +359,7 @@ function pickPart(clientX,clientY){
     const z=u*a[2]+v*b[2]+(1-u-v)*c[2];if(z<depth){depth=z;best=t.sym}
   }return best;
 }
-function inspectPartAt(x,y){const sym=pickPart(x,y);if(!sym)return;selectedSym=sym;const el=$('part-inspector');el.hidden=false;$('part-symbol').textContent=sym;$('part-name').value=partLabel(name,sym);el.style.left='auto';el.style.right='12px';}
+function inspectPartAt(x,y){const sym=pickPart(x,y);if(!sym)return;selectedSym=sym;rebuild(false);const el=$('part-inspector');el.hidden=false;$('part-symbol').textContent=sym;$('part-name').value=partLabel(name,sym);el.style.left='auto';el.style.right='12px';}
 $('part-name').oninput=e=>{if(!selectedSym)return;(partNames[name]||(partNames[name]={}))[selectedSym]=e.target.value;saveViewerPrefs();updateFloatingLabels();};
 function rememberView(){if(!gallery&&cur)returnMode={sheet,all,variant,sel}}
 function selectMeshAt(x,y){const sym=pickPart(x,y);if(!sym)return;const i=parsed.findIndex(P=>P.sym===sym);if(i<0)return;
@@ -382,7 +377,7 @@ function cameraView(view){
   frameCamera();
 }
 $('camera-reset').onclick=()=>cameraView('reset');
-$('camera-fit').onclick=frameCamera;
+
 for(const view of ['front','right','top'])$('camera-'+view).onclick=()=>cameraView(view);
 $('camera-in').onclick=()=>zoomCamera(-.2);
 $('camera-out').onclick=()=>zoomCamera(.2);
@@ -451,7 +446,7 @@ new ResizeObserver(need).observe(cv);addEventListener('resize',need);need();
 const held=new Set();let lastFrame=0;
 cv.tabIndex=0;
 cv.addEventListener('pointerdown',()=>cv.focus());
-cv.setAttribute('aria-label','3D viewport. Drag to orbit, Shift drag to pan, wheel to zoom. F frames the scene; Home resets the camera.');
+cv.setAttribute('aria-label','3D viewport. Drag to orbit, Shift drag to pan, wheel to zoom. Home resets the camera.');
 cv.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();
   if(e.ctrlKey||e.metaKey||e.altKey)return;

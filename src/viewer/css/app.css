@@ -130,3 +130,10 @@ a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,selec
 #demo-picker img,#demo-picker .ph{width:36px;height:36px;object-fit:contain;image-rendering:pixelated;border-radius:6px}
 #demo-picker .ph{display:grid;place-items:center;background:var(--pn);color:var(--ac);font-weight:700;font-size:15px}
 #demo-picker small{font-size:8px;color:var(--mut)}
+
+/* T028: navigation hierarchy and floating viewport controls. */
+#side{display:flex;flex-direction:column}.theme-dock{position:static;order:0}#demo-panel{order:0}#animal-field{display:none!important}
+#demo-picker{grid-template-columns:repeat(2,minmax(0,1fr))}#demo-actions,.demo-mode #demo-actions{display:grid;grid-template-columns:1fr 1fr}.examples-label{grid-column:1/-1;margin-top:8px}.demo-mode #demo-start{display:block}
+#view-settings{position:absolute;right:12px;top:70px;width:210px;max-height:40%;overflow:auto;z-index:4;background:var(--card);box-shadow:0 3px 12px #0002}#view-settings p{font-size:10px}#view-settings h4{margin:0 0 8px}
+@media(max-width:700px) and (orientation:portrait){body,body.left-collapsed,body.right-collapsed{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:60dvh 40dvh}#side,#edit-side{overflow:auto;min-width:0;border-top:2px solid var(--bd)}#side{border-radius:14px 0 0 0}#edit-side{border-radius:0 14px 0 0}button,select{min-height:40px}#view-settings{top:52px;right:6px;width:155px;max-height:28%;padding:6px}#view-settings p{display:none}#camera-tools{bottom:12px}#camera-tools button{min-height:32px}#demo-picker{grid-template-columns:1fr 1fr}}
+@media(max-height:550px) and (orientation:landscape){body{grid-template-columns:210px minmax(0,1fr) 210px;grid-template-rows:100dvh}#side{grid-column:1;grid-row:1}#view{grid-column:2;grid-row:1}#edit-side{grid-column:3;grid-row:1}#view-settings{top:50px;width:150px;max-height:30%}#view-settings p{display:none}button,select{min-height:32px}}

@@ -2,7 +2,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const models=fs.readFileSync('src/viewer/js/demo-models.js','utf8');
 const lab=fs.readFileSync('src/viewer/js/parts-lab.js','utf8').split('//#LAB-PURE-START')[1].split('//#LAB-PURE-END')[0];
-const context=vm.createContext({});vm.runInContext(models+'\n'+lab+'\nthis.api={models:PARTS_DEMOS,validateDemoPreset,normaliseLocalTable};',context);
+const context=vm.createContext({});vm.runInContext(models+'\n'+lab+'\nthis.api={models:PARTS_DEMOS,validateDemoPreset,normaliseLocalTable,editMemory,examplePart};',context);
 const {models:demo,validateDemoPreset:validate,normaliseLocalTable:table}=context.api;
 assert.equal(Object.keys(demo).length,3);
 for(const [name,m] of Object.entries(demo)){
@@ -24,3 +24,13 @@ assert.throws(()=>table({...synthetic,'<img onerror=alert(1)>':synthetic.synthet
 assert.throws(()=>table(JSON.parse('{"__proto__":{}}')));
 assert.throws(()=>table({synthetic:{...synthetic.synthetic,parts:[{ended:true,seg:4,symbol:'part',rom:-1}]}}));
 console.log('3 original models; demo preset round trips; invalid share/table inputs rejected.');
+
+const memory=context.api.editMemory(),edits={mesh:{head:{s:[1,2,1]}},map:{A:'B'},deform:{head:[{ops:[]}]}};
+memory.put('a',edits);edits.mesh.head.s[1]=9;memory.put('b',{mesh:{}});
+assert.equal(memory.get('a').mesh.head.s[1],2);const restored=memory.get('a');restored.mesh.head.s[1]=7;assert.equal(memory.get('a').mesh.head.s[1],2);
+assert.equal(JSON.stringify(memory.get('missing')),'{}');
+const candidates=[{sym:'head'},{sym:'tail'},{sym:'paw'}];
+assert.equal(context.api.examplePart(candidates,null,()=>.8).sym,'paw');
+assert.equal(context.api.examplePart(candidates,'tail',()=>0).sym,'tail');
+assert.equal(context.api.examplePart([],null,()=>0),undefined);
+console.log('Per-model edits isolated and restored; examples select a random part unless selected.');
