@@ -143,6 +143,9 @@ Full credits: TBD.
 Created and maintained by [sssv-modkit dev](https://github.com/sssv-modkit-dev).
 AI tools used: Anthropic and OpenAI coding tools, including Claude Code and OpenAI's Codex.
 
+Codex-assisted commits can include a `Co-authored-by` trailer to make tool
+attribution visible in the Git history.
+
 Contact: [sssv-modkit-dev@protonmail.me](mailto:sssv-modkit-dev@protonmail.me).
 
 ### License
