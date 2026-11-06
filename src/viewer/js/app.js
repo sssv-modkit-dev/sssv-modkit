@@ -199,7 +199,7 @@ const mk=(t,on,f)=>{const r=document.createElement('button');r.type='button';r.c
 const modeTitle=document.createElement('div');modeTitle.className='parts-section-title';modeTitle.textContent='DISPLAY MODES';L.appendChild(modeTitle);
 mk('▦  Parts sheet (exploded grid)',sheet,()=>{assembled=false;sheet=!sheet;all=false;if(sheet)SH=sheetLayout(visibleParts());ui();rebuild(true);info()});
 if(!demoMode)mk('◈  All parts overlaid (shared origin)',all,()=>{assembled=false;all=!all;sheet=false;ui();rebuild(true);info()});
-mk(demoMode?'◉  Assembled creature':'◉  Assembled (needs pose JSON)',demoMode?all:assembled&&poseOk(),()=>{if(demoMode){all=true;sheet=false;ui();rebuild(true);info();return}if(!poseOk()){poseIn.click();return}assembled=!assembled;all=false;sheet=false;ui();rebuild(true);info()});
+mk(demoMode?'◉  Assembled creature':'◉  Assembled (needs pose JSON)',demoMode?all||assembled&&poseOk():assembled&&poseOk(),()=>{if(demoMode){assembled=poseOk();all=!assembled;sheet=false;ui();rebuild(true);info();return}if(!poseOk()){poseIn.click();return}assembled=!assembled;all=false;sheet=false;ui();rebuild(true);info()});
 const hasDef=Object.keys(deform).length;mk('\u25B3  Deform preview: '+(deformOn?'ON':hasDef?'off':demoMode?'use Bend / Twist':'load a config...')+(hasDef&&!demoMode?'  (shift+click = load another)':''),deformOn,e=>{if(demoMode&&!hasDef)return;if(!demoMode&&(e.shiftKey||!hasDef)){defIn.click();return}deformOn=!deformOn;ui();rebuild(false);info()});
 const partsTitle=document.createElement('div');partsTitle.className='parts-section-title';partsTitle.textContent='INDIVIDUAL PARTS';L.appendChild(partsTitle);
 cur.p.forEach((p,i)=>{
@@ -264,7 +264,7 @@ V.onchange=()=>{
   ui();
   rebuild(true);
   info();
-};map={};mesh={};deform={};deformOn=false;deformCache.clear();assembled=false;sel=0;all=demoMode&&!BUNDLED_ANIMALS.has(n);sheet=!all;SH=sheetLayout(visibleParts());$('an').value=n;ui();rebuild(true);info()}
+};map={};mesh={};deform={};deformOn=false;deformCache.clear();if(demoMode)pose=BUNDLED_POSES[n]||null;assembled=demoMode&&poseOk();sel=0;all=demoMode&&!BUNDLED_ANIMALS.has(n);sheet=!all&&!assembled;SH=sheetLayout(visibleParts());$('an').value=n;ui();rebuild(true);info()}
 const ROM_DB='sssv-modkit-viewer';
 function openRomDB(){return new Promise((resolve,reject)=>{
   if(!('indexedDB' in window)){reject(new Error('IndexedDB unavailable'));return}

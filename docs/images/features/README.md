@@ -8,6 +8,7 @@ holders; it is not part of the project's CC0 dedication.
 | --- | --- | --- |
 | `parts-lab.jpg` | Current public-build Parts Lab, original wind-up robot demo and save controls, 2026-11-04 | Demo geometry, not an in-game animal |
 | `level-viewer-prototype.jpg` | Private level viewer with textured terrain and Save/Open view controls, 2026-11-04 | View settings only; level editing is not implemented in this UI |
+| `parts-lab-before-after.png` | Public-build Parts Lab, 2026-11-05: bundled bear, dog and fox assembled with their game-captured poses (top) and with share-link presets applied (bottom: new palettes, bear arms scaled 1.5x and bent, dog legs scaled, fox tail scaled) | Browser preview of edits, not an in-game capture |
 | `bear-deform-comparison.png` | Original bear at left, patched bear at right; existing deformation test, 2026-10-31 | Evidence for this bear build only; the effect is deliberately subtle |
 | `minimap-prototype.png` | Level 1 gameplay with the v2 minimap prototype | Other levels, hardware, and combination with the widescreen patch are unverified |
 | `hud-restyle-prototype.png` | Restyled HUD textures in a patched ROM, captured after 1800 frames | A research prototype, not a public builder feature |
@@ -20,5 +21,8 @@ fit the page.
 
 The two browser UI captures were resized proportionally from 1440 × 960 to
 1200 × 800 and saved as JPEGs. The complete interface remains visible.
+`parts-lab-before-after.png` is six headless-Chrome captures (1400 × 900 window) of
+the 3D view only, cropped to 800 × 720, scaled to 400 × 360 and tiled 3 × 2. Nothing
+was retouched. It still needs the owner's approval like the images above.
 The level viewer capture is documentation imagery only; its embedded game data
 and generated HTML remain private.

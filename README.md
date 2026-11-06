@@ -1,18 +1,20 @@
 # Space Station Silicon Valley (N64) - Modkit
-
 ![SSSV Modkit — Auburnish Ear Bear edition](docs/images/releases/auburnish-ear-bear-v3.png)
+<sup>Work In Progress // _last updated: 2026-11-06_</sup>
 
-## Welcome
-Welcome to the sssv-modkit public repository!
+***Welcome to the Space Station Silicon Valley (sssv) Modkit public repository!***  
 
-**WORK IN PROGRESS** (_last updated: 2026-11-05_)
+* **Quick directory:**
+  * Source code [`src/`](src/), example edits in [`configs/`](configs/),
+guides in [`docs/`](docs/README.md). For code checks
+[development](docs/DEVELOPMENT.md).
 
 ## Contents
 
 - [What is this?](#what-is-this)
+  - [Is it a **de**compilation / **re**compilation?](#is-this-a-decompilation--recompilation)
+  - [Was it made with AI?](#was-this-made-using-ai)
 - [How do I play this?](#how-do-i-play-this)
-- [Is this a decompilation / recompilation?](#is-this-a-decompilation--recompilation)
-- [Was this made using AI?](#was-this-made-using-ai)
 - [Features](#features)
 - [Credits](#credits)
 - [License](#license)
@@ -21,17 +23,21 @@ Welcome to the sssv-modkit public repository!
 
 ### What is this?
 
-This is a fan-made modding project for Space Station Silicon Valley on the Nintendo 64.
-It provides:
+<details open>
+<summary>❓ Answer:</summary>
+A fan-made modding project for Space Station Silicon Valley (Nintendo 64, orginal release: 1998).
 
-- tools to recolor and modify animals, previewed in your browser;
-- a level editor;
-- ROM patch scripts that turn your edits into a patch for your own ROM.
+It consists of:
+1. 🛠 Tools to modify & recolor the models 
+2. 🗺 A level editor 
+3. ⚙ Scripts to build your own ROM patch mod for the game.</details>
 
-There is no finished mod campaign (yet) or full game download here (ever).
 
 ### How do I play this?
 
+<details open>
+<summary>🕹 Answer:</summary>
+  
 | What you want to do | Where | What you need |
 | --- | --- | --- |
 | Try out the tools | [Edit models: Parts Lab demo](https://sssv-modkit-dev.github.io/sssv-modkit/parts_lab.html) | Nothing; it opens with five bundled animals and three original demo creatures. |
@@ -45,31 +51,41 @@ and the local viewer needs a browser with WebGL. Playing a patched ROM depends o
 your N64 emulator and device. There is no standalone phone app or native PC
 version, and original hardware and most emulators have not been tested, so
 support is not guaranteed.
+</details>
 
-### Is this a decompilation / recompilation?
+#### Is this a decompilation / recompilation?
+
+
+<details open>
+<summary>👨‍💻 Answer</summary>
 
 No. This project makes **ROM patches**.
 
-| Approach | In one sentence |
+| Method | Summary |
 | --- | --- |
 | Decompilation | Works backwards from a compiled game to recreate its source code. |
 | Recompilation | Takes code for one system and builds it to run on another, such as an N64 game as a native PC application. |
 | ROM patch (this project) | Edits the original N64 ROM, without recreating the game's source or making a native PC port. |
 
-### Was this made using AI?
+</details>
 
+#### Was this made using AI?
+<details open>
+<summary>🤖 Answer</summary>
 Yes.
 
 Most of the code is AI-written or generated, with only minor tweaks such as
 renaming file paths done by the developer.
 
-Claude and OpenAI coding tools have been used throughout development.
+Anthropic and OpenAI coding tools have been used throughout development.
 For details, see [AI development details](docs/DEVELOPMENT-NOTES.md):
 
 - [What the AI tools did](docs/DEVELOPMENT-NOTES.md#what-the-ai-tools-did)
 - [What the Developer did](docs/DEVELOPMENT-NOTES.md#what-the-developer-did)
+</details>
 
-## Features
+
+### Features
 
 | Feature | Status |
 | --- | --- |
@@ -80,26 +96,20 @@ For details, see [AI development details](docs/DEVELOPMENT-NOTES.md):
 | Preview parts and import/export edit configs | Implemented in the browser viewer |
 | Try bundled and original demo creatures online | Implemented; no ROM needed |
 | Build an IPS patch and a patched ROM | Implemented, with ROM/version and conflicting-edit checks |
-| Import pose transforms in the viewer | Partial; assembly accuracy needs more checking |
+| Assemble animals from pose transforms | Implemented; the five bundled demo animals ship poses captured from the running game. Imported poses for other animals need their own checks |
 | Import entirely new character models or rigs | Not implemented |
 | Shuffle stages | Prototype only; cannot write a playable stage shuffle to the ROM |
 
-### Animal edits
+#### Animal edits
 
-![Original bear on the left and a bear with tapered, bent arms on the right](docs/images/features/bear-deform-comparison.png)
+![Bear, dog and fox in the Parts Lab: originals on the top row; recoloured, with bigger bear arms, thicker dog legs and a longer fox tail, on the bottom row](docs/images/features/parts-lab-before-after.png)
 
-Original on the left, edited ROM on the right. The bear's arms and shoulders are
-tapered and bent. This build was checked in game; each new edit still needs testing.
+Originals on top, edited below, as previewed in the online Parts Lab (no ROM
+needed). A ROM built from a bear arm edit was
+[checked in game](docs/images/features/bear-deform-comparison.png); each new edit
+still needs testing.
 
-### Parts Lab
-
-![Parts Lab showing the original wind-up robot demo and Save edits controls](docs/images/features/parts-lab.jpg)
-
-Preview parts, change their colours and shapes, and use **Save edits** to download
-a JSON file. **Open edits** loads it again. The online demo starts with original
-creatures; you can load your own game files locally.
-
-### In development
+#### In development
 
 ![Private level viewer showing textured terrain and Save view and Open view controls](docs/images/features/level-viewer-prototype.jpg)
 
@@ -128,16 +138,16 @@ See the [config guide](docs/guides/CONFIGS.md) for available edits and
 The [separate emulator tools](https://github.com/sssv-modkit-dev/sssv-modkit-automated-testing)
 can repeat button presses and take screenshots for testing.
 
-## Credits
+### Credits
 
 Full credits: TBD.
 
 Created and maintained by [sssv-modkit dev](https://github.com/sssv-modkit-dev).
-AI tools used: Claude and OpenAI coding tools.
+AI tools used: Anthropic and OpenAI coding tools, including Claude Code and OpenAI's Codex.
 
 Contact: [sssv-modkit-dev@protonmail.me](mailto:sssv-modkit-dev@protonmail.me).
 
-## License
+### License
 
 Original contributions are dedicated under [CC0 1.0 Universal](LICENSE).
 Space Station Silicon Valley and third-party material remain the property of
@@ -145,9 +155,5 @@ their respective rights holders. No ROMs or extracted game assets are included.
 See [NOTICE.md](NOTICE.md) for details.
 
 ---
-
-Source code is in [`src/`](src/), example edits in [`configs/`](configs/), and
-guides in [`docs/`](docs/README.md). For code checks, see
-[development](docs/DEVELOPMENT.md).
 
 <p align="right"><sub>Made by FM</sub></p>

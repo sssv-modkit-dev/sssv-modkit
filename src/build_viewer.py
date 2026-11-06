@@ -59,6 +59,9 @@ if args.public:
     # Real animals bundled for the public demo (no ROM read): appended after the three original creatures.
     bundled=json.loads((here/'web/demo/animals.json').read_text(encoding='utf-8'))['models']
     demo_animals='\nObject.assign(PARTS_DEMOS,'+json.dumps(bundled,separators=(',',':')).replace('<',r'\u003c')+');\nfor(const n of '+json.dumps(list(bundled))+')BUNDLED_ANIMALS.add(n);\n'
+    # Their assembly poses (part transforms captured from the running game), keyed by animal name.
+    poses={n:json.loads((here/'web/demo/poses'/(n+'.json')).read_text(encoding='utf-8')) for n in bundled if (here/'web/demo/poses'/(n+'.json')).is_file()}
+    demo_animals+='Object.assign(BUNDLED_POSES,'+json.dumps(poses,separators=(',',':')).replace('<',r'\u003c')+');\n'
 # Public builds also embed handoff.js so Build & Play can pass the config to play.html, which ships beside it.
 handoff=(here/'web/handoff.js').read_text(encoding='utf-8')+'\n' if args.public else ''
 js=handoff+(base/'js'/'demo-models.js').read_text(encoding='utf-8')+demo_animals+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')
