@@ -1,6 +1,6 @@
 //#LAB-PURE-START
 function validateDemoPreset(value){
-  if(!value||value.format!=='sssv-parts-lab-demo-v1'||!Object.hasOwn(PARTS_DEMOS,value.model))throw new Error('Not a Parts Lab demo preset.');
+  if(!value||value.format!=='sssv-parts-lab-demo-v1'||!Object.hasOwn(PARTS_DEMOS,value.model))throw new Error('Not a Model Editor demo preset.');
   const symbols=new Set(PARTS_DEMOS[value.model].p.map(p=>p.s));
   const vector=(a,lo,hi)=>Array.isArray(a)&&a.length===3&&a.every(n=>Number.isFinite(n)&&n>=lo&&n<=hi);
   const meshOut={},palette={},deformations={};
@@ -100,7 +100,7 @@ $('exp').onclick=()=>demoMode?downloadJSON(demoPreset(),name+'.parts-lab.json'):
 if(window.SSSVHandoff){$('build-play').hidden=false;$('build-play').onclick=()=>{
   const say=t=>{(demoMode?$('demo-status'):$('msg')).textContent=t};
   if(demoMode||!cur||!dv.byteLength){say('Build & Play needs a game config: open your animal table and US 1.0 ROM first. Demo presets are not ROM patches.');return}
-  try{SSSVHandoff.openPlay({parts:gameConfig(),partsName:name+'.json',rom:new Blob([dv.buffer]),romName:'ROM loaded in Parts Lab',source:'Parts Lab'});say('Opened Play with '+name+' and your loaded ROM. Press Build & Play there.')}
+  try{SSSVHandoff.openPlay({parts:gameConfig(),partsName:name+'.json',rom:new Blob([dv.buffer]),romName:'ROM loaded in Model Editor',source:'Model Editor'});say('Opened Play with '+name+' and your loaded ROM. Press Build & Play there.')}
   catch(e){say(e.message)}
 }}
 $('impf').onchange=async e=>{

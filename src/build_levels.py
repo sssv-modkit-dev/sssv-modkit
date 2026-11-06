@@ -116,7 +116,7 @@ def validate(document, stock):
         attachment = document.get('parts')
         if attachment is not None:
             if not isinstance(attachment, dict) or not isinstance(attachment.get('config'), dict):
-                raise ValueError('Invalid Parts Lab attachment')
+                raise ValueError('Invalid Model Editor attachment')
             parts = attachment['config']
             if parts.get('format') == 'sssv-parts-lab-demo-v1':
                 raise ValueError('Demo creatures are not production animal patch configs')
@@ -193,13 +193,13 @@ def patch(stock, edited):
 
 
 def build_parts(orig, base, parts, table, dry_run=False, log=print):
-    """Stack a Parts Lab config (dict) on a level build in process; table is a path or a loaded animal table.
+    """Stack a Model Editor config (dict) on a level build in process; table is a path or a loaded animal table.
     Prints the same report as make_animal_mods.py. Returns the patched ROM bytes, or None for a dry run."""
     import make_animal_mods as animals
     if not isinstance(table, dict):
         with open(animals.find_table(str(table)), encoding='utf-8') as handle:
             table = json.load(handle)
-    entries, _ = animals.config_entries(json.loads(json.dumps(parts)), 'Parts Lab attachment')
+    entries, _ = animals.config_entries(json.loads(json.dumps(parts)), 'Model Editor attachment')
     plan = animals.plan_edits(table, base, entries, log=log)
     for name in sorted({c['animal'] for _, c in entries if 'animal' in c}):
         touched = set(plan['touch'].get(name, ())) | {q['symbol'] for a2, q, m in plan['mesh'] + plan['deform'] if a2 == name}

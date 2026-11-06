@@ -1,12 +1,12 @@
-# Parts Lab
+# Model Editor
 
-[Open Parts Lab](https://sssv-modkit-dev.github.io/sssv-modkit/parts_lab.html)
+[Open Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/parts_lab.html)
 
 Preview animal parts, experiment with their colours and shapes, and save edits
 for a ROM build. The public demo includes five bundled animals with captured
 poses and three original creatures; you can explore it without supplying a ROM.
 
-![Parts Lab showing the wind-up robot demo and Save edits controls](../images/features/parts-lab.jpg)
+![Model Editor showing the wind-up robot demo and Save edits controls](../images/features/parts-lab.jpg)
 
 ## Try an edit
 

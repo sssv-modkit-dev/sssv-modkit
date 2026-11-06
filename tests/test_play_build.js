@@ -121,9 +121,9 @@ function fakeBuilder(outcome) {
 
   builder = fakeBuilder(built); p = panel(builder);
   const buffer = new Uint8Array(8192).buffer;
-  await p.send({ type: 'sssv-build', parts: { animal: 'bear', recolor: {} }, partsName: 'bear.json', rom: buffer, source: 'Parts Lab' });
-  assert.equal(p.el['b-received'].textContent, 'Received from Parts Lab: Parts config, its loaded ROM.');
-  assert.match(p.el['b-status'].textContent, /^ROM: ROM from Parts Lab · Parts: bear\.json\. Press Build & Play\.$/);
+  await p.send({ type: 'sssv-build', parts: { animal: 'bear', recolor: {} }, partsName: 'bear.json', rom: buffer, source: 'Model Editor' });
+  assert.equal(p.el['b-received'].textContent, 'Received from Model Editor: Parts config, its loaded ROM.');
+  assert.match(p.el['b-status'].textContent, /^ROM: ROM from Model Editor · Parts: bear\.json\. Press Build & Play\.$/);
   assert.equal(p.el['b-go'].disabled, false);
   await p.el['b-go'].listeners.click();
   assert.ok(builder.calls[0].rom instanceof p.FakeBlob);

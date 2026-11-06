@@ -1,4 +1,4 @@
-name: Deploy Parts Lab
+name: Deploy Model Editor
 on:
   workflow_dispatch:
   push:

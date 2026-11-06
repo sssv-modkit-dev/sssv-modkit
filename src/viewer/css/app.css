@@ -98,7 +98,7 @@ body.right-collapsed .workbench-row{display:flex!important}body.right-collapsed 
 #floating-labels span{pointer-events:auto;cursor:grab}#floating-labels span:active{cursor:grabbing}
 @media(max-width:700px){.theme-dock{position:static}#side{padding:8px}}
 
-/* Parts Lab: original-demo entry point, shared with the private ROM workbench. */
+/* Model Editor: original-demo entry point, shared with the private ROM workbench. */
 .lab-eyebrow{font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--ac)}
 #demo-panel{order:0;background:linear-gradient(135deg,var(--card),var(--ac-soft));padding:13px}
 #demo-panel p{font-size:12px;line-height:1.55;margin:8px 0}
