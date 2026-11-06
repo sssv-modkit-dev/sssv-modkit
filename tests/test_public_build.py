@@ -32,7 +32,21 @@ for (const [search, hash] of [['', ''], ['?demo=fox&color=blue', '#pose=2'], [''
         assert (temp / asset).is_file(), asset
     for module in ('web_build.py', 'build_levels.py', 'make_animal_mods.py', 'animal_rom.py', 'romio.py'):
         assert (temp / 'py' / module).is_file(), module
-    assert (temp/'levels.html').is_file() and (temp/'index.html').is_file()
+    assert (temp/'level-editor.html').is_file() and (temp/'index.html').is_file()
+    level_redirect = (temp / 'levels.html').read_text(encoding='utf-8')
+    assert '<meta http-equiv="refresh" content="0; url=level-editor.html">' in level_redirect
+    assert '<link rel="canonical" href="level-editor.html">' in level_redirect
+    level_redirect_script = level_redirect.split('<script>')[1].split('</script>')[0]
+    subprocess.run(['node', '-e', """
+const vm = require('node:vm');
+const assert = require('node:assert/strict');
+for (const [search, hash] of [['', ''], ['?rom=1&x=%23%26', '#stage=2'], ['', '#shared'], ['?rom=1', '']]) {
+    let target;
+    vm.runInNewContext(process.argv[1], {location: {search, hash, replace: value => {target = value;}}});
+    assert.equal(target, 'level-editor.html' + search + hash);
+}
+""", level_redirect_script], check=True, capture_output=True)
+    assert b'level-editor.html' in (temp/'index.html').read_bytes()
     assert b'model_editor.html' in (temp/'index.html').read_bytes()
     for asset in ('rom.js','selection.js','palette.js','gallery.js','loader.js','runtime.js','levels.css'):
         assert (temp/'levels'/asset).is_file()

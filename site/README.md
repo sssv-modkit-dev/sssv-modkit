@@ -129,16 +129,16 @@ the ROM plus a level project/diff and/or a Parts config, shows the worker's prog
 stages, starts the patched ROM in the emulator, and offers Download IPS and Download ROM.
 The build log is in a collapsible area. Wrong-ROM messages from the CLI get a hint added.
 Relocate and new animals are under "Advanced"; new animals are not game-verified.
-Levels and Model Editor (public build) have a Build & Play button. `handoff.js` opens
+Level Editor and Model Editor (public build) have a Build & Play button. `handoff.js` opens
 `play.html` with `window.open`, waits for its same-origin `sssv-play-ready`, then posts
 `{type: 'sssv-build', level?, parts?, levelName?, partsName?, rom?, romName?, source}` once.
 `rom` is the ROM already loaded on that page, sent as an in-memory Blob. If it is
 missing, the user picks the ROM on Play. Nothing is written to storage. The handoff needs
 http(s) (not `file://`) and is blocked if pop-ups are not allowed.
 
-## Levels
+## Level Editor
 
-The public build includes `levels.html` and the `levels/` source bundle. It opens the
+The public build includes `level-editor.html` and the `levels/` source bundle. It opens the
 bundled demo level (no ROM needed); the **Levels** button opens a gallery of level cards.
 For every level, use **Open local ROM** and choose
 your own stock or compatible modded US ROM; stage records, ground textures, and supported prop meshes

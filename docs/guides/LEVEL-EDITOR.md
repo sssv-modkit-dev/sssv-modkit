@@ -1,10 +1,10 @@
-# Level editor
+# Level Editor
 
-Open [Levels](https://sssv-modkit-dev.github.io/sssv-modkit/levels.html) and choose
+Open [Level Editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) and choose
 your stock US ROM or a compatible modded build. Big-endian `.z64`, byte-swapped `.v64`, and little-endian
 `.n64` files (8–16 MB) are normalized and checked for the US SSSV header and supported data layout. The page
 decodes all 36 stage slots locally. No ROM, mesh, texture, or extracted spawn table
-is included in the site, and Levels makes no upload requests.
+is included in the site, and Level Editor makes no upload requests.
 
 ## Select and edit
 

@@ -108,9 +108,9 @@ function fakeBuilder(outcome) {
     await p.send(bad);
   await p.send({ type: 'sssv-build', level: project }, 'https://evil.test');
   assert.equal(p.el['b-received'].hidden, true);
-  await p.send({ type: 'sssv-build', level: project, levelName: 'Levels project', source: 'Levels' });
+  await p.send({ type: 'sssv-build', level: project, levelName: 'Level Editor project', source: 'Level Editor' });
   assert.equal(p.el['b-received'].hidden, false);
-  assert.equal(p.el['b-received'].textContent, 'Received from Levels: level edits.');
+  assert.equal(p.el['b-received'].textContent, 'Received from Level Editor: level edits.');
   assert.match(p.el['b-status'].textContent, /choose your ROM/);
   assert.equal(p.el['b-go'].disabled, true);
   p.choose('b-rom', romFile);
@@ -141,7 +141,7 @@ function fakeBuilder(outcome) {
   vm.runInNewContext(fs.readFileSync('src/web/handoff.js', 'utf8'), ctx);
   const rom = { size: 1, slice() {} };
   assert.throws(() => host.SSSVHandoff.openPlay({}), /Nothing to build/);
-  host.SSSVHandoff.openPlay({ level: project, levelName: 'Levels project', rom, source: 'Levels', extra: 'dropped' });
+  host.SSSVHandoff.openPlay({ level: project, levelName: 'Level Editor project', rom, source: 'Level Editor', extra: 'dropped' });
   assert.deepEqual(opened, [['play.html', '_blank']]);
   const fire = (source, origin, data) => { for (const fn of Array.from(listeners)) fn({ source, origin, data }); };
   fire({}, ORIGIN, { type: 'sssv-play-ready' });            // another window
@@ -163,7 +163,7 @@ function fakeBuilder(outcome) {
   // End to end: what handoff.js posts is what play-build.js accepts.
   p = panel(fakeBuilder(built));
   await p.send(posted[0][0]);
-  assert.equal(p.el['b-received'].textContent, 'Received from Levels: level edits, its loaded ROM.');
+  assert.equal(p.el['b-received'].textContent, 'Received from Level Editor: level edits, its loaded ROM.');
   assert.equal(p.el['b-go'].disabled, false);
   console.log('Build panel wiring, progress, log, downloads, wrong-ROM hints, handoff validation and editor handoff passed.');
 })().catch(error => { console.error(error); process.exit(1); });

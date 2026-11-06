@@ -49,7 +49,7 @@ See [AI development details](DEVELOPMENT-NOTES.md).
 
 Local build tools run on a computer with Python. The browser site also offers
 Build & Play using Pyodide, alongside [Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/model_editor.html),
-the [level editor](https://sssv-modkit-dev.github.io/sssv-modkit/levels.html) and
+the [Level Editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) and
 [browser play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html).
 The viewer needs WebGL. You can try the online demos in your phone's browser,
 but mobile controls and compatibility still need testing.
