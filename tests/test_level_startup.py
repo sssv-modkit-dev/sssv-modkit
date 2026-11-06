@@ -20,7 +20,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         pass
 
 probe = r"""
-<script>
 setTimeout(()=>{
  const failures=[];const check=(ok,msg)=>{if(!ok)failures.push(msg);};
  check(document.getElementById('setup').hidden,'demo startup failed: '+document.getElementById('load-status').textContent);
@@ -42,7 +41,6 @@ setTimeout(()=>{
  }
  parent.document.body.append(Object.assign(parent.document.createElement('pre'),{id:'startup-result',textContent:JSON.stringify(failures)}));
 },2500);
-</script>
 """
 with tempfile.TemporaryDirectory(prefix='level-startup-') as tmp:
     out=Path(tmp)
@@ -50,7 +48,9 @@ with tempfile.TemporaryDirectory(prefix='level-startup-') as tmp:
     shutil.copytree(ROOT/'src/levels',out/'levels',dirs_exist_ok=True)
     runtime=(ROOT/'src/levels/runtime.js').read_text(encoding='utf-8').replace('/*EDITOR*/',(ROOT/'src/levels/editor.js').read_text(encoding='utf-8'))
     with open(out/'levels/runtime.js','w',encoding='utf-8',newline='\n') as f:f.write(runtime)
-    with open(out/'level-editor.html','a',encoding='utf-8',newline='\n') as f:f.write(probe)
+    # External file, not inline: the page's CSP allows only same-origin scripts.
+    (out/'probe.js').write_text(probe,encoding='utf-8')
+    with open(out/'level-editor.html','a',encoding='utf-8',newline='\n') as f:f.write('<script src="probe.js"></script>\n')
     server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Handler,directory=tmp))
     threading.Thread(target=server.serve_forever,daemon=True).start()
     try:
