@@ -95,7 +95,7 @@ function buildAnimals(){
  const b=L.bb,m=3000,sz=b[2]-24;L.sea={p:buf(new Float32Array([b[0]-m,b[1]-m,sz,b[3]+m,b[1]-m,sz,b[3]+m,b[4]+m,sz,b[0]-m,b[1]-m,sz,b[3]+m,b[4]+m,sz,b[0]-m,b[4]+m,sz])),n:6};
 }
 function buildMeshes(){
- const S=+$('ms').value||1,lift=$('ml').checked,P=[],C=[];let nt=0,ni=0;
+ const S=+$('ms').value||1,lift=false,P=[],C=[];let nt=0,ni=0;
  L.spw.forEach(s=>{const m=MODELS[s[3]];if(!m)return;ni++;nt+=m.n/3;
   const a=(s[4]||0)*Math.PI/180,ca=Math.cos(a),sa=Math.sin(a),dz=lift?-m.zmin*S:0;
   for(let k=0;k<m.n;k++){const x=m.p[k*3]*S,y=m.p[k*3+1]*S,z=m.p[k*3+2]*S;
@@ -143,8 +143,8 @@ function gpick(mx,my){const nx=mx/cv.clientWidth*2-1,ny=1-my/cv.clientHeight*2,f
   if(pz<=L.grid8[gx*97+gy]*8){return tcell(px,py);}}
  return null;}
 let drag=null;
-cv.onmousedown=e=>{drag={x:e.clientX,y:e.clientY,pan:e.shiftKey||e.button==2};};
-window.onmouseup=()=>drag=null;cv.oncontextmenu=e=>e.preventDefault();
+cv.onmousedown=e=>{if(e.button===2)setFly(true);if(e.button===2||e.button===1||e.shiftKey)drag={x:e.clientX,y:e.clientY,pan:e.button===1||e.button===0&&e.shiftKey};};
+window.onmouseup=()=>{drag=null;fly=false;};cv.oncontextmenu=e=>e.preventDefault();
 window.onmousemove=e=>{
  if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;
   if(drag.pan){const s=cam.d/cv.clientHeight*1.2,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);cam.t[0]+=(dx*sy-dy*cy*Math.sin(cam.pitch))*s;cam.t[1]+=(-dx*cy-dy*sy*Math.sin(cam.pitch))*s;}
@@ -169,21 +169,20 @@ cv.addEventListener('touchmove',e=>{e.preventDefault();if(!tch)return;const n=ti
 cv.addEventListener('touchend',e=>{tch=e.touches.length?Object.assign(tinfo(e.touches),{n:e.touches.length}):null;});
 let fly=false;const keys={};
 /* WASD/QE always move the camera; the look button only switches dragging between orbit and fly-style mouse look. */
-function setFly(on){fly=on;$('mode').textContent='look: '+(on?'fly':'orbit');$('mode').setAttribute('aria-pressed',String(on));
- if(on){const e=EYE,dir=[cam.t[0]-e[0],cam.t[1]-e[1],cam.t[2]-e[2]].map(v=>v/cam.d);cam.d=60;cam.t=[e[0]+dir[0]*60,e[1]+dir[1]*60,e[2]+dir[2]*60];}}
-$('mode').onclick=()=>setFly(!fly);$('mn').onclick=()=>{const u=$('ui');u.classList.toggle('min');$('mn').innerHTML=u.classList.contains('min')?'+':'&ndash;';};
+function setFly(on){fly=on;}
+$('mn').onclick=()=>{const u=$('ui');u.classList.toggle('min');$('mn').innerHTML=u.classList.contains('min')?'+':'&ndash;';};
 window.addEventListener('keydown',e=>{const t=e.target.tagName;if(t=='INPUT'||t=='SELECT'||t=='TEXTAREA'||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();keys[k]=true;if(k.length==1&&'wasdqe'.includes(k))e.preventDefault();});
-window.addEventListener('blur',()=>{for(const k of Object.keys(keys))delete keys[k];});
+window.addEventListener('blur',()=>{for(const k of Object.keys(keys))delete keys[k];drag=null;fly=false;});
 window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 let lastT=performance.now();
-function flyStep(){const now=performance.now(),dt=Math.min(.05,(now-lastT)/1000);lastT=now;
+function flyStep(){const now=performance.now(),dt=Math.min(.05,(now-lastT)/1000);lastT=now;if(!fly)return;
  const sp=(keys.shift?3.4:1)*Math.max(700,cam.d*.35)*dt,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cp=Math.cos(cam.pitch),spp=Math.sin(cam.pitch);
  const fw=[-cp*cy,-cp*sy,-spp],rt=[-sy,cy,0],m=[0,0,0],add=(v,k)=>{for(let j=0;j<3;j++)m[j]+=v[j]*k;};
  if(keys.w)add(fw,1);if(keys.s)add(fw,-1);if(keys.d)add(rt,1);if(keys.a)add(rt,-1);if(keys.e)m[2]+=1;if(keys.q)m[2]-=1;
  for(let j=0;j<3;j++)cam.t[j]+=m[j]*sp;}
 cv.onwheel=e=>{e.preventDefault();cam.d*=Math.exp(e.deltaY*.001);};
 LEVELS.forEach((l,i)=>{const o=document.createElement('option');o.value=i;o.textContent='Level '+l.id;$('lv').appendChild(o);});
-$('gm').onchange=recolor;$('ms').onchange=$('ml').onchange=()=>{buildMeshes();};
+$('gm').onchange=recolor;$('ms').onchange=()=>{buildMeshes();};
 $('lv').onchange=()=>load(+$('lv').value);
 (function(root){
   'use strict';
@@ -205,15 +204,15 @@ $('lv').onchange=()=>load(+$('lv').value);
 
 function currentView(){
  const settings={gm:$('gm').value,pm:$('pm').value,ms:Number($('ms').value),panelCollapsed:$('ui').classList.contains('min')};
- for(const k of ViewPreset.checks)settings[k]=$(k).checked;
+ for(const k of ViewPreset.checks)settings[k]=k==='ml'?false:$(k).checked;
  return ViewPreset.validate({format:'sssv-level-view-v1',level:L.id,camera:{target:cam.t.slice(),yaw:cam.yaw,pitch:cam.pitch,distance:cam.d},fly,settings},LEVELS.map(l=>l.id));
 }
 function openView(value){
  const v=ViewPreset.validate(value,LEVELS.map(l=>l.id)); // Validate everything before changing the view.
- for(const k of ViewPreset.checks)$(k).checked=v.settings[k];
+ for(const k of ViewPreset.checks)if(k!=='ml')$(k).checked=v.settings[k];
  $('gm').value=v.settings.gm;$('pm').value=v.settings.pm;$('ms').value=v.settings.ms;
  const i=LEVELS.findIndex(l=>l.id===v.level);load(i);$('lv').value=i;
- setFly(v.fly);cam={t:v.camera.target.slice(),yaw:v.camera.yaw,pitch:v.camera.pitch,d:v.camera.distance};
+ setFly(false);cam={t:v.camera.target.slice(),yaw:v.camera.yaw,pitch:v.camera.pitch,d:v.camera.distance};
  for(const k of Object.keys(keys))delete keys[k];drag=null;tch=null;
  $('ui').classList.toggle('min',v.settings.panelCollapsed);$('mn').innerHTML=v.settings.panelCollapsed?'+':'&ndash;';
  $('ui').style.display='';$('view-status').textContent='View opened. This file contains display settings, not level edits.';

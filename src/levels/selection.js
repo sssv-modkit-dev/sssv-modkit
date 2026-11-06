@@ -46,6 +46,7 @@ const LevelSelection = (() => {
   function dragDelta(m,width,height,start,now,z){const a=groundPoint(m,width,height,start,z),b=groundPoint(m,width,height,now,z);return a&&b?[b[0]-a[0],b[1]-a[1]]:null;}
   /* Fallback when the ray misses the plane: screen right is (-sin yaw, cos yaw), screen down is towards the camera (cos yaw, sin yaw). */
   function screenDelta(dx,dy,yaw,scale){const c=Math.cos(yaw),s=Math.sin(yaw);return [(-dx*s+dy*c)*scale,(dx*c+dy*s)*scale];}
-  return {animalNames,propNames,categories,name,category,project,inRectangle,translate,corners,screenRect,pickAt,hitsRect,nudge,invert,groundPoint,dragDelta,screenDelta};
+  function removeAppended(records,stock,keys){for(const key of keys){const [kind,index]=key.split(':');if(!stock[kind]||!Number.isInteger(+index)||+index<stock[kind].length||+index>=records[kind].length)throw Error('Only appended spawns can be deleted');}for(const kind of ['props','animals']){const indices=keys.filter(k=>k.startsWith(kind+':')).map(k=>+k.split(':')[1]).sort((a,b)=>b-a);for(const index of new Set(indices))records[kind].splice(index,1);}}
+  return {removeAppended,animalNames,propNames,categories,name,category,project,inRectangle,translate,corners,screenRect,pickAt,hitsRect,nudge,invert,groundPoint,dragDelta,screenDelta};
 })();
 if(typeof module!=='undefined')module.exports=LevelSelection;

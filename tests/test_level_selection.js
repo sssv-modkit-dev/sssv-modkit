@@ -73,3 +73,13 @@ assert.deepEqual(Array.from(ctx.api.values(edited,'props')),[34,100,200,300,90,0
 assert.throws(()=>ctx.api.validate({format:'sssv-editor-diff',version:1,rom_sha1:'wrong',levels:{}}));
 assert.throws(()=>ctx.api.validate({format:'sssv-editor-diff',version:1,rom_sha1:'synthetic',levels:{'1':{props:{delete:[0]}}}}));
 console.log('Cursor-following object drag, named categories, rectangle projection, footprint picking, spacing-preserving atomic group moves and record validation passed.');
+
+// Appended deletion physically removes records while preserving original indices; atomic rejection of mixed selection.
+const originals={props:['original0','original1'],animals:['animal0']};
+const records={props:[...originals.props,'addedA','addedB','addedC'],animals:[...originals.animals,'addedAnimal']};
+assert.throws(()=>selection.removeAppended(records,originals,['props:0','props:2']));
+assert.equal(records.props.length,5);
+selection.removeAppended(records,originals,['props:2','props:4','animals:1']);
+assert.deepEqual(records,{props:['original0','original1','addedB'],animals:['animal0']});
+assert.equal(selection.pickAt(items,[9999,9999]),null);
+assert(selection.hitsRect(items[0],[100,100],[0,0]));
