@@ -13,6 +13,9 @@ decompilation files, and none ship with this project. Some identifiers keep that
 address-based style (for example `D_04000420_C7E50`: segment address plus ROM offset)
 because they are just addresses.
 
+We're very grateful to that decompilation project and its contributors. Their public work
+made those first prototypes possible.
+
 ## Is this a decompilation / recompilation?
 
 No.

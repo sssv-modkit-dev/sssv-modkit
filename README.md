@@ -1,5 +1,8 @@
 # Space Station Silicon Valley (N64) - Modkit
-![SSSV Modkit — Auburnish Ear Bear edition](docs/images/releases/auburnish-ear-bear-v3.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/releases/velvet-midnight-rat-dark.png">
+  <img alt="SSSV Modkit — Velvet Midnight Rat edition, pre-alpha v0.01" src="docs/images/releases/velvet-midnight-rat-light.png">
+</picture>
 <sup>Work In Progress // _last updated: 2026-11-06_</sup>
 
 ***Welcome to the Space Station Silicon Valley (sssv) Modkit public repository!***  
