@@ -41,5 +41,14 @@ assert.deepStrictEqual([n.body, n.accent], [2, 1]);
 assert.ok(fox[2] > fox[0] && fox[6] < fox[2], 'body is violet and darker where the source was darker');
 assert.deepStrictEqual(Array.from(fox.slice(8, 16)), [201, 176, 255, 255, 0, 0, 0, 255]);
 assert.deepStrictEqual(Array.from(fox.slice(16)), [220, 10, 10, 0]);
+// Left anchor moves the text block right of the head slot.
+text.length = 0; rects.length = 0;
+draw({getContext: () => ctx2}, {name: 'X', version: 'v', accent: '#6496c8', style: 'anglo', anchor: 'left'}, null);
+assert.strictEqual(text[0][1], 430); assert.strictEqual(rects[1][0], 430);
+// Rat: black body -> bold, pink ear -> light, red nose and grey whisker kept.
+const rat = Uint8ClampedArray.from([24, 24, 24, 255, 216, 144, 144, 255, 240, 0, 0, 255, 192, 192, 192, 255]);
+const rn = twoTonePixels(rat, 4, 'rat', '#6d28d9', '#e4d7ff');
+assert.deepStrictEqual([rn.body, rn.accent], [1, 1]);
+assert.deepStrictEqual(Array.from(rat.slice(4)), [228, 215, 255, 255, 240, 0, 0, 255, 192, 192, 192, 255]);
 assert.throws(() => twoTonePixels(fox, 5, 'yeti', '#000000', '#ffffff'), /Unknown head/);
 console.log('Banner masks, two-tone heads, quote traditions, lower-case version, transparency, ear boundary, Unicode title and title bounds passed.');

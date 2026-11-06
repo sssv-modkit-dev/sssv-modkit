@@ -44,6 +44,9 @@
     dog: (r, g, b) => r > 100 && g > 100 && b < r * .7 ? 'body' : (luma(r, g, b) < 40 ? 'accent' : null),
     seagull: (r, g, b) => sat(r, g, b) < .3 && luma(r, g, b) > 90 ? 'body' : (r > 120 && g > 120 && b < 60 ? 'accent' : null),
     sheep: (r, g, b) => sat(r, g, b) < .15 && luma(r, g, b) > 90 ? 'body' : null,
+    // rat: black body -> bold, pink ears -> light; red nose and grey whiskers kept
+    rat: (r, g, b) => luma(r, g, b) < 70 && sat(r, g, b) < .6 ? 'body'
+      : (r > 100 && g < r * .8 && b >= g * .85 && sat(r, g, b) > .15 && sat(r, g, b) < .6 ? 'accent' : null),
   };
   // Two tones with the original shading kept: each pixel's brightness relative to its role's mean scales the tone.
   function twoTonePixels(pixels, width, head, bold, light) {
@@ -101,8 +104,10 @@
     const ctx = canvas.getContext('2d');
     canvas.width = 1500; canvas.height = 250;
     ctx.fillStyle = settings.background || '#111b29'; ctx.fillRect(0, 0, 1500, 250);
+    // anchor 'right' (default): text left, head right. 'left': head left, text shifted right.
+    const left = settings.anchor === 'left', tx = left ? 430 : 70, hx = left ? 250 : 1230;
     ctx.fillStyle = settings.accent;
-    ctx.font = '500 18px system-ui'; ctx.fillText('SSSV MODKIT', 70, 70);
+    ctx.font = '500 18px system-ui'; ctx.fillText('SSSV MODKIT', tx, 70);
     const pair = quotes[styleOf(settings.style)];
     const title = pair[0] + settings.name + pair[1] + ' edition';
     let size = 48;
@@ -111,18 +116,18 @@
       if (ctx.measureText(title).width <= 890 || size <= 12) break;
       size--;
     } while (true);
-    ctx.fillText(title, 70, 135, 890);
+    ctx.fillText(title, tx, 135, 890);
     ctx.fillStyle = settings.muted || '#9ba9b9'; ctx.font = '400 15px system-ui';
-    ctx.fillText(String(settings.version).toLowerCase(), 70, 172, 890);
-    ctx.fillStyle = settings.rule || '#26384b'; ctx.fillRect(70, 205, 890, 1);
-    ctx.fillStyle = settings.accent; ctx.fillRect(70, 205, 64, 2);
+    ctx.fillText(String(settings.version).toLowerCase(), tx, 172, 890);
+    ctx.fillStyle = settings.rule || '#26384b'; ctx.fillRect(tx, 205, 890, 1);
+    ctx.fillStyle = settings.accent; ctx.fillRect(tx, 205, 64, 2);
     if (head) {
       const tones = settings.head && settings.bold ? {head: settings.head, bold: settings.bold, light: settings.light || settings.accent} : null;
       const image = recolor(head, settings.accent, settings.recolor || 'original', tones);
       ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
       const box = settings.head ? opaqueBox(image) : {x: 0, y: 0, w: image.width, h: image.height};
       const scale = Math.min(200 / box.w, 200 / box.h, settings.head ? 2.2 : Infinity);
-      ctx.drawImage(image, box.x, box.y, box.w, box.h, 1230 - box.w * scale / 2, 125 - box.h * scale / 2,
+      ctx.drawImage(image, box.x, box.y, box.w, box.h, hx - box.w * scale / 2, 125 - box.h * scale / 2,
         box.w * scale, box.h * scale);
     }
   }
