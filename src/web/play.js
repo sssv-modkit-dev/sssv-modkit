@@ -6,7 +6,7 @@ let romUrl, started = false;
 const isBlobLike = b => !!b && typeof b === 'object' && typeof b.slice === 'function' && typeof b.size === 'number';
 romInput.addEventListener('change', () => {
   startButton.disabled = !romInput.files.length;
-  status.textContent = romInput.files.length ? 'Ready. Load game downloads the emulator; your ROM stays local.' : 'Choose a ROM to begin.';
+  status.textContent = romInput.files.length ? 'Ready. Load game fetches the emulator from this site; your ROM stays local.' : 'Choose a ROM to begin.';
 });
 document.getElementById('reset').addEventListener('click', () => location.reload());
 async function startGame(blob, name) {
@@ -19,22 +19,25 @@ async function startGame(blob, name) {
   romUrl = URL.createObjectURL(blob);
   window.EJS_player = '#game';
   window.EJS_language = 'en-US';
-  window.EJS_disableAutoLang = true;
+  window.EJS_disableAutoLang = false; // en-US needs no localization download
   window.EJS_core = document.getElementById('core').value;
   window.EJS_gameUrl = romUrl;
   window.EJS_gameName = String(name || blob.name || 'game').replace(/\.[^.]+$/, '');
-  window.EJS_pathtodata = 'https://cdn.emulatorjs.org/4.2.3/data/';
+  window.EJS_pathtodata = new URL('vendor/emulatorjs/data/', location.href).href; // same-origin copy from tools/vendor_deps.py
   window.EJS_startOnLoaded = false;
+  // Never phone home: no ads, no netplay (EmulatorJS leaves it off unless debug flags are set), no update check
+  // (EmulatorJS only runs it on localhost, and the page CSP blocks it), no localization or other extra downloads.
+  window.EJS_AdUrl = '';
   window.EJS_threads = false; // GitHub Pages does not supply COOP/COEP headers.
   window.EJS_ready = () => { status.textContent = 'Emulator ready. Press Start Game in the player.'; };
   window.EJS_onGameStart = () => { status.textContent = 'Running. Use the player menu for controls and saves.'; };
   const loader = document.createElement('script');
   loader.src = window.EJS_pathtodata + 'loader.js';
-  loader.onerror = () => { status.textContent = 'Emulator download failed. Check your connection or content blocker, then press Choose another ROM to reload and retry.'; };
+  loader.onerror = () => { status.textContent = 'Emulator files failed to load from this site. Press Choose another ROM to reload and retry.'; };
   romInput.disabled = true;
   startButton.disabled = true;
   document.getElementById('core').disabled = true;
-  status.textContent = 'Downloading emulator… First load may take a moment.';
+  status.textContent = 'Loading emulator... First load may take a moment.';
   document.body.appendChild(loader);
 }
 async function startFrom(blob, name) {

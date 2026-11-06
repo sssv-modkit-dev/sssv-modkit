@@ -6,7 +6,7 @@ async function run(bytes, size = 16*1024*1024, opener) {
   const listeners = {}, appended = [], winListeners = {};
   const file = {size, name: 'test.z64', slice: () => ({arrayBuffer: async () => Uint8Array.from(bytes).buffer})};
   const elements = Object.fromEntries(['rom','start','status','reset','core'].map(id => [id, {files:[file], value:'mupen64plus_next', addEventListener: (e,f) => listeners[id+e]=f}]));
-  const context = {window:{addEventListener:(e,f)=>winListeners[e]=f, opener}, Blob:class{constructor(parts){this.size=parts[0].byteLength;const u=new Uint8Array(parts[0]);this.slice=()=>({arrayBuffer:async()=>u.slice(0,4).buffer});}}, location:{origin:'https://site.test',reload(){}}, URL:{createObjectURL:()=> 'blob:local-test',revokeObjectURL(){}}, Uint8Array, document:{getElementById:id=>elements[id],createElement:tag=>tag==='canvas'?{getContext:()=>({})}:{}, body:{appendChild:s=>appended.push(s)}}};
+  const context = {window:{addEventListener:(e,f)=>winListeners[e]=f, opener}, Blob:class{constructor(parts){this.size=parts[0].byteLength;const u=new Uint8Array(parts[0]);this.slice=()=>({arrayBuffer:async()=>u.slice(0,4).buffer});}}, location:{origin:'https://site.test',href:'https://site.test/play.html',reload(){}}, URL:Object.assign(function(p,b){return new globalThis.URL(p,b)},{createObjectURL:()=> 'blob:local-test',revokeObjectURL(){}}), Uint8Array, document:{getElementById:id=>elements[id],createElement:tag=>tag==='canvas'?{getContext:()=>({})}:{}, body:{appendChild:s=>appended.push(s)}}};
   vm.runInNewContext(fs.readFileSync('src/web/play.js','utf8'),context);
   await listeners.startclick();
   return {context, elements, appended, winListeners};
@@ -22,9 +22,9 @@ async function run(bytes, size = 16*1024*1024, opener) {
     assert.equal(result.context.window.EJS_gameUrl,'blob:local-test');
     assert.equal(result.context.window.EJS_threads,false);
     assert.equal(result.appended.length,1);
-    assert.equal(result.appended[0].src,'https://cdn.emulatorjs.org/4.2.3/data/loader.js');
+    assert.equal(result.appended[0].src,'https://site.test/vendor/emulatorjs/data/loader.js');
     result.appended[0].onerror();
-    assert.match(result.elements.status.textContent,/download failed/);
+    assert.match(result.elements.status.textContent,/failed to load/);
   }
   // startGame with an in-memory blob (no file input involved)
   const mem = (bytes, size = 8192) => ({size, slice: () => ({arrayBuffer: async () => Uint8Array.from(bytes).buffer})});

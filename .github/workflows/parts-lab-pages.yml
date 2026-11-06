@@ -12,6 +12,8 @@ on:
       - 'src/build_viewer.py'
       - 'tests/**'
       - 'src/check.py'
+      - 'tools/**'
+      - 'NOTICE.md'
       - '.github/workflows/parts-lab-pages.yml'
 permissions:
   contents: read
@@ -30,7 +32,9 @@ jobs:
         with:
           node-version: '22'
       - run: python src/check.py
+      # Fetches Pyodide, EmulatorJS and the N64 cores at pinned versions, verifies SHA-256 and licenses, places them in site/dist/vendor.
       - run: python src/build_viewer.py --public
+      - run: python tools/vendor_deps.py --out site/dist --offline
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/dist
