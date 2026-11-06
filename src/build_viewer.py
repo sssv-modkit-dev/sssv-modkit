@@ -75,7 +75,7 @@ else:
 for marker,value in [('/*VIEWER_CSS*/',css),('/*VIEWER_JS*/',js),('/*VIEWER_ICON*/',icon)]:
     if marker not in html:raise SystemExit('missing template marker '+marker)
     html=html.replace(marker,value)
-html=html.replace('<!--PUBLIC_NAV-->', '<nav class="panel" aria-label="Modkit"><a href="index.html">Home</a> Â· <a href="model-editor.html" aria-current="page">Model Editor</a> Â· <a href="level-editor.html">Level Editor</a> Â· <a href="play.html">Play your ROM</a></nav>' if args.public else '')
+html=html.replace('<!--PUBLIC_NAV-->', '<nav class="panel" aria-label="Modkit"><a href="index.html">Home</a> · <a href="model-editor.html" aria-current="page">Model Editor</a> · <a href="level-editor.html">Level Editor</a> · <a href="play.html">Play your ROM</a></nav>' if args.public else '')
 out.parent.mkdir(parents=True,exist_ok=True)
 out.write_text(html,encoding='utf-8')
 print(('Public Model Editor: 8 demo models (bundled), no ROM read' if args.public else f'{len(T)} animals, {sum(len(v["p"]) for v in T.values())} parts')+f' -> {out}')
