@@ -40,7 +40,7 @@ It consists of:
   
 | What you want to do | Where | What you need |
 | --- | --- | --- |
-| Try out the tools | [Edit models: Parts Lab demo](https://sssv-modkit-dev.github.io/sssv-modkit/parts_lab.html) | Nothing; it opens with five bundled animals and three original demo creatures. |
+| Try out the tools | [Edit models: Model Editor demo](https://sssv-modkit-dev.github.io/sssv-modkit/parts_lab.html) | Nothing; it opens with five bundled animals and three original demo creatures. |
 | Edit levels | [Level editor demo](https://sssv-modkit-dev.github.io/sssv-modkit/levels.html) ([guide](docs/guides/LEVEL-EDITOR.md)) | Your own stock or compatible modded ROM, opened locally. |
 | Play in the browser | [Browser play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html) | Your own uncompressed ROM or patched build. Experimental; compatibility and performance are still being tested. |
 | Make a local build | [Getting started](docs/guides/GETTING-STARTED.md) | Your own ROM ([details](rom/README.md)); open the patched ROM in your emulator. |
@@ -102,9 +102,9 @@ For details, see [AI development details](docs/DEVELOPMENT-NOTES.md):
 
 #### Animal edits
 
-![Bear, dog and fox in the Parts Lab: originals on the top row; recoloured, with bigger bear arms, thicker dog legs and a longer fox tail, on the bottom row](docs/images/features/parts-lab-before-after.png)
+![Bear, dog and fox in the Model Editor: originals on the top row; recoloured, with bigger bear arms, thicker dog legs and a longer fox tail, on the bottom row](docs/images/features/parts-lab-before-after.png)
 
-Originals on top, edited below, as previewed in the online Parts Lab (no ROM
+Originals on top, edited below, as previewed in the online Model Editor (no ROM
 needed). Each new edit still needs testing in game.
 
 #### In development

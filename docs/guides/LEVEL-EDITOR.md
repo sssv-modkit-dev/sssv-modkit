@@ -85,11 +85,11 @@ If an edited stage no longer fits its original compressed slot, `--relocate`
 allows a level-only build to append the stage and update its table entry. Expanded
 ROMs need separate runtime verification. The default refuses relocation.
 
-## Parts Lab projects
+## Model Editor projects
 
-Attach an exported production animal configuration with **Attach Parts Lab config**.
+Attach an exported production animal configuration with **Attach Model Editor config**.
 **Save project** stores it alongside the level diff; **Open project** restores both.
-**Download animal config** returns the attachment for Parts Lab's **Open edits**.
+**Download animal config** returns the attachment for Model Editor's **Open edits**.
 The attachment is carried unchanged and does not alter the animal preview here.
 
 Build a combined project using the local animal table:

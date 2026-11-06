@@ -30,7 +30,7 @@ function png(w, h, rgba) {
 global.document = {createElement: () => { const o = {getContext: () => ({createImageData: (w, h) => ({data: new Uint8ClampedArray(w * h * 4), w, h}), putImageData: i => { o.img = i; }}), toDataURL: () => 'data:image/png;base64,' + png(o.img.w, o.img.h, o.img.data).toString('base64')}; return o; }};
 const LevelRom = require('./levels/rom.js');
 
-// ---- parseDL from the viewer (the same code the Parts Lab runs) ----
+// ---- parseDL from the viewer (the same code the Model Editor runs) ----
 const appSource = fs.readFileSync(path.join(__dirname, 'viewer/js/app.js'), 'utf8').split('//#PURE-START')[1].split('//#PURE-END')[0];
 const parseDL = new Function(appSource + '; return parseDL;')();
 
@@ -76,7 +76,7 @@ async function levelBundle(rom) {
   types: [...types].sort((a, b) => a - b), modelled: Object.keys(MODEL).map(Number)};
 }
 
-// ---- animals in Parts Lab demo shape (see PARTS_DEMOS), without vertex colours ----
+// ---- animals in Model Editor demo shape (see PARTS_DEMOS), without vertex colours ----
 function animals(rom, table, sheetDir) {
   const dv = new DataView(rom.buffer, rom.byteOffset, rom.byteLength), models = {}, heads = {};
   for (const [name, info] of Object.entries(ANIMALS)) {

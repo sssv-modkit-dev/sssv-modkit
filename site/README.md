@@ -1,4 +1,4 @@
-# SSSV Parts Lab
+# SSSV Model Editor
 
 The public playground uses the same WebGL renderer and editing controls as the private viewer.
 Its three demo creatures are independently authored procedural geometry in
@@ -14,7 +14,7 @@ python src/build_viewer.py --public
 python -m http.server 8765 --directory site/dist
 ```
 
-Deploy **only `site/dist`**. The generated `parts_lab.html` (Parts Lab; `index.html` is the landing page) also works as a downloaded,
+Deploy **only `site/dist`**. The generated `parts_lab.html` (Model Editor; `index.html` is the landing page) also works as a downloaded,
 offline file; clipboard sharing may require HTTPS or localhost. The public builder
 never searches for private inputs and rejects a positional animal table.
 The private builder now defaults to `viewers/parts_viewer.html`; an explicit old
@@ -87,7 +87,7 @@ The ROM stays in memory and is never persisted.
 The upstream [N64 core example](https://emulatorjs.org/docs/systems/nintendo-64/)
 and [CDN versioning](https://emulatorjs.org/docs/cdn/) document the integration.
 Game compatibility, mobile performance, controller behaviour and save persistence
-still require direct testing. Parts Lab JSON must first be built into a ROM with
+still require direct testing. Model Editor JSON must first be built into a ROM with
 the local builder. The private level editor is not bundled in the public site.
 
 ## In-browser builder (Pyodide)
@@ -129,7 +129,7 @@ the ROM plus a level project/diff and/or a Parts config, shows the worker's prog
 stages, starts the patched ROM in the emulator, and offers Download IPS and Download ROM.
 The build log is in a collapsible area. Wrong-ROM messages from the CLI get a hint added.
 Relocate and new animals are under "Advanced"; new animals are not game-verified.
-Levels and Parts Lab (public build) have a Build & Play button. `handoff.js` opens
+Levels and Model Editor (public build) have a Build & Play button. `handoff.js` opens
 `play.html` with `window.open`, waits for its same-origin `sssv-play-ready`, then posts
 `{type: 'sssv-build', level?, parts?, levelName?, partsName?, rom?, romName?, source}` once.
 `rom` is the ROM already loaded on that page, sent as an in-memory Blob. If it is
@@ -153,7 +153,7 @@ Committed under `src/web/demo/` and copied to `dist/demo/` (owner-approved, 2026
 third-party game content, see `NOTICE.md`):
 
 - `level-4.json`: stage 4 (terrain, texture atlas, spawn records, and the 26 prop meshes that stage uses).
-- `animals.json`: bear, dog, fox, sheep and seagull parts (base variants) in Parts Lab demo shape.
+- `animals.json`: bear, dog, fox, sheep and seagull parts (base variants) in Model Editor demo shape.
 - `heads/dog.png`, `fox.png`, `sheep.png`, `seagull.png`: 128 px head icons rendered from those parts.
   `heads/bear.png` is the existing `src/viewer/assets/icon.png`, copied at build time.
 

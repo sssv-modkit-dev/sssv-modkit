@@ -49,9 +49,9 @@ for(const id of ['ed-snap','ed-height','ed-add'])$(id).onclick=()=>$(id).setAttr
 edList();
 
 let edParts=null;
-function edPartsStatus(){ $('ed-parts-status').textContent=edParts?'Attached: '+edParts.name+' (carried with level edits; geometry preview remains in Parts Lab)':'No animal config attached.'; }
+function edPartsStatus(){ $('ed-parts-status').textContent=edParts?'Attached: '+edParts.name+' (carried with level edits; geometry preview remains in Model Editor)':'No animal config attached.'; }
 $('ed-parts').onclick=()=>$('ed-parts-file').click();
-$('ed-parts-file').onchange=async()=>{try{const f=$('ed-parts-file').files[0],config=JSON.parse(await f.text());if(!config||typeof config!=='object'||Array.isArray(config))throw Error('Expected a Parts Lab config object');edParts={name:f.name,config};edPartsStatus();}catch(e){edStatus(e.message);}finally{$('ed-parts-file').value='';}};
+$('ed-parts-file').onchange=async()=>{try{const f=$('ed-parts-file').files[0],config=JSON.parse(await f.text());if(!config||typeof config!=='object'||Array.isArray(config))throw Error('Expected a Model Editor config object');edParts={name:f.name,config};edPartsStatus();}catch(e){edStatus(e.message);}finally{$('ed-parts-file').value='';}};
 function edProject(){return {format:'sssv-workspace-project',version:1,rom_sha1:EDITOR_SHA1,parts:edParts,level_diff:edDiff()};}
 $('ed-project-save').onclick=()=>{const project=edProject(),a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}));a.href=u;a.download='sssv-project.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);edStatus('Project saved: animal config plus level edits.');};
 /* Build & Play: hand the project (and the ROM this page decoded, if any) to play.html; handoff.js waits for its ready message. */
@@ -108,4 +108,4 @@ function edPlaceAt(point,snap){if(!M)return;edPlacedAt=performance.now();const z
 $('pal-place').onclick=()=>{const q=edFlag('ed-snap')?64:1;edAddObject(...[0,1].map(i=>Math.round(cam.t[i]/q)*q),Math.round(cam.t[2]));};
 edTool('select');
 
-$('ed-parts-download').onclick=()=>{if(!edParts){edStatus('Attach an animal config first.');return;}const a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(edParts.config,null,2)],{type:'application/json'}));a.href=u;a.download=edParts.name.split(/[\\/]/).pop()||'animal-config.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);edStatus('Animal config downloaded. Open it with Parts Lab Open edits.');};
+$('ed-parts-download').onclick=()=>{if(!edParts){edStatus('Attach an animal config first.');return;}const a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(edParts.config,null,2)],{type:'application/json'}));a.href=u;a.download=edParts.name.split(/[\\/]/).pop()||'animal-config.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);edStatus('Animal config downloaded. Open it with Model Editor Open edits.');};
