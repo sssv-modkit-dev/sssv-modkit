@@ -4,7 +4,7 @@
 
 - [Getting started](guides/GETTING-STARTED.md): local inputs, table generation and your first patch.
 - [Config guide](guides/CONFIGS.md): available edits, examples and combining configs.
-- [Model Editor](guides/PARTS-LAB.md): browser demos, editing and Build & Play.
+- [Model Editor](guides/MODEL-EDITOR.md): browser demos, editing and Build & Play.
 - [FAQ](FAQ.md): project background and device support.
 - [Level editor](guides/LEVEL-EDITOR.md): local-ROM stages, named selection, group editing, project files and patch builds.
 - [Viewer guide](guides/VIEWER.md): building the page, inspecting parts and exporting edits.
