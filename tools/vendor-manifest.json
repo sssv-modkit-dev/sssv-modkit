@@ -1,0 +1,195 @@
+{
+ "comment": "SHA-256 manifest for tools/vendor_deps.py. Every file is fetched from url and must match sha256. Paths are relative to <public build>/vendor/.",
+ "deps": [
+  {
+   "id": "pyodide",
+   "name": "Pyodide",
+   "version": "314.0.7",
+   "license": "MPL-2.0 (Pyodide); PSF-2.0 (CPython 3.14.2 standard library); the WebAssembly runtime also statically links permissively licensed libraries listed in the Pyodide repository",
+   "source_url": "https://github.com/pyodide/pyodide/tree/314.0.7",
+   "files": [
+    {
+     "path": "pyodide/pyodide.mjs",
+     "url": "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.mjs",
+     "sha256": "6f1d60f7bf529beb300f0f47983c921d3982363640ba20af0e38efdddbc66109",
+     "size": 17931
+    },
+    {
+     "path": "pyodide/pyodide.asm.mjs",
+     "url": "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.asm.mjs",
+     "sha256": "f7cdc8ece80678ceb712f8e65ebe6d3a83203a180c399865f49612a051693635",
+     "size": 1250344
+    },
+    {
+     "path": "pyodide/pyodide.asm.wasm",
+     "url": "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.asm.wasm",
+     "sha256": "cc36e3cab04fdfc9a63ff13eb52eae2b911bf46c025cc7b281f394bd3de1d5e6",
+     "size": 9598218
+    },
+    {
+     "path": "pyodide/python_stdlib.zip",
+     "url": "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/python_stdlib.zip",
+     "sha256": "fa1957e5777068fc4f7437f96d860ae2fbe9c19732ba06c84e004ec16dd7dd7a",
+     "size": 2545637
+    },
+    {
+     "path": "pyodide/pyodide-lock.json",
+     "url": "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide-lock.json",
+     "sha256": "5dc2fc119108bc148c7457dc86e7675b5c87e1cafd420b9c34c1eaef7b36c010",
+     "size": 119077
+    }
+   ],
+   "license_files": [
+    {
+     "path": "pyodide/LICENSE",
+     "url": "https://raw.githubusercontent.com/pyodide/pyodide/314.0.7/LICENSE",
+     "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+     "size": 16725
+    },
+    {
+     "path": "pyodide/LICENSE-CPython",
+     "url": "https://raw.githubusercontent.com/python/cpython/v3.14.2/LICENSE",
+     "sha256": "b0e25a78cffb43f4d92de8b61ccfa1f1f98ecbc22330b54b5251e7b6ba010231",
+     "size": 13804
+    }
+   ]
+  },
+  {
+   "id": "emulatorjs",
+   "name": "EmulatorJS",
+   "version": "4.2.3",
+   "license": "GPL-3.0",
+   "source_url": "https://github.com/EmulatorJS/EmulatorJS/tree/v4.2.3",
+   "files": [
+    {
+     "path": "emulatorjs/data/loader.js",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/loader.js",
+     "sha256": "69e0903bf1e2f62ced78895e7e511fa26e11316f7eb734925c35e919ba1287b2",
+     "size": 7594
+    },
+    {
+     "path": "emulatorjs/data/emulator.min.js",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/emulator.min.js",
+     "sha256": "6aec3fd7bb2721255801b0a6af02e47e78b05e28a1822b1f213aacbd348abaee",
+     "size": 426343
+    },
+    {
+     "path": "emulatorjs/data/emulator.min.css",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/emulator.min.css",
+     "sha256": "16406c60b2dc3b04ae9b115e308613e6f567a0cc7068e21d9d0c1e5030fb395e",
+     "size": 25630
+    },
+    {
+     "path": "emulatorjs/data/compression/extract7z.js",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/compression/extract7z.js",
+     "sha256": "4ac9933b995a516cb6b3ca4027db860278372a20c21c405d93ceb1998498853a",
+     "size": 280155
+    },
+    {
+     "path": "emulatorjs/data/compression/extractzip.js",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/compression/extractzip.js",
+     "sha256": "3cc825428724213acd43d30552a78008e0869b2326de17dee240dbff9ee2f629",
+     "size": 196199
+    },
+    {
+     "path": "emulatorjs/data/compression/libunrar.js",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/compression/libunrar.js",
+     "sha256": "bc35b98ec95020ec047f4762de3e66629741eee3826022195498d2a1e0fc102c",
+     "size": 66684
+    },
+    {
+     "path": "emulatorjs/data/compression/libunrar.wasm",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/compression/libunrar.wasm",
+     "sha256": "e4ea9bd0b13a9767916b424469e30205f47f267ecd9125ed56fb9ff0b9bc1b58",
+     "size": 173799
+    }
+   ],
+   "license_files": [
+    {
+     "path": "emulatorjs/LICENSE",
+     "url": "https://raw.githubusercontent.com/EmulatorJS/EmulatorJS/v4.2.3/LICENSE",
+     "sha256": "a617fab6d251b3302b1cb2c1c94f52d1c584f6fcb2fc218ec1a475bc08053a61",
+     "size": 35111
+    }
+   ]
+  },
+  {
+   "id": "mupen64plus_next",
+   "name": "Mupen64Plus-Next (libretro core, built by EmulatorJS)",
+   "version": "EmulatorJS 4.2.3 build of 2025-06-14",
+   "license": "GPL-2.0",
+   "source_url": "https://github.com/libretro/mupen64plus-libretro-nx/tree/0346d3ef26016bb4de604cf918d004bd791447ee",
+   "source_note": "EmulatorJS does not publish the exact commit it built; this is the last upstream commit before the build date (corresponding source for GPL purposes should be confirmed with EmulatorJS/build).",
+   "files": [
+    {
+     "path": "emulatorjs/data/cores/mupen64plus_next-wasm.data",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/cores/mupen64plus_next-wasm.data",
+     "sha256": "2da1cbce9fda395e3ae83ca5787353baa159142d45ef3ea90f108b92524f76cc",
+     "size": 1451795
+    },
+    {
+     "path": "emulatorjs/data/cores/mupen64plus_next-legacy-wasm.data",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/cores/mupen64plus_next-legacy-wasm.data",
+     "sha256": "425072f4bf94eec02633cbe9b84f47d6803dc0ec1b3c3b8de3ebbd2eb5617c3f",
+     "size": 1451870
+    },
+    {
+     "path": "emulatorjs/data/cores/reports/mupen64plus_next.json",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/cores/reports/mupen64plus_next.json",
+     "sha256": "270105553cec57fd1058c50e0541b8b89dbd30b2323fd70682036f6919b805cc",
+     "size": 153
+    }
+   ],
+   "license_files": [
+    {
+     "path": "mupen64plus_next/LICENSE",
+     "url": "https://raw.githubusercontent.com/libretro/mupen64plus-libretro-nx/0346d3ef26016bb4de604cf918d004bd791447ee/LICENSE",
+     "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+     "size": 18092
+    }
+   ]
+  },
+  {
+   "id": "parallel_n64",
+   "name": "ParaLLEl N64 (libretro core, built by EmulatorJS)",
+   "version": "EmulatorJS 4.2.3 build of 2025-06-14",
+   "license": "GPL-2.0",
+   "source_url": "https://github.com/libretro/parallel-n64/tree/f8605345e13c018a30c8f4ed03c05d8fc8f70be8",
+   "source_note": "EmulatorJS does not publish the exact commit it built; this is the last upstream commit before the build date (corresponding source for GPL purposes should be confirmed with EmulatorJS/build).",
+   "files": [
+    {
+     "path": "emulatorjs/data/cores/parallel_n64-wasm.data",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/cores/parallel_n64-wasm.data",
+     "sha256": "873755608d41a604f3eee11b631f1cbe7e4d8c4d10c92859c27941299c8ef6a6",
+     "size": 1028134
+    },
+    {
+     "path": "emulatorjs/data/cores/parallel_n64-legacy-wasm.data",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/cores/parallel_n64-legacy-wasm.data",
+     "sha256": "de0db87bb2d99c8aa6c9d70e9a101025cecf8dcd83d1c5a7ade25ac919b20485",
+     "size": 1027660
+    },
+    {
+     "path": "emulatorjs/data/cores/reports/parallel_n64.json",
+     "url": "https://cdn.emulatorjs.org/4.2.3/data/cores/reports/parallel_n64.json",
+     "sha256": "fc72e6320ba1225b041dfedf3e62406c0dc954696cc91a13b7d71303de349f24",
+     "size": 126
+    }
+   ],
+   "license_files": [
+    {
+     "path": "parallel_n64/LICENSE",
+     "url": "https://raw.githubusercontent.com/libretro/parallel-n64/f8605345e13c018a30c8f4ed03c05d8fc8f70be8/mupen64plus-core/doc/gpl-license",
+     "sha256": "6774e66e59957ebf1da6c9e22be4e7b97fb169a534ab37e085e92831ff414fdd",
+     "size": 18646
+    },
+    {
+     "path": "parallel_n64/LICENSES",
+     "url": "https://raw.githubusercontent.com/libretro/parallel-n64/f8605345e13c018a30c8f4ed03c05d8fc8f70be8/mupen64plus-core/LICENSES",
+     "sha256": "0a64350252a0b3e844449a8b9347707976add51726fa951b6035b1bf3f8c45a6",
+     "size": 1959
+    }
+   ]
+  }
+ ]
+}

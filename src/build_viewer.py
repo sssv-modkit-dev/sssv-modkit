@@ -10,6 +10,7 @@ parser.add_argument('output',nargs='?',type=Path,help='output HTML (default: vie
 parser.add_argument('--animals-dir',type=Path,help='generate the table first from external animal C source files; requires a local ROM')
 parser.add_argument('--public',action='store_true',help='Build original demos only; never read a ROM or animal table')
 parser.add_argument('--out',type=Path,help='Override output HTML path')
+parser.add_argument('--no-vendor',action='store_true',help='Public build: skip downloading Pyodide/EmulatorJS into vendor/ (offline tests; Build & Play and Play then cannot start)')
 parser.add_argument('--labels',type=Path,help='Embed a private sssv-viewer-labels-v1 part-name file (never used in public builds)')
 args=parser.parse_args()
 if args.public and (args.table or args.animals_dir or args.labels): parser.error('--public rejects private table/source/label inputs; use --out for output')
@@ -72,15 +73,26 @@ if icon_path and not args.public:
 else:
     svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#202638"/><text x="32" y="41" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="bold" fill="#edf1fa">SS</text></svg>'
     icon='data:image/svg+xml,'+quote(svg,safe='')
+GH='https://github.com/sssv-modkit-dev/sssv-modkit'
+if args.public:
+    # Same-origin only: scripts come from this one inline block (pinned by hash); styles stay inline (the page builds styled elements).
+    script_hash=base64.b64encode(hashlib.sha256(js.encode('utf-8')).digest()).decode('ascii')
+    csp=("default-src 'none'; script-src 'sha256-"+script_hash+"'; style-src 'unsafe-inline'; img-src 'self' data: blob:; "
+         "connect-src 'none'; base-uri 'none'; form-action 'none'")
+    html=html.replace('<title>SSSV Model Editor</title>','<title>Model Editor (sssv-modkit)</title><meta http-equiv="Content-Security-Policy" content="'+csp+'">',1)
+    html=html.replace('<link rel="icon" href="/*VIEWER_ICON*/">','<link rel="icon" type="image/svg+xml" href="favicon-model-editor.svg">',1)
+    html=html.replace('<body>\n','<body>\n<noscript><p style="padding:12px;margin:0;background:#202638;color:#eaf0fa;font:16px/1.5 system-ui,sans-serif;position:relative;z-index:99"><strong>JavaScript is required.</strong> The Model Editor runs entirely in your browser and needs JavaScript turned on; there is no server behind it. It lets you take low-poly animals apart, recolour, bend and stretch them, and export an edit file. Nothing is uploaded, and nothing is loaded from other websites. <a href="'+GH+'" style="color:#ffbd78">Source on GitHub</a> &middot; <a href="'+GH+'/tree/main/docs/guides" style="color:#ffbd78">guides</a>.</p></noscript>\n',1)
 for marker,value in [('/*VIEWER_CSS*/',css),('/*VIEWER_JS*/',js),('/*VIEWER_ICON*/',icon)]:
     if marker not in html:raise SystemExit('missing template marker '+marker)
     html=html.replace(marker,value)
-html=html.replace('<!--PUBLIC_NAV-->', '<nav class="panel" aria-label="Modkit"><a href="index.html">Home</a> Â· <a href="model-editor.html" aria-current="page">Model Editor</a> Â· <a href="level-editor.html">Level Editor</a> Â· <a href="play.html">Play your ROM</a></nav>' if args.public else '')
+html=html.replace('<!--PUBLIC_NAV-->', '<nav class="panel" aria-label="Modkit"><a href="index.html">Home</a> &middot; <a href="model-editor.html" aria-current="page">Model Editor</a> &middot; <a href="level-editor.html">Level Editor</a> &middot; <a href="play.html">Play your ROM</a></nav><details class="panel net-note"><summary>Network</summary><p>When opened, this page downloads only itself, its icon (favicon-model-editor.svg) and the demo head pictures (demo/heads/*.png), all from this site (same origin). It makes no other requests and uploads nothing; your files and ROM stay in the browser. Build &amp; Play opens play.html on this site. Details: <a href="'+GH+'/blob/main/docs/NETWORK.md">docs/NETWORK.md</a>.</p></details>' if args.public else '')
 out.parent.mkdir(parents=True,exist_ok=True)
 out.write_text(html,encoding='utf-8')
 print(('Public Model Editor: 8 demo models (bundled), no ROM read' if args.public else f'{len(T)} animals, {sum(len(v["p"]) for v in T.values())} parts')+f' -> {out}')
 
 if args.public:
+    for name in ('favicon.svg','favicon-model-editor.svg','favicon-level-editor.svg','favicon-build-play.svg'):
+        (out.parent/name).write_bytes((here/'web'/name).read_bytes())
     (out.parent/'parts_lab.html').write_bytes((here/'web/model-editor-redirect.html').read_bytes())
     (out.parent/'index.html').write_bytes((here/'web/index.html').read_bytes())
     for name in ('play.html', 'play.js', 'play-build.js', 'handoff.js', 'builder.js', 'builder-worker.js', 'builder-core.js'):
@@ -107,3 +119,8 @@ if args.public:
     if icon_path:
         (demo_out/'heads').mkdir(exist_ok=True)
         shutil.copyfile(icon_path,demo_out/'heads/bear.png')
+    if not args.no_vendor:
+        # Third-party runtimes (Pyodide, EmulatorJS and its N64 cores) are fetched here, hash-checked and served same-origin.
+        sys.path.insert(0,str(here.parent/'tools'))
+        import vendor_deps
+        print(f'Vendored {vendor_deps.vendor(out.parent)/1e6:.1f} MB (SHA-256 verified) -> {out.parent/"vendor"}')

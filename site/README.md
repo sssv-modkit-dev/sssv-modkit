@@ -59,10 +59,10 @@ to edit on touch devices. Desktop users can also double-click a part.
 
 The public build also writes `play.html` and `play.js`. Select a local uncompressed
 N64 ROM or a patched build; the launcher passes a browser blob URL to EmulatorJS
-4.2.3. It fetches the loader and N64 core from the upstream CDN only after Load
-game is clicked. No ROM is bundled or uploaded by the launcher. The CDN code runs
+4.2.3. It loads the loader and N64 core from the site's own `vendor/emulatorjs/` only after Load
+game is clicked (no CDN; `tools/vendor_deps.py` fetches and hash-checks them at build time). No ROM is bundled or uploaded by the launcher. The emulator code runs
 in the same page and can access the chosen ROM, so this is not an isolated offline
-sandbox. Threads are disabled because GitHub Pages lacks COOP/COEP headers.
+sandbox; the page's Content-Security-Policy limits it to same-origin requests. See `docs/NETWORK.md`. Threads are disabled because GitHub Pages lacks COOP/COEP headers.
 
 ### Builder entry (in-memory ROM)
 
@@ -95,8 +95,8 @@ the local builder. The private level editor is not bundled in the public site.
 `builder.js` builds a patched ROM and IPS in the browser from the user's ROM plus a
 level project/diff JSON and/or a Parts config (single config or pack). A Web Worker
 (`builder-worker.js`, an ES module worker) runs the repository's own Python (`py/*.py`, copied from `src/`)
-in [Pyodide](https://pyodide.org/) 314.0.7, which it downloads from the jsDelivr CDN
-on the first build (about 6–7 MB over the network, about 12 MB unpacked, then cached). That third-party code runs in the worker.
+in [Pyodide](https://pyodide.org/) 314.0.7, which it loads from the site's own `vendor/pyodide/`
+on the first build (about 12 MB, then cached; no CDN). That third-party code runs in the worker.
 Output matches `build_levels.py` / `make_animal_mods.py` byte for byte, with the same
 checks: animal edits need the unmodified US 1.0 ROM, and the animal table is derived
 from that ROM in memory (`animal_table.py --from-rom`); nothing ROM-derived is shipped.

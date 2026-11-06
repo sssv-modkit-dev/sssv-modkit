@@ -4,7 +4,8 @@
 (function (root) {
   'use strict';
   const PYODIDE_VERSION = '314.0.7';
-  const PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v' + PYODIDE_VERSION + '/full/';
+  // Same-origin copy placed by tools/vendor_deps.py (relative to the page/worker; the worker resolves it). Nothing is fetched from a CDN.
+  const PYODIDE_URL = 'vendor/pyodide/';
   // Every module web_build.py imports, directly or indirectly. src/build_viewer.py copies these to dist/py/.
   const PY_MODULES = ['romio.py', 'level_rnc.py', 'level_rnc_pack.py', 'build_levels.py', 'make_animal_mods.py',
     'animal_table.py', 'animal_rom.py', 'web_build.py'];

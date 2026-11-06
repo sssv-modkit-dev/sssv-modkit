@@ -152,7 +152,7 @@ async function workerCase(pyodide, rt) {
   const diff = { format: 'sssv-editor-diff', version: 1, rom_sha1: sha1,
     levels: { '5': { props: { set: [{ index: 1, bytes: record }] } }, '31': { props: { add: [{ bytes: record }] } } } };
 
-  // Run builder-worker.js in a sandbox: importScripts serves builder-core.js and stands in for the Pyodide CDN script.
+  // Run builder-worker.js in a sandbox: importScripts serves builder-core.js and stands in for the vendored Pyodide script.
   // The worker is an ES module; run it as a script by swapping its two imports for sandbox stand-ins.
   let source = fs.readFileSync(path.join(SRC, 'web/builder-worker.js'), 'utf8');
   for (const [from, to] of [["import './builder-core.js';", "importScripts('builder-core.js');"], ['await import(', 'await importModule(']]) {
@@ -177,8 +177,8 @@ async function workerCase(pyodide, rt) {
   };
   sandbox.importModule = async url => {
     imported.push(url);
-    assert.equal(url, core.PYODIDE_URL + 'pyodide.mjs');
-    return { loadPyodide: opts => { assert.equal(opts.indexURL, core.PYODIDE_URL); return pyodide.loadPyodide(); } };
+    assert.equal(url, 'https://site.test/vendor/pyodide/pyodide.mjs');
+    return { loadPyodide: opts => { assert.equal(opts.indexURL, 'https://site.test/vendor/pyodide/'); return pyodide.loadPyodide(); } };
   };
   vm.createContext(sandbox);
   vm.runInContext(source, sandbox);
@@ -200,7 +200,7 @@ async function workerCase(pyodide, rt) {
   assert.equal(done.message.romSha1, sha('sha1', rom));
   assert.equal(done.message.sourceSha1, sha1);
   assert.ok(applyIps(stock, ips).equals(Buffer.from(rom)), 'worker IPS reproduces the worker ROM');
-  assert.deepEqual(imported, ['builder-core.js', core.PYODIDE_URL + 'pyodide.mjs']);
+  assert.deepEqual(imported, ['builder-core.js', 'https://site.test/vendor/pyodide/pyodide.mjs']);
   console.log('  worker: strict level build on a synthetic 36-stage ROM (' + ms + ' ms incl. Pyodide start; timings ' + JSON.stringify(done.message.timings) + ')');
 
   // Byte-identical to the command-line tool on the same input.

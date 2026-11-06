@@ -2,7 +2,7 @@
 // In:  {type: 'build', id, rom: ArrayBuffer, level?: object|string, parts?: object|string, options?: {relocate, new_animals}}
 // Out: {type: 'progress', id, stage, detail, ms}, then {type: 'done', id, rom: ArrayBuffer, ips: ArrayBuffer, romSha1,
 //      sourceSha1, log, timings} or {type: 'error', id, message}. The ROM stays in this worker's memory only.
-// Pyodide (third-party) is downloaded from the jsDelivr CDN on the first build; Python sources come from ./py/.
+// Pyodide (third-party) is served from this site's own vendor/pyodide/ on the first build; Python sources come from ./py/.
 // Module worker (new Worker(url, {type: 'module'})): Pyodide 314 no longer loads in classic workers.
 import './builder-core.js';
 const core = self.SSSVBuilderCore;
@@ -19,11 +19,12 @@ async function readSource(name) {
 function loadRuntime(progress) {
   if (!runtime) {
     runtime = (async () => {
-      progress('runtime', 'Downloading Pyodide ' + core.PYODIDE_VERSION + ' (first build only)');
+      progress('runtime', 'Loading Pyodide ' + core.PYODIDE_VERSION + ' from this site (first build only)');
+      const indexURL = new URL(core.PYODIDE_URL, self.location.href).href;
       let pyodide;
-      try { pyodide = await import(core.PYODIDE_URL + 'pyodide.mjs'); }
-      catch (error) { throw new Error('Pyodide download failed (' + (error && error.message || error) + '). Check your connection or content blocker, then retry.'); }
-      return core.createRuntime(pyodide.loadPyodide, readSource, { indexURL: core.PYODIDE_URL });
+      try { pyodide = await import(indexURL + 'pyodide.mjs'); }
+      catch (error) { throw new Error('Pyodide failed to load (' + (error && error.message || error) + '). The vendor/pyodide/ files of this site may be missing; reload and retry.'); }
+      return core.createRuntime(pyodide.loadPyodide, readSource, { indexURL });
     })();
     runtime.catch(() => { runtime = null; });   // allow a retry after a failed download
   }
