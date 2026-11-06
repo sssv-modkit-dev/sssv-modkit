@@ -1,6 +1,6 @@
 # Model Editor
 
-[Open Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/model_editor.html)
+[Open Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/model-editor.html)
 
 Preview animal parts, experiment with their colours and shapes, and save edits
 for a ROM build. The public demo includes five bundled animals with captured

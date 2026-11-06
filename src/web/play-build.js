@@ -98,7 +98,7 @@
   $('b-ips').addEventListener('click', () => state.result && download(state.result.ips, 'sssv-patch.ips'));
   $('b-out').addEventListener('click', () => state.result && download(state.result.rom, 'sssv-patched.z64'));
 
-  // Handoff from level-editor.html / model_editor.html (handoff.js). JSON arrives as a parsed object or text; the ROM, if the
+  // Handoff from level-editor.html / model-editor.html (handoff.js). JSON arrives as a parsed object or text; the ROM, if the
   // editor had one loaded, as a Blob or ArrayBuffer. Anything malformed is ignored.
   const isDocument = v => (typeof v === 'string' && v.length > 0 && v.length <= 8e6) || (!!v && typeof v === 'object' && !Array.isArray(v) && !isBlobLike(v));
   function receive(data) {
