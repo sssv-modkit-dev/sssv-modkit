@@ -18,7 +18,7 @@ function element(id) {
 
 function panel(builder) {
   const ids = ['b-rom', 'b-level', 'b-parts', 'b-relocate', 'b-new-animals', 'b-go', 'b-ips', 'b-out', 'b-progress', 'b-status',
-    'b-received', 'b-log-box', 'b-log', 'build', 'screen', 'setup'];
+    'b-received', 'b-log-box', 'b-log', 'build', 'screen'];
   const elements = registry = Object.fromEntries(ids.map(id => [id, element(id)]));
   const started = [], downloads = [], winListeners = {};
   class FakeBlob { constructor(parts) { this.parts = parts; this.size = parts[0].byteLength; } slice() { return this; } }
@@ -53,13 +53,24 @@ function fakeBuilder(outcome) {
   const built = { rom: { size: 8192, tag: 'rom' }, ips: { size: 20, tag: 'ips' }, romSha1: 'ab'.repeat(20), sourceSha1: 'cd'.repeat(20),
     log: ['bear: 3 colour words', 'bear: mesh ok'], timings: { total: 2500 } };
 
-  // Wiring: Build & Play needs a ROM and at least one edit file; inputs, Advanced options and progress reach the builder.
+  // One panel: a ROM alone plays as it is (no build); adding an edit file turns Play into Build & Play.
   let builder = fakeBuilder(built), p = panel(builder);
   assert.equal(p.el['b-go'].disabled, true);
   p.choose('b-rom', romFile);
-  assert.equal(p.el['b-go'].disabled, true);
+  assert.equal(p.el['b-go'].disabled, false);
+  assert.equal(p.el['b-go'].textContent, 'Play');
+  await p.el['b-go'].listeners.click();
+  assert.equal(builder.calls.length, 0, 'no build without edits');
+  assert.deepEqual(p.started, [[romFile, 'stock.z64']]);
+  assert.equal(p.el['b-go'].disabled, true, 'one game per page load');
+  assert.match(p.el['b-status'].textContent, /unchanged/);
+
+  // Wiring: inputs, Advanced options and progress reach the builder.
+  builder = fakeBuilder(built); p = panel(builder);
+  p.choose('b-rom', romFile);
   p.choose('b-parts', partsFile);
   assert.equal(p.el['b-go'].disabled, false);
+  assert.equal(p.el['b-go'].textContent, 'Build & Play');
   assert.equal(p.el['b-ips'].disabled, true);
   p.el['b-new-animals'].checked = true;
   await p.el['b-go'].listeners.click();
@@ -116,6 +127,7 @@ function fakeBuilder(outcome) {
   assert.equal(p.el['b-received'].textContent, 'Received from Level Editor: level edits.');
   assert.match(p.el['b-status'].textContent, /choose your ROM/);
   assert.equal(p.el['b-go'].disabled, true);
+  assert.equal(p.el['b-go'].textContent, 'Build & Play');
   p.choose('b-rom', romFile);
   assert.equal(p.el['b-go'].disabled, false);
   await p.el['b-go'].listeners.click();
@@ -128,7 +140,6 @@ function fakeBuilder(outcome) {
   assert.equal(p.el['b-rom'].disabled, true, 'handed-off ROM picker is greyed out');
   assert.equal(p.el['b-parts'].disabled, true, 'handed-off parts picker is greyed out');
   assert.equal(p.el['b-level'].disabled, false, 'level picker stays usable');
-  assert.equal(p.el.setup.disabled, true, 'local ROM fieldset is greyed out');
   assert.match(p.el['b-parts'].after.children[0].textContent, /^Loaded: bear\.json/);
   assert.equal(p.el['b-received'].textContent, 'Received from Model Editor: Parts config, its loaded ROM.');
   assert.match(p.el['b-status'].textContent, /^ROM: ROM from Model Editor · Parts: bear\.json\. Press Build & Play\.$/);

@@ -1,16 +1,13 @@
 'use strict';
-const romInput = document.getElementById('rom');
-const startButton = document.getElementById('start');
+// Emulator side of play.html. The single "Load ROM" panel (play-build.js) calls SSSVPlay.startGame with either the
+// chosen ROM as-is or the freshly built patched ROM; editors can also post {type:'sssv-rom'} here.
 const status = document.getElementById('status');
 let romUrl, started = false;
 const isBlobLike = b => !!b && typeof b === 'object' && typeof b.slice === 'function' && typeof b.size === 'number';
-romInput.addEventListener('change', () => {
-  startButton.disabled = !romInput.files.length;
-  status.textContent = romInput.files.length ? 'Ready. Load game fetches the emulator from this site; your ROM stays local.' : 'Choose a ROM to begin.';
-});
-document.getElementById('reset').addEventListener('click', () => location.reload());
+const reset = document.getElementById('reset');
+if (reset) reset.addEventListener('click', () => location.reload());
 async function startGame(blob, name) {
-  if (started) throw new Error('A game is already loading. Reload the page to choose another ROM.');
+  if (started) throw new Error('A game is already running. Press Start over to choose another ROM.');
   if (!isBlobLike(blob) || blob.size < 4096 || blob.size > 64 * 1024 * 1024) throw new Error('Choose an uncompressed N64 ROM between 4 KB and 64 MB.');
   const magic = Array.from(new Uint8Array(await blob.slice(0, 4).arrayBuffer())).map(b => b.toString(16).padStart(2, '0')).join('');
   if (!['80371240', '37804012', '40123780'].includes(magic)) throw new Error('Unrecognized N64 header. Unzip the ROM first; .z64, .v64 and .n64 byte orders are supported.');
@@ -33,19 +30,15 @@ async function startGame(blob, name) {
   window.EJS_onGameStart = () => { status.textContent = 'Running. Use the player menu for controls and saves.'; };
   const loader = document.createElement('script');
   loader.src = window.EJS_pathtodata + 'loader.js';
-  loader.onerror = () => { status.textContent = 'Emulator files failed to load from this site. Press Choose another ROM to reload and retry.'; };
-  romInput.disabled = true;
-  startButton.disabled = true;
+  loader.onerror = () => { status.textContent = 'Emulator files failed to load from this site. Press Start over to reload and retry.'; };
   document.getElementById('core').disabled = true;
   status.textContent = 'Loading emulator... First load may take a moment.';
   document.body.appendChild(loader);
 }
 async function startFrom(blob, name) {
-  startButton.disabled = true;
-  try { await startGame(blob, name); }
-  catch (error) { status.textContent = error.message; startButton.disabled = started || !romInput.files.length; }
+  try { await startGame(blob, name); return true; }
+  catch (error) { status.textContent = error.message; return false; }
 }
-startButton.addEventListener('click', () => { const file = romInput.files[0]; return startFrom(file, file && file.name); });
 // Builder entry: same-origin postMessage {type:'sssv-rom', name, buffer|blob}. Blobs cannot survive navigation, so
 // a builder opens play.html with window.open, waits for 'sssv-play-ready', then posts once.
 function toBlob(data) {

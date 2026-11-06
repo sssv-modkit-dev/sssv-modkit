@@ -8,15 +8,15 @@
   const $ = id => document.getElementById(id);
   const STAGES = ['runtime', 'rom', 'levels', 'table', 'animals', 'ips', 'done'];
   const US10_SHA1 = 'e5e09205aa743a9e5043a42df72adc379c746b0b';
-  const state = { rom: null, romName: '', level: null, levelName: '', parts: null, partsName: '', source: '', result: null, busy: false };
+  const state = { rom: null, romName: '', level: null, levelName: '', parts: null, partsName: '', source: '', result: null, busy: false, played: false };
   const status = text => { $('b-status').textContent = text; };
   const isBlobLike = b => !!b && typeof b === 'object' && typeof b.slice === 'function' && typeof b.size === 'number';
   const isArrayBuffer = b => Object.prototype.toString.call(b) === '[object ArrayBuffer]';
   const shortName = (value, fallback) => typeof value === 'string' && value && value.length <= 255 ? value : fallback;
 
   function update() {
-    const ready = !!state.rom && !!(state.level || state.parts);
-    $('b-go').disabled = state.busy || !ready;
+    $('b-go').disabled = state.busy || state.played || !state.rom;
+    $('b-go').textContent = state.level || state.parts ? 'Build & Play' : 'Play';
     $('b-ips').disabled = state.busy || !state.result;
     $('b-out').disabled = state.busy || !state.result;
   }
@@ -57,8 +57,24 @@
     $('b-log-box').hidden = !log;
   }
 
+  // No edit files: play the chosen ROM unchanged (stock, or a build made earlier).
+  async function playAsIs() {
+    state.busy = true; update();
+    status('Starting ' + state.romName + ' as it is…');
+    const ok = await window.SSSVPlay.startGame(state.rom, state.romName || 'game.z64');
+    state.busy = false; state.played = ok !== false; update();
+    if (state.played) { status('Playing ' + state.romName + ' unchanged. Press Start over to load something else.'); scrollToScreen(); }
+    else status('Could not start this ROM; see the message below the panel.');
+  }
+
+  function scrollToScreen() {
+    const screen = $('screen');
+    if (screen && screen.scrollIntoView) screen.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   async function build() {
-    if (state.busy) return;
+    if (state.busy || state.played || !state.rom) return;
+    if (!state.level && !state.parts) return playAsIs();
     state.busy = true; setResult(null); update();
     const bar = $('b-progress');
     bar.hidden = false; bar.value = 0;
@@ -72,9 +88,8 @@
       setResult(result);
       const seconds = result.timings && result.timings.total ? ' in ' + (result.timings.total / 1000).toFixed(1) + ' s' : '';
       status('Built' + seconds + '. Patched ROM SHA1 ' + result.romSha1 + '. Starting the emulator below; you can also download the IPS or ROM.');
-      await window.SSSVPlay.startGame(result.rom, 'patched.z64');
-      const screen = $('screen');
-      if (screen && screen.scrollIntoView) screen.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      state.played = (await window.SSSVPlay.startGame(result.rom, 'patched.z64')) !== false;
+      scrollToScreen();
     } catch (error) {
       bar.hidden = true;
       status(explain(error && error.message));
@@ -90,7 +105,7 @@
       state[key + 'Name'] = file ? file.name : '';
       setResult(null);
       update();
-      status(describeInputs() || 'Choose your ROM and at least one edit file.');
+      status(describeInputs() ? describeInputs() + '. Press ' + (state.level || state.parts ? 'Build & Play' : 'Play') + '.' : 'Choose your ROM to begin.');
     });
   }
   pick('b-rom', 'rom'); pick('b-level', 'level'); pick('b-parts', 'parts');
@@ -116,7 +131,6 @@
     const again = document.createElement('button'); again.type = 'button'; again.textContent = 'Replace';
     again.addEventListener('click', () => {
       lockInput(id, null);
-      if (id === 'b-rom') { const setup = $('setup'); if (setup) { setup.disabled = false; setup.style.opacity = ''; setup.title = ''; } }
       input.value = ''; input.click();
     });
     chip.append(label, ' ', again);
@@ -148,8 +162,6 @@
     lockInput('b-rom', rom && state.romName);
     lockInput('b-level', level && state.levelName);
     lockInput('b-parts', parts && state.partsName);
-    const setup = $('setup');
-    if (setup && rom) { setup.disabled = true; setup.style.opacity = '.5'; setup.title = 'The ROM came from ' + source + '; Build & Play starts it.'; }
     update();
     const fieldset = $('build');
     if (fieldset && fieldset.scrollIntoView) fieldset.scrollIntoView({ block: 'start' });
