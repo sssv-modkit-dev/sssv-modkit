@@ -40,7 +40,7 @@
   function draw(canvas, settings, head) {
     const ctx = canvas.getContext('2d');
     canvas.width = 1500; canvas.height = 250;
-    ctx.fillStyle = '#111b29'; ctx.fillRect(0, 0, 1500, 250);
+    ctx.fillStyle = settings.background || '#111b29'; ctx.fillRect(0, 0, 1500, 250);
     ctx.fillStyle = settings.accent; ctx.fillRect(70, 38, 32, 3);
     ctx.font = '500 18px system-ui'; ctx.fillText('SSSV MODKIT', 70, 70);
     const pair = quotes[settings.style];
@@ -52,9 +52,9 @@
       size--;
     } while (true);
     ctx.fillText(title, 70, 135, 890);
-    ctx.fillStyle = '#9ba9b9'; ctx.font = '400 18px system-ui';
+    ctx.fillStyle = settings.muted || '#9ba9b9'; ctx.font = '400 18px system-ui';
     ctx.fillText(settings.version, 70, 175, 890);
-    ctx.fillStyle = '#26384b'; ctx.fillRect(70, 205, 890, 1);
+    ctx.fillStyle = settings.rule || '#26384b'; ctx.fillRect(70, 205, 890, 1);
     ctx.fillStyle = settings.accent; ctx.fillRect(70, 205, 64, 2);
     if (head) {
       const image = recolor(head, settings.accent, settings.recolor || 'original');

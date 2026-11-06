@@ -16,6 +16,11 @@ PRESETS = {
     'blue': ('Ceruleanish Ear Bear', '#8dc4ed'),
     'orange': ('Amberish Ear Bear', '#efb16b'),
     'green': ('Jadeish Ear Bear', '#91cbb1'),
+    'purple': ('Amethystish Ear Bear', '#bd93f9'),
+}
+# Optional per-palette backgrounds (default: the navy #111b29 theme). purple = Dracula (#282a36 / #6272a4 / #44475a).
+THEMES = {
+    'purple': {'background': '#282a36', 'muted': '#6272a4', 'rule': '#44475a'},
 }
 STYLES = ('english', 'french', 'spanish', 'german', 'japanese')
 
@@ -52,7 +57,7 @@ def make_page(options, style):
     settings = json.dumps({
         'name': options.name or PRESETS[options.palette][0],
         'version': options.version, 'accent': PRESETS[options.palette][1],
-        'style': style, 'recolor': options.recolor,
+        'style': style, 'recolor': options.recolor, **THEMES.get(options.palette, {}),
     }, ensure_ascii=True).replace('<', '\\u003c')
     return r'''<!doctype html><meta charset="utf-8">
 <style>html,body{margin:0;width:1500px;height:250px;overflow:hidden}canvas{display:block}</style>
