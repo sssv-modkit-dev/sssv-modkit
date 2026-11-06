@@ -207,10 +207,11 @@ cur.p.forEach((p,i)=>{
 });
 const pal=[...new Set(parsed.flatMap(P=>[...P.cols.map(c=>c.rgba),...(noOwnColour(P)?['808080FF']:[])]))],D=$('pal');D.innerHTML='';
 for(const o of pal){const r=document.createElement('div');r.className='row';const cur2=map[o]||o;
-r.innerHTML='<div class="sw" style="background:#'+o.slice(0,6)+'"></div><span>'+colourName(o)+' (Original)<br>#'+o.slice(0,6)+(cur2!==o?' → #'+cur2.slice(0,6):'')+'</span>';
-const inp=document.createElement('input');inp.type='color';inp.value='#'+cur2.slice(0,6).toLowerCase();
+r.title=colourName(o)+' (Original) #'+o.slice(0,6)+(cur2!==o?' → #'+cur2.slice(0,6):'');
+r.innerHTML='<div class="sw" style="background:#'+o.slice(0,6)+'"></div>';
+const inp=document.createElement('input');inp.type='color';inp.setAttribute('aria-label',r.title);inp.title=r.title;inp.value='#'+cur2.slice(0,6).toLowerCase();
 inp.oninput=()=>{const n=inp.value.slice(1).toUpperCase()+o.slice(6);if(n==o)delete map[o];else map[o]=n;rebuild(false)};r.appendChild(inp);D.appendChild(r)}}
-function meshUI(){const D=$('mesh');D.innerHTML='';if(gallery)return;const P=parsed[sel];if(all||sheet||!P){D.innerHTML='<h4>Mesh editing</h4><div class="mut">Select an individual part below to edit its scale and position. Choose a part row to enter single-part mode.</div>';return}const sym=cur.p[sel].s,E=mesh[sym]||{s:[1,1,1],m:[0,0,0],o:false};
+function meshUI(){const D=$('mesh');D.innerHTML='';if(gallery)return;const P=parsed[sel];if(all||sheet||!P){D.innerHTML='<div class="mut mesh-hint">Select a part to edit its mesh.</div>';return}const sym=cur.p[sel].s,E=mesh[sym]||{s:[1,1,1],m:[0,0,0],o:false};
 D.innerHTML='<h4>'+labelHTML(sym)+(partLabel(name,sym)?' · '+labelHTML(partLabel(name,sym)):'')+'</h4>';const reset=document.createElement('button');reset.textContent='Reset';reset.onclick=()=>{delete mesh[sym];delete deform[sym];deformCache.clear();rebuild(false);info()};D.appendChild(reset);
 const axes=['X','Y','Z'];
 for(const [lab,key] of [['Scale','s'],['Move','m']]){const group=document.createElement('div');group.className='mesh-group';group.innerHTML='<div class="mesh-group-title">'+lab+'</div>';
@@ -451,7 +452,7 @@ cv.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   if(['w','a','s','d','q','e',' ','shift'].includes(k)){held.add(k);e.preventDefault();return}
-  const actions={f:frameCamera,home:()=>cameraView('reset'),'1':()=>cameraView('front'),'3':()=>cameraView('right'),'7':()=>cameraView('top'),'+':()=>zoomCamera(-.15),'=':()=>zoomCamera(-.15),'-':()=>zoomCamera(.15),arrowleft:()=>panCamera(-32,0),arrowright:()=>panCamera(32,0),arrowup:()=>panCamera(0,-32),arrowdown:()=>panCamera(0,32)};
+  const actions={f:()=>cameraView('reset'),home:()=>cameraView('reset'),'1':()=>cameraView('front'),'3':()=>cameraView('right'),'7':()=>cameraView('top'),'+':()=>zoomCamera(-.15),'=':()=>zoomCamera(-.15),'-':()=>zoomCamera(.15),arrowleft:()=>panCamera(-32,0),arrowright:()=>panCamera(32,0),arrowup:()=>panCamera(0,-32),arrowdown:()=>panCamera(0,32)};
   if(actions[k]){e.preventDefault();actions[k]()}
 });
 cv.addEventListener('keyup',e=>held.delete(e.key.toLowerCase()));
@@ -484,3 +485,5 @@ $('floating-labels').addEventListener('pointerdown',e=>{const el=e.target.closes
 $('floating-labels').addEventListener('pointermove',e=>{if(!labelDrag)return;const {sym,el}=labelDrag,off=(labelOffsets[name]||(labelOffsets[name]={}))[sym]||[0,0];off[0]+=e.clientX-labelDrag.x;off[1]+=e.clientY-labelDrag.y;labelDrag.x=e.clientX;labelDrag.y=e.clientY;el.style.left=`calc(${parseFloat(el.dataset.baseX||"0")}% + ${off[0]}px)`;el.style.top=`calc(${parseFloat(el.dataset.baseY||"0")}% + ${off[1]}px)`;});
 $('floating-labels').addEventListener('pointerup',()=>{if(labelDrag){labelDrag=null;saveViewerPrefs();updateFloatingLabels()}});
 $('floating-labels').addEventListener('pointercancel',()=>{labelDrag=null;updateFloatingLabels()});
+
+$('view-settings').open=!matchMedia('(max-width:700px) and (orientation:portrait)').matches;

@@ -70,7 +70,7 @@ function buildDemoPicker(){
   const models=Object.keys(TABLE),groups=[...new Set(models.map(modelGroup))];
   const button=(text,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=text;b.onclick=fn;host.appendChild(b);return b};
   if(!groups.includes(modelCategory))modelCategory='';
-  if(!modelCategory){for(const group of groups)button(group,()=>{modelCategory=group;buildDemoPicker()});return}
+  if(!modelCategory){for(const group of groups){const b=button(group,()=>{modelCategory=group;buildDemoPicker()});const icon=document.createElement('span');icon.className='ph';icon.setAttribute('aria-hidden','true');icon.textContent=({'Custom':'◇','Mammals':'🐾','Birds':'🐦','Water & reptiles':'🐢'})[group]||'◇';b.prepend(icon);}return}
   button('← Categories',()=>{modelCategory='';buildDemoPicker()});
   for(const n of models.filter(n=>modelGroup(n)===modelCategory)){const b=button(n.replaceAll('_',' '),()=>{$('an').value=n;pick(n);if(demoMode)markDemoPicker()});b.dataset.model=n;b.setAttribute('aria-pressed',String(n===name));if(modelCategory==='Custom'){const img=new Image();img.alt='';img.src=headshot(n);b.prepend(img)}}
 }
