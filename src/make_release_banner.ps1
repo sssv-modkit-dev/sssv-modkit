@@ -4,7 +4,7 @@ param(
     [string]$Version = 'CONCEPT',
     [string]$Out = '',
     [ValidateSet('blue', 'orange', 'green')][string]$Palette = 'blue',
-    [ValidateSet('random', 'english', 'french', 'spanish', 'german', 'japanese')][string]$QuoteStyle = 'random',
+    [ValidateSet('random', 'anglo', 'romance', 'francophone', 'central-european', 'east-asian', 'english', 'french', 'spanish', 'german', 'japanese')][string]$QuoteStyle = 'random',
     [ValidateSet('original', 'head', 'ears', 'both')][string]$Recolor = 'both',
     [string]$Browser = '',
     [switch]$Batch
