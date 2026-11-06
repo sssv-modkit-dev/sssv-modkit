@@ -106,6 +106,7 @@ function edAddObject(x,y,z){if(!palChoice){edStatus(palStatus());return;}try{con
 function edPlaceAt(point,snap){if(!M)return;edPlacedAt=performance.now();const z=Math.round(cam.t[2]),g=LevelSelection.groundPoint(M,cv.clientWidth,cv.clientHeight,point,z)||cam.t,q=snap?64:1;edAddObject(Math.round(g[0]/q)*q,Math.round(g[1]/q)*q,z);}
 $('pal-place').onclick=()=>{const q=edFlag('ed-snap')?64:1;edAddObject(...[0,1].map(i=>Math.round(cam.t[i]/q)*q),Math.round(cam.t[2]));};
 edTool('select');
+palRender();
 
 $('ed-parts-download').onclick=()=>{if(!edParts){edStatus('Attach an animal config first.');return;}const a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(edParts.config,null,2)],{type:'application/json'}));a.href=u;a.download=edParts.name.split(/[\\/]/).pop()||'animal-config.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);edStatus('Animal config downloaded. Open it with Model Editor Open edits.');};
 

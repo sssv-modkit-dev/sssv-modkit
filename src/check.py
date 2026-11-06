@@ -19,6 +19,7 @@ def main():
     print('Python syntax: %d active tool/test files.' % len(paths), flush=True)
     commands = [
         [sys.executable, 'tests/test_levels.py'],
+        [sys.executable, 'tests/test_level_startup.py'],
         ['node', 'tests/test_level_selection.js'],
         ['node', 'tests/test_level_palette.js'],
         ['node', '--check', 'src/web/play.js'],
