@@ -91,7 +91,7 @@ for(const [v,t] of palCategories){const o=document.createElement('option');o.val
 function palName(kind,type){return LevelSelection.name(kind,type);}
 function palStatus(){return palChoice?`Add: ${palName(palChoice.kind,palChoice.type)} chosen. ${edTouchUI()?'Tap':'Click'} the ground to place it, or use Place at target.`:'Add: choose an object in the palette first.';}
 function palArt(kind,type,art){const name=palName(kind,type),head=kind==='animals'&&LevelGallery.HEADS[name],fallback=()=>{art.textContent=LevelPalette.initials(name);art.style.background=`hsl(${LevelPalette.hue(type)} 35% 30%)`;};
- if(!head){fallback();return;}const img=document.createElement('img');img.src='demo/heads/'+head+'.png';img.alt='';img.width=img.height=40;img.onerror=()=>{img.remove();fallback();};art.append(img);}
+ const iconBase=document.querySelector('meta[name="scene-icons"]')?.content||'';if(!head||!iconBase){fallback();return;}const img=document.createElement('img');img.src=iconBase+head+'.png';img.alt='';img.width=img.height=40;img.onerror=()=>{img.remove();fallback();};art.append(img);}
 function palRender(){
  const grid=$('pal-grid');grid.replaceChildren();$('pal-category').hidden=palKind!=='props';
  for(const k of ['animals','props'])$('pal-tab-'+k).setAttribute('aria-selected',String(k===palKind));

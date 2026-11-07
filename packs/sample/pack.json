@@ -9,7 +9,24 @@
   "level-source": "slots/level-source.html",
   "level-network": "slots/level-network.html"
  },
- "scripts": {"model-editor": [], "level-editor": []},
- "scenes": [],
- "files": [{"src": "index.html", "dest": "index.html"}]
+ "scripts": {
+  "model-editor": [],
+  "level-editor": []
+ },
+ "scenes": [
+  {
+   "src": "assets/island.scene.json",
+   "dest": "scenes/island.scene.json"
+  }
+ ],
+ "files": [
+  {
+   "src": "index.html",
+   "dest": "index.html"
+  }
+ ],
+ "model_demos": {
+  "models": "assets/models.json",
+  "assembled": true
+ }
 }

@@ -50,7 +50,8 @@ def load_pack(folder):
     scenes = [(need(s['src']), s['dest']) for s in manifest.get('scenes', [])]
     demos = manifest.get('model_demos')
     if demos:
-        demos = {'models': need(demos['models']), 'poses': need(demos['poses']) if demos.get('poses') else None}
+        demos = {'models': need(demos['models']), 'poses': need(demos['poses']) if demos.get('poses') else None,
+                 'assembled': bool(demos.get('assembled'))}
     hook = need(manifest['build_hook']) if manifest.get('build_hook') else None
     return {'id': pid, 'title': manifest.get('title', pid), 'slots': slots, 'files': files, 'scripts': scripts,
             'scenes': scenes, 'demos': demos, 'hook': hook, 'scene_icons': manifest.get('scene_icons', '')}
@@ -69,7 +70,10 @@ def demo_models_js(demos):
     if not demos:
         return ''
     bundled = json.loads(demos['models'].read_text(encoding='utf-8'))['models']
-    js = '\nObject.assign(PARTS_DEMOS,' + js_literal(bundled) + ');\nfor(const n of ' + json.dumps(list(bundled)) + ')BUNDLED_ANIMALS.add(n);\n'
+    js = '\nObject.assign(PARTS_DEMOS,' + js_literal(bundled) + ');\n'
+    if demos['assembled']:
+        return js  # shown whole like the original demos: no part sheet, no poses
+    js += 'for(const n of ' + json.dumps(list(bundled)) + ')BUNDLED_ANIMALS.add(n);\n'
     poses = {}
     if demos['poses']:
         poses = {n: json.loads((demos['poses'] / (n + '.json')).read_text(encoding='utf-8')) for n in bundled if (demos['poses'] / (n + '.json')).is_file()}

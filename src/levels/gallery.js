@@ -30,12 +30,13 @@ const LevelGallery = (() => {
     for (const k of kids) e.append(k); return e;
   }
   /* Fill `list` with one card per level. onPick(index) is called when a card is chosen. */
-  function render(list, data, onPick, headBase = 'demo/heads/') {
+  function render(list, data, onPick, headBase = '') {
     list.replaceChildren();
     data.LEVELS.forEach((level, index) => {
       const records = data.EDITOR_STOCK[level.id], names = animalNames(records);
       const heads = el('span', {className: 'card-heads'});
       for (const key of new Set(names.map(n => HEADS[n]).filter(Boolean))) {
+        if (!headBase) continue;  // packs without icons show names only
         const img = el('img', {src: headBase + key + '.png', alt: '', width: 28, height: 28}); img.onerror = () => img.remove(); heads.append(img);
       }
       const card = el('button', {className: 'card', type: 'button', title: 'Open level ' + level.id},
