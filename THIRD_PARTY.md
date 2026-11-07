@@ -4,6 +4,7 @@
 |---|---|---|---|---|
 | Quaternius robot | `packs/sample/assets/models.json` | Quaternius | https://opengameart.org/content/animated-lowpoly-robot | CC0-1.0 |
 | Quaternius sheep | `packs/sample/assets/models.json` | Quaternius | https://opengameart.org/content/lowpoly-animated-farm-animal-pack | CC0-1.0 |
+| Sample island (original) | `packs/sample/assets/island.scene.json` | this project | `tools/make_island.js --seed 1` | CC0-1.0 |
 | Quaternius pig | `packs/sample/assets/models.json` | Quaternius | https://opengameart.org/content/lowpoly-animated-farm-animal-pack | CC0-1.0 |
 
 Credit line: "Models by Quaternius (CC0)." The models were converted to the Model Editor's part format by `tools/import_baked_model.js` (scaled, recentred, colours quantised per triangle).

@@ -1,0 +1,27 @@
+# Words the public core must not contain. Whole words, any case; a trailing * matches any ending.
+# [everywhere] applies to every file; [code] to everything outside README.md and docs/ (the explainer zone).
+# [explainer-limits] caps how often a word may appear across the explainer zone.
+[everywhere]
+nintendo
+hack
+hacking
+hacked
+hacker*
+[code]
+n64
+z64
+v64
+rom
+roms
+ips
+decomp*
+recomp*
+emulat*
+cartridge*
+dump
+dumps
+dumped
+rnc
+patched
+[explainer-limits]
+n64=1
