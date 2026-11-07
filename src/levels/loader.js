@@ -1,6 +1,7 @@
 let editorSession=null;
 const query=new URLSearchParams(location.search),$g=id=>document.getElementById(id);
-function enterEditor(data,demo){
+function enterEditor(doc,demo){
+  const data=Scene.toRuntime(doc);
   editorSession=startLevelEditor(data);
   $g('setup').hidden=true;
   const list=$g('gallery-list'),select=$g('lv');
@@ -21,7 +22,7 @@ document.getElementById('level-rom').addEventListener('change',async event=>{
   if(!file)return;input.disabled=true;
   try{
     status.textContent='Checking your local ROM…';
-    const data=await LevelRom.decode(await file.arrayBuffer(),message=>status.textContent=message);
+    const data=SceneImport.fromBundle(await LevelRom.decode(await file.arrayBuffer(),message=>status.textContent=message));
     window.SSSVLevelRom=file;  // in memory only: Build & Play hands it to play.html (handoff.js)
     enterEditor(data,false);
   }catch(error){status.textContent=error.message;input.disabled=false;input.value='';}
@@ -34,10 +35,10 @@ async function showChooser(note){
 (async()=>{
   if(query.has('rom'))return showChooser();
   try{
-    const response=await fetch('demo/level-4.json');
+    const response=await fetch('demo/level-4.scene.json');
     if(!response.ok)throw Error('HTTP '+response.status);
-    const data=await response.json();
-    if(data.format!=='sssv-demo-level-v1')throw Error('Unexpected demo bundle');
+    const data=await response.json(),errors=Scene.validate(data);
+    if(errors.length)throw Error(errors.join('; '));
     enterEditor(data,true);
   }catch(error){showChooser('The bundled demo level could not be loaded ('+error.message+'). Choose your own ROM to begin.');}
 })();

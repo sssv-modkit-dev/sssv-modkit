@@ -48,9 +48,12 @@ for (const [search, hash] of [['', ''], ['?rom=1&x=%23%26', '#stage=2'], ['', '#
 """, level_redirect_script], check=True, capture_output=True)
     assert b'level-editor.html' in (temp/'index.html').read_bytes()
     assert b'model-editor.html' in (temp/'index.html').read_bytes()
-    for asset in ('rom.js','selection.js','palette.js','gallery.js','loader.js','runtime.js','levels.css'):
+    for asset in ('rom.js','scene.js','scene-import.js','edits-export.js','selection.js','palette.js','gallery.js','loader.js','runtime.js','levels.css'):
         assert (temp/'levels'/asset).is_file()
-    for asset in ('level-4.json','animals.json','heads/dog.png','heads/sheep.png','heads/bear.png'):
+    assert not (temp/'demo'/'level-4.json').exists()
+    page = (temp/'level-editor.html').read_text(encoding='utf-8')
+    assert page.index('levels/scene.js') < page.index('levels/runtime.js') and 'levels/edits-export.js' in page
+    for asset in ('level-4.scene.json','animals.json','heads/dog.png','heads/sheep.png','heads/bear.png'):
         assert (temp/'demo'/asset).is_file(), asset
     subprocess.run(['node','--check',str(temp/'levels/runtime.js')],check=True,capture_output=True)
     assert b'/*EDITOR*/' not in (temp/'levels/runtime.js').read_bytes()

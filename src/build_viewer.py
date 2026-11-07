@@ -108,14 +108,15 @@ if args.public:
     (out.parent/'levels.html').write_bytes((here/'web/level-editor-redirect.html').read_bytes())
     levels_out=out.parent/'levels'
     levels_out.mkdir(exist_ok=True)
-    for name in ('levels.css','rom.js','selection.js','palette.js','gallery.js','loader.js'):
+    for name in ('levels.css','rom.js','scene.js','scene-import.js','edits-export.js','selection.js','palette.js','gallery.js','loader.js'):
         (levels_out/name).write_bytes((here/'levels'/name).read_bytes())
     runtime=(here/'levels/runtime.js').read_text(encoding='utf-8')
     editor=(here/'levels/editor.js').read_text(encoding='utf-8')
     (levels_out/'runtime.js').write_text(runtime.replace('/*EDITOR*/',editor),encoding='utf-8')
     # Bundled demo level, its models and head icons (generated once by build_demo_assets.js; no ROM is read here).
     demo_out=out.parent/'demo'
-    shutil.copytree(here/'web/demo',demo_out,dirs_exist_ok=True)
+    # The decoder bundle level-4.json is a build input only; the page loads level-4.scene.json (scene-v1).
+    shutil.copytree(here/'web/demo',demo_out,dirs_exist_ok=True,ignore=shutil.ignore_patterns('level-4.json'))
     if icon_path:
         (demo_out/'heads').mkdir(exist_ok=True)
         shutil.copyfile(icon_path,demo_out/'heads/bear.png')
