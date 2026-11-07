@@ -29,8 +29,10 @@ def load_lists(root):
 
 
 def pattern(words):
-    parts = [re.escape(w[:-1]) + r'\w*' if w.endswith('*') else re.escape(w) for w in words]
-    return re.compile(r'\b(' + '|'.join(parts) + r')\b', re.I)
+    # Words are separated by anything but letters and digits, so snake_case (word_x), kebab-case and dotted names are split,
+    # while camelCase identifiers such as wordTable stay whole (the next letter continues the word).
+    parts = [re.escape(w[:-1]) + r'[A-Za-z0-9]*' if w.endswith('*') else re.escape(w) for w in words]
+    return re.compile(r'(?<![A-Za-z0-9])(' + '|'.join(parts) + r')(?![A-Za-z0-9])', re.I)
 
 
 def explainer(path):
@@ -79,6 +81,7 @@ def check_tree(root, lists, report):
     counts = {}
     names = files(root)
     for name in names:
+        check_text(name, [('path', name)], lists, report, {})  # file and folder names count too
         data = (root / name).read_bytes()
         if len(data) > MAX_BYTES:
             report.add(name, 'larger than 2 MB')
@@ -118,6 +121,16 @@ def check_history(root, lists, report):
         elif raw.startswith('+') and not raw.startswith('+++'):
             lines.append(('commit ' + commit, raw[1:]))
     flush()
+    messages = subprocess.run(['git', '-C', str(root), 'log', '--all', '--format=%h%x00%B%x01'], capture_output=True, check=True)
+    rx = pattern([w for words in (lists['everywhere'], lists['code']) for w in words])
+    for entry in messages.stdout.decode('utf-8', 'replace').split('\x01'):
+        if '\x00' in entry:
+            commit, body = entry.strip().split('\x00', 1)
+            for m in rx.finditer(body):
+                report.add('commit %s' % commit, 'commit message: ' + m.group(0))
+    names = subprocess.run(['git', '-C', str(root), 'log', '--all', '--name-only', '--format='], capture_output=True, check=True)
+    for name in sorted(set(filter(None, names.stdout.decode('utf-8', 'replace').splitlines()))):
+        check_text(name, [('path (history)', name)], lists, report, {})
 
 
 def main(argv):

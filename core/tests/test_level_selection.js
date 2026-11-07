@@ -70,8 +70,8 @@ const record='00000000000000000000000000000000000000000000',stock={'1':{props:[r
 const ctx={Uint8Array,DataView,structuredClone,EDITOR_STOCK:stock,EDITOR_SHA1:'synthetic'};vm.createContext(ctx);vm.runInContext(source+';this.api=EditorRecords;',ctx);
 const edited=ctx.api.update(record,'props',[34,100,200,300,90,0]);
 assert.deepEqual(Array.from(ctx.api.values(edited,'props')),[34,100,200,300,90,0]);
-assert.throws(()=>ctx.api.validate({format:'sssv-editor-diff',version:1,rom_sha1:'wrong',levels:{}}));
-assert.throws(()=>ctx.api.validate({format:'sssv-editor-diff',version:1,rom_sha1:'synthetic',levels:{'1':{props:{delete:[0]}}}}));
+assert.throws(()=>ctx.api.validate({format:'scene-edits-v1',version:1,source_sha1:'wrong',levels:{}}));
+assert.throws(()=>ctx.api.validate({format:'scene-edits-v1',version:1,source_sha1:'synthetic',levels:{'1':{props:{delete:[0]}}}}));
 console.log('Cursor-following object drag, named categories, rectangle projection, footprint picking, spacing-preserving atomic group moves and record validation passed.');
 
 // Appended deletion physically removes records while preserving original indices; atomic rejection of mixed selection.

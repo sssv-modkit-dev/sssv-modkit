@@ -8,7 +8,8 @@
   "level-noscript": "slots/level-noscript.html",
   "level-source": "slots/level-source.html",
   "level-network": "slots/level-network.html",
-  "level-gallery-open": "slots/level-gallery-open.html"
+  "level-gallery-open": "slots/level-gallery-open.html",
+  "level-nav": "slots/level-nav.html"
  },
  "scripts": {
   "model-editor": [],
@@ -29,5 +30,6 @@
  "model_demos": {
   "models": "assets/models.json",
   "assembled": true
- }
+ },
+ "source_url": ""
 }

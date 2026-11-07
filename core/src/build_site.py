@@ -10,9 +10,10 @@ pack is incomplete; the message names the missing slot or file.
 import argparse, base64, hashlib, importlib.util, json, shutil, sys
 from pathlib import Path
 from urllib.parse import quote
+from html import escape
 
 HERE = Path(__file__).resolve().parent
-SLOTS = ('model-noscript', 'model-source', 'model-nav', 'level-noscript', 'level-source', 'level-network', 'level-gallery-open')
+SLOTS = ('model-noscript', 'model-source', 'model-nav', 'level-nav', 'level-noscript', 'level-source', 'level-network', 'level-gallery-open')
 LEVEL_SCRIPTS = ('scene.js', 'selection.js', 'palette.js', 'gallery.js', 'loader.js')
 FAVICONS = ('favicon.svg', 'favicon-model-editor.svg', 'favicon-level-editor.svg')
 
@@ -22,7 +23,7 @@ class PackError(Exception):
 
 
 def js_literal(value):
-    return json.dumps(value, separators=(',', ':')).replace('<', r'<')
+    return json.dumps(value, separators=(',', ':')).replace('<', r'\u003c')
 
 
 def load_pack(folder):
@@ -54,7 +55,7 @@ def load_pack(folder):
                  'assembled': bool(demos.get('assembled'))}
     hook = need(manifest['build_hook']) if manifest.get('build_hook') else None
     return {'id': pid, 'title': manifest.get('title', pid), 'slots': slots, 'files': files, 'scripts': scripts,
-            'scenes': scenes, 'demos': demos, 'hook': hook, 'scene_icons': manifest.get('scene_icons', '')}
+            'scenes': scenes, 'demos': demos, 'hook': hook, 'scene_icons': manifest.get('scene_icons', ''), 'source_url': manifest.get('source_url', '')}
 
 
 def fill(html, slots, names):
@@ -96,7 +97,9 @@ def model_editor(pack):
     html = html.replace('<link rel="icon" href="/*VIEWER_ICON*/">', '<link rel="icon" type="image/svg+xml" href="favicon-model-editor.svg">', 1)
     html = html.replace('<body>\n', '<body>\n' + pack['slots']['model-noscript'] + '\n', 1)
     html = html.replace('<!--PUBLIC_NAV-->', pack['slots']['model-nav'])
-    html = fill(html, pack['slots'], ('model-source',)).replace('__PACK_TITLE__', pack['title'])
+    html = fill(html, pack['slots'], ('model-source',)).replace('__PACK_TITLE__', escape(pack['title']))
+    link = '<a href="%s" target="_blank" rel="noopener">Source &amp; credits &#8599;</a>' % escape(pack['source_url']) if pack['source_url'] else ''
+    html = html.replace('<!--SOURCE_LINK-->', link)
     svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#202638"/><text x="32" y="41" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="bold" fill="#edf1fa">SS</text></svg>'
     icon = 'data:image/svg+xml,' + quote(svg, safe='')
     for marker, value in (('/*VIEWER_CSS*/', (base / 'css/app.css').read_text(encoding='utf-8')), ('/*VIEWER_JS*/', js), ('/*VIEWER_ICON*/', icon)):
@@ -108,7 +111,7 @@ def model_editor(pack):
 
 def level_editor(pack, out):
     html = (HERE / 'web/level-editor.html').read_text(encoding='utf-8').replace('__PACK_TITLE__', pack['title'])
-    html = fill(html, pack['slots'], ('level-noscript', 'level-source', 'level-network', 'level-gallery-open'))
+    html = fill(html, pack['slots'], ('level-nav', 'level-noscript', 'level-source', 'level-network', 'level-gallery-open'))
     tags = ''.join('<script src="levels/%s"></script>' % s.name for s in pack['scripts']['level-editor'])
     meta = '<meta name="default-scene" content="%s"><meta name="scene-icons" content="%s">' % (pack['scenes'][0][1] if pack['scenes'] else '', pack['scene_icons'])
     html = html.replace('<!--PACK_SCRIPTS-->', tags, 1).replace('</head>', meta + '</head>', 1)

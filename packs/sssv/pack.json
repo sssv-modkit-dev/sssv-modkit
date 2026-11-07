@@ -8,7 +8,8 @@
   "level-noscript": "slots/level-noscript.html",
   "level-source": "slots/level-source.html",
   "level-network": "slots/level-network.html",
-  "level-gallery-open": "slots/level-gallery-open.html"
+  "level-gallery-open": "slots/level-gallery-open.html",
+  "level-nav": "slots/level-nav.html"
  },
  "scripts": {
   "model-editor": [
@@ -92,5 +93,6 @@
    ]
   }
  ],
- "build_hook": "build_hook.py"
+ "build_hook": "build_hook.py",
+ "source_url": ""
 }

@@ -43,7 +43,7 @@ passes({'README.md': 'What is a %s? An %s patch?' % (R.upper(), 'I' + 'PS'), 'do
 fails({'src/x.js': '// ' + DEC}, DEC)
 # test_everywhere
 fails({'README.md': 'Not by ' + NIN.title()}, NIN)
-# test_n64_limit
+# test_platform_limit
 passes({'README.md': 'A fan editor for an %s game.' % N.upper()})
 fails({'README.md': '%s once. %s twice.' % (N.upper(), N.upper())}, N)
 fails({'README.md': N.upper(), 'docs/a.md': N.upper()}, N)
@@ -60,6 +60,9 @@ root = tree({'docs/img/big.png': b'\0' * (3 * 1024 * 1024)})
 result = run(root)
 assert result.returncode == 1 and 'docs/img/big.png' in result.stdout, result.stdout
 passes({'docs/img/ok.png': b'\x89PNG\0\0'})
+# test_snake_case_and_paths: underscores separate words; file names are checked too
+fails({'tests/t.js': "x={%s_sha1:1}" % R}, 'tests/t.js:1: ' + R)
+fails({'src/level-source-' + R + '.js': '// ok'}, 'src/level-source-' + R + '.js:path')
 # test_history: a banned word that was committed and later removed still fails --history
 root = tree({'src/a.js': '// ' + R + ' loader'})
 git = lambda *a: subprocess.run(['git', '-C', str(root), *a], check=True, capture_output=True)
@@ -69,4 +72,11 @@ git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qam', 'two')
 assert run(root).returncode == 0
 result = run(root, '--history')
 assert result.returncode == 1 and R in result.stdout, result.stdout
+# commit messages are part of history too
+root = tree({'src/b.js': '// fine'})
+git = lambda *a: subprocess.run(['git', '-C', str(root), *a], check=True, capture_output=True)
+git('init', '-q'); git('-c', 'user.email=t@t', '-c', 'user.name=t', 'add', '-A')
+git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'add ' + R + ' loader')
+result = run(root, '--history')
+assert result.returncode == 1 and 'commit message' in result.stdout, result.stdout
 print('Guards: zones, explainer limit, licences, binaries and history passed.')

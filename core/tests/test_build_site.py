@@ -27,6 +27,24 @@ with tempfile.TemporaryDirectory() as tmp:
         assert '<!--slot:' not in text and '__PACK_TITLE__' not in text, path
     assert 'SSSV Editor' in (out / 'model-editor.html').read_text(encoding='utf-8')
 
+    # test_every_page_has_disclaimer_and_no_dead_links
+    DISCLAIMER = 'Unofficial fan project. Not affiliated with or endorsed by the rights holders. Contains no game data.'
+    for path, text in pages(out).items():
+        assert DISCLAIMER in text, ('disclaimer missing', path)
+        assert 'href="play.html"' not in text and 'github.com' not in text, ('dead or old link', path)
+
+    # test_inline_script_escape: model names cannot close the inline script
+    evil = tmp / 'evil'
+    shutil.copytree(ROOT / 'packs/sample', evil)
+    manifest = json.loads((evil / 'pack.json').read_text(encoding='utf-8'))
+    models = json.loads((evil / 'assets/models.json').read_text(encoding='utf-8'))
+    models['models']['</script><b id=x>'] = next(iter(models['models'].values()))
+    (evil / 'assets/models.json').write_text(json.dumps(models), encoding='utf-8')
+    result = build(evil, tmp / 'evil-out')
+    assert result.returncode == 0, result.stderr
+    html = (tmp / 'evil-out/model-editor.html').read_text(encoding='utf-8')
+    assert '</script><b id=x>' not in html and html.count('</script>') == html.count('<script'), 'inline script closed early'
+
     # test_missing_slot_fails
     broken = tmp / 'broken'
     shutil.copytree(ROOT / 'packs/sample', broken)

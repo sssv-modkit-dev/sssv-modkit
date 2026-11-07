@@ -7,6 +7,13 @@ assert.ok(Scene.validate({format:'x'}).some(e=>/format/.test(e)));
 assert.ok(Scene.validate(null).length>0);
 const broken=structuredClone(island);broken.levels[0].atlas='missing';
 assert.ok(Scene.validate(broken).some(e=>/atlases/.test(e)));
+// Every field the editor needs is checked up front, so a bad file cannot half-start the editor.
+for(const [what,mutate] of [['source.sha1',d=>{delete d.source.sha1;}],['types',d=>{delete d.types;}],['meshes',d=>{d.meshes=null;}],
+  ['creatures',d=>{delete d.creatures;}],['records',d=>{delete d.levels[0].records;}],['objects',d=>{d.levels[0].objects={};}],
+  ['terrain.colours',d=>{delete d.levels[0].terrain.colours;}],['records.props',d=>{d.levels[0].records.props='x';}]]){
+  const doc=structuredClone(island);mutate(doc);
+  assert.ok(Scene.validate(doc).some(e=>e.includes(what)),'validate reports '+what+': '+JSON.stringify(Scene.validate(doc)));
+}
 const rt=Scene.toRuntime(island),id=String(rt.LEVELS[0].id);
 assert.equal(rt.EDITOR_SHA1,island.source.sha1);assert.equal(rt.LEVELS[0].tex,island.levels[0].atlas);
 assert.deepStrictEqual(rt.EDITOR_STOCK[id].animals,island.levels[0].records.creatures);

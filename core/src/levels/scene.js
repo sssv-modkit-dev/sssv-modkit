@@ -9,13 +9,23 @@ const Scene=(()=>{
   function validate(doc){
     const errors=[];
     if(!doc||typeof doc!=='object')return ['not a scene-v1 document'];
+    const isObject=v=>!!v&&typeof v==='object'&&!Array.isArray(v),strings=v=>Array.isArray(v)&&v.every(x=>typeof x==='string');
     if(doc.format!=='scene-v1')errors.push('format must be "scene-v1", got '+JSON.stringify(doc.format));
+    // source.sha1 identifies the scene; edits files are matched against it, so it must exist.
+    if(typeof doc.source?.sha1!=='string'||!doc.source.sha1)errors.push('source.sha1 must be a non-empty string');
+    if(!Array.isArray(doc.types))errors.push('types must be a list');
+    if(!isObject(doc.meshes))errors.push('meshes must be an object');
+    if(!isObject(doc.creatures)||!isObject(doc.creatures.models)||!isObject(doc.creatures.species))errors.push('creatures must have models and species objects');
+    if(!isObject(doc.atlases))errors.push('atlases must be an object');
     if(!Array.isArray(doc.levels)||!doc.levels.length){errors.push('levels must be a non-empty list');return errors;}
-    const atlases=doc.atlases||{};
+    const atlases=isObject(doc.atlases)?doc.atlases:{};
     doc.levels.forEach((level,i)=>{
-      if(typeof level?.terrain?.positions!=='string')errors.push(`levels[${i}].terrain.positions must be a string`);
+      for(const key of Object.keys(TERRAIN))if(typeof level?.terrain?.[key]!=='string')errors.push(`levels[${i}].terrain.${key} must be a string`);
       if(!Number.isInteger(level?.vertexCount))errors.push(`levels[${i}].vertexCount must be an integer`);
+      if(!Array.isArray(level?.bounds)||level.bounds.length!==6)errors.push(`levels[${i}].bounds must be a list of 6 numbers`);
       if(!(level?.atlas in atlases))errors.push(`levels[${i}].atlas ${JSON.stringify(level?.atlas)} not in atlases`);
+      if(typeof level?.objects?.props!=='string'||!Array.isArray(level?.objects?.creatures))errors.push(`levels[${i}].objects needs props (string) and creatures (list)`);
+      if(!strings(level?.records?.props)||!strings(level?.records?.creatures))errors.push(`levels[${i}].records.props and records.creatures must be lists of hex strings`);
     });
     return errors;
   }
