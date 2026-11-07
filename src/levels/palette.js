@@ -1,4 +1,4 @@
-/* Object palette: which object types can be added and how a new spawn record is built. Pure; no ROM access.
+/* Object palette: which object types can be added and how a new spawn record is built. Pure; no file access.
    A new record clones a stock record of the same type from any loaded level when one exists (so level-specific
    fields stay plausible); otherwise it is all zeros apart from type and pose. Offsets match EditorRecords. */
 const LevelPalette = (() => {

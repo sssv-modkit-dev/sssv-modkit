@@ -1,4 +1,4 @@
-/* Level gallery: cards with a top-down thumbnail, name and animal head icons. Pure display; no ROM access. */
+/* Level gallery: cards with a top-down thumbnail, name and animal head icons. Pure display; no file access. */
 const LevelGallery = (() => {
   const HEADS = {Bear: 'bear', 'Crazy Bear': 'bear', 'Mystery Bear': 'bear', Dog: 'dog', 'Racing Dog': 'dog', 'Flying Dog': 'dog', Fox: 'fox', 'Fire Fox': 'fox', 'Racing Fox': 'fox', Sheep: 'sheep', Seagull: 'seagull'};
   const b64 = (s, T) => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new T(u.buffer); };

@@ -220,7 +220,7 @@ function openView(value){
 $('save-view').onclick=()=>{
  try{const v=currentView(),a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(v,null,2)],{type:'application/json'}));
  a.href=u;a.download='sssv-level-'+v.level+'-view.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
- $('view-status').textContent='View saved. No ROM, meshes or textures included.';
+ $('view-status').textContent='View saved (camera and display settings only).';
  }catch(e){$('view-status').textContent=e.message;}
 };
 $('open-view').onclick=()=>$('view-file').click();

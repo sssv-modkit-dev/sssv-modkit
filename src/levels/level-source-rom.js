@@ -10,3 +10,7 @@ document.getElementById('level-rom')?.addEventListener('change',async event=>{
     enterEditor(data,false);
   }catch(error){status.textContent=error.message;input.disabled=false;input.value='';}
 });
+// Build & Play: hand the project (and the ROM this page decoded, if any) to play.html; handoff.js waits for its ready message.
+window.LevelEditorPlay=(project,parts)=>{const rom=window.SSSVLevelRom||null;
+  window.SSSVHandoff.openPlay({level:EditsExport.toBuilderProject(project),levelName:'Level Editor project'+(parts?' + '+parts.name:''),rom,romName:rom?rom.name:undefined,source:'Level Editor'});
+  return rom?'Opened Play with this project and your ROM. Press Build & Play there.':'Opened Play with this project. Choose your US 1.0 ROM there, then press Build & Play.';};

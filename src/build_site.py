@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 HERE = Path(__file__).resolve().parent
-SLOTS = ('model-noscript', 'model-source', 'model-nav', 'level-noscript', 'level-source', 'level-network')
+SLOTS = ('model-noscript', 'model-source', 'model-nav', 'level-noscript', 'level-source', 'level-network', 'level-gallery-open')
 LEVEL_SCRIPTS = ('scene.js', 'selection.js', 'palette.js', 'gallery.js', 'loader.js')
 FAVICONS = ('favicon.svg', 'favicon-model-editor.svg', 'favicon-level-editor.svg')
 
@@ -96,7 +96,7 @@ def model_editor(pack):
     html = html.replace('<link rel="icon" href="/*VIEWER_ICON*/">', '<link rel="icon" type="image/svg+xml" href="favicon-model-editor.svg">', 1)
     html = html.replace('<body>\n', '<body>\n' + pack['slots']['model-noscript'] + '\n', 1)
     html = html.replace('<!--PUBLIC_NAV-->', pack['slots']['model-nav'])
-    html = fill(html, pack['slots'], ('model-source',))
+    html = fill(html, pack['slots'], ('model-source',)).replace('__PACK_TITLE__', pack['title'])
     svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#202638"/><text x="32" y="41" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="bold" fill="#edf1fa">SS</text></svg>'
     icon = 'data:image/svg+xml,' + quote(svg, safe='')
     for marker, value in (('/*VIEWER_CSS*/', (base / 'css/app.css').read_text(encoding='utf-8')), ('/*VIEWER_JS*/', js), ('/*VIEWER_ICON*/', icon)):
@@ -108,7 +108,7 @@ def model_editor(pack):
 
 def level_editor(pack, out):
     html = (HERE / 'web/level-editor.html').read_text(encoding='utf-8').replace('__PACK_TITLE__', pack['title'])
-    html = fill(html, pack['slots'], ('level-noscript', 'level-source', 'level-network'))
+    html = fill(html, pack['slots'], ('level-noscript', 'level-source', 'level-network', 'level-gallery-open'))
     tags = ''.join('<script src="levels/%s"></script>' % s.name for s in pack['scripts']['level-editor'])
     meta = '<meta name="default-scene" content="%s"><meta name="scene-icons" content="%s">' % (pack['scenes'][0][1] if pack['scenes'] else '', pack['scene_icons'])
     html = html.replace('<!--PACK_SCRIPTS-->', tags, 1).replace('</head>', meta + '</head>', 1)

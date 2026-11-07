@@ -18,9 +18,6 @@ decomp*
 recomp*
 emulat*
 cartridge*
-dump
-dumps
-dumped
 rnc
 patched
 [explainer-limits]

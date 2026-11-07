@@ -10,7 +10,7 @@ function parseDL(dv,addr,bases){const vb={},cols=[],tris=[],groups=[],bb=[1e9,1e
 for(let i=0;i<800;i++){const o=addr+8*i;if(o+8>dv.byteLength)break;const op=dv.getUint8(o),w0=dv.getUint32(o),w1=dv.getUint32(o+4);
 if(op==0xB8)break;
 if(op==4){const seg=w1>>>24,off=w1&0xFFFFFF,n=((w0&0x3FF)+1)>>4,v0=((w0>>>16)&255)>>1,b=bases[seg],gv=[];groups.push({verts:gv});for(let k=0;k<n;k++){const q=vb[v0+k]=b===undefined?null:vtx(dv,b,off,k);if(q)gv.push(q);if(q)for(let a=0;a<3;a++){bb[a]=Math.min(bb[a],q[a]);bb[a+3]=Math.max(bb[a+3],q[a])}}}
-else if(op==0xFA){cols.push({rgba:w1.toString(16).toUpperCase().padStart(8,'0'),rom:o+4});c=cols.length-1}
+else if(op==0xFA){cols.push({rgba:w1.toString(16).toUpperCase().padStart(8,'0'),at:o+4});c=cols.length-1}
 else if(op==0xBF||op==0xB1){const T=op==0xBF?[[(w1>>>16)&255,(w1>>>8)&255,w1&255]]:[[(w0>>>16)&255,(w0>>>8)&255,w0&255],[(w1>>>16)&255,(w1>>>8)&255,w1&255]];
 for(const t of T){const v=t.map(k=>vb[k>>1]);if(v.every(x=>x)&&new Set(t).size==3)tris.push({v,c})}}}
 // Keep the full vertex bounds for builder-compatible mesh transforms, but
@@ -81,7 +81,7 @@ function makeDeform(lo,hi,ops,about){
 // one vertex through one makeDeform fn -> rounded, int16-clamped [x,y,z]; st.clip counts clamped coordinates
 function applyDeform(f,v,st){const p=[v[0],v[1],v[2]];f(p);return p.map(x=>{let y=Math.floor(x+.5);if(y<-32768||y>32767){if(st)st.clip++;y=Math.max(-32768,Math.min(32767,y))}return y})}
 function bboxOf(pts){const lo=[1e9,1e9,1e9],hi=[-1e9,-1e9,-1e9];for(const p of pts)for(let k=0;k<3;k++){if(p[k]<lo[k])lo[k]=p[k];if(p[k]>hi[k])hi[k]=p[k]}return[lo,hi]}
-// entries = [{ops,about,groups}] in config order. Like the builder: each entry selects whole vertex groups (all of them unless "groups":[i,..]), every unique vertex (by ROM offset) is deformed once,
+// entries = [{ops,about,groups}] in config order. Like the builder: each entry selects whole vertex groups (all of them unless "groups":[i,..]), every unique vertex (by source offset) is deformed once,
 // the mesh edit E (or null) runs first, and each entry's bbox comes from its selected vertices as the previous entry left them. Each fn in fs carries .sel (Set of vertex offsets).
 function partGroups(P){if(P.groups)return P.groups;const seen=new Set(),gv=[];let n=0;for(const t of P.tris)for(const v of t.v)if(!seen.has(v)){seen.add(v);if(v.o===undefined)v.o=--n;gv.push(v)}return[{verts:gv}]}
 function deformPrepare(P,E,entries){
@@ -451,7 +451,7 @@ function flyFrame(t){const dt=Math.min((t-lastFrame)/1000||0,.06);lastFrame=t;
   }requestAnimationFrame(flyFrame)
 }requestAnimationFrame(flyFrame);
 
-// Viewer-only annotations and layout offsets: never write to the ROM.
+// Viewer-only annotations and layout offsets: never write to the source data.
 function saveViewerPrefs(){try{localStorage.setItem('sssv-viewer-annotations-v1',JSON.stringify({partNames,partOffsets,labelOffsets}))}catch(_){}}
 try{const p=JSON.parse(localStorage.getItem('sssv-viewer-annotations-v1')||'{}');partNames=p.partNames||{};partOffsets=p.partOffsets||{};labelOffsets=p.labelOffsets||{}}catch(_){}
 $('part-name').addEventListener('change',()=>{saveViewerPrefs();ui()});

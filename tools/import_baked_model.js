@@ -15,7 +15,7 @@ function convert(parts){
   return {b:{},s:[],p:parts.map(part=>{
     const cols=[],index=new Map(),tris=[];
     const at=k=>part.verts[k].map((v,i)=>Math.round((v-centre[i])*scale));
-    for(const f of part.faces){const rgba=hex(part.cols[f[0]]);if(!index.has(rgba)){index.set(rgba,cols.length);cols.push({rgba,rom:0});}
+    for(const f of part.faces){const rgba=hex(part.cols[f[0]]);if(!index.has(rgba)){index.set(rgba,cols.length);cols.push({rgba,at:0});}
       tris.push({v:f.map(at),c:index.get(rgba)});}
     const vs=tris.flatMap(t=>t.v),bb=[0,1,2].map(k=>Math.min(...vs.map(v=>v[k]))).concat([0,1,2].map(k=>Math.max(...vs.map(v=>v[k]))));
     let s=part.name.replace(/_\d+$/,'').toLowerCase().replace(/[^a-z0-9]+/g,'-');const n=(used.get(s)||0)+1;used.set(s,n);if(n>1)s+='-'+n;

@@ -1,10 +1,10 @@
-"""Guards: banned words by zone, N64 limit, licences, binaries and history. Banned words are built by concatenation."""
+"""Guards: banned words by zone, the explainer-zone limit, licences, binaries and history. Banned words are built by concatenation."""
 from pathlib import Path
 import os, shutil, subprocess, sys, tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 GUARDS = [sys.executable, str(ROOT / 'tools/guards.py')]
-R, N, NIN, Z = 'r' + 'om', 'n' + '64', 'nin' + 'tendo', 'z' + '64'
+R, N, NIN, Z, DEC = 'r' + 'om', 'n' + '64', 'nin' + 'tendo', 'z' + '64', 'decom' + 'pilation'
 
 
 def tree(files):
@@ -39,8 +39,8 @@ fails({'src/load.js': "accept='.%s'" % Z}, Z)
 # test_romTable_allowed (not a whole word)
 passes({'src/app.js': 'let %sTable={};' % R})
 # test_explainer_zone: the docs may explain, the code may not
-passes({'README.md': 'What is a %s? An IPS patch?' % R.upper(), 'docs/HOW.md': 'decompilation vs recompilation'})
-fails({'src/x.js': '// decompilation'}, 'decompilation')
+passes({'README.md': 'What is a %s? An %s patch?' % (R.upper(), 'I' + 'PS'), 'docs/HOW.md': DEC + ' vs re' + 'compilation'})
+fails({'src/x.js': '// ' + DEC}, DEC)
 # test_everywhere
 fails({'README.md': 'Not by ' + NIN.title()}, NIN)
 # test_n64_limit
@@ -69,4 +69,4 @@ git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qam', 'two')
 assert run(root).returncode == 0
 result = run(root, '--history')
 assert result.returncode == 1 and R in result.stdout, result.stdout
-print('Guards: zones, N64 limit, licences, binaries and history passed.')
+print('Guards: zones, explainer limit, licences, binaries and history passed.')

@@ -7,11 +7,13 @@
   "model-nav": "slots/model-nav.html",
   "level-noscript": "slots/level-noscript.html",
   "level-source": "slots/level-source.html",
-  "level-network": "slots/level-network.html"
+  "level-network": "slots/level-network.html",
+  "level-gallery-open": "slots/level-gallery-open.html"
  },
  "scripts": {
   "model-editor": [
    "../../src/web/handoff.js",
+   "../../src/viewer/js/parts-table.js",
    "../../src/viewer/js/model-source-rom.js"
   ],
   "level-editor": [

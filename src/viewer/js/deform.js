@@ -1,11 +1,11 @@
 /* deform.js - JS port of plan_deform() from src/make_animal_mods.py, for live preview in the viewer.
  * SAME maths and SAME rounding as the builder (tests/test_deform_parity.js proves it against golden vectors made by the Python).
- * Pure functions, no DOM, no ROM access.  Works as a browser global (SSSVDeform) and as a Node module.
+ * Pure functions, no DOM, no file access.  Works as a browser global (SSSVDeform) and as a Node module.
  *
  *   const r = SSSVDeform.planDeform(verts, entry);
  *     verts : [[x,y,z], ...]  int16 vertex positions of the SELECTED vertices (same order you will draw them)
  *     entry : the config's deform entry, e.g. {"about":[x,y,z], "ops":[{"type":"taper",...}, ...]}  ("symbol" is the caller's job; for "groups" use planDeformGroups)
- *   -> { verts: [[x,y,z],...] (rounded + clamped like the ROM), bboxBefore:[lo,hi], bboxAfter:[lo,hi], clamped:n }
+ *   -> { verts: [[x,y,z],...] (rounded + clamped to Int16), bboxBefore:[lo,hi], bboxAfter:[lo,hi], clamped:n }
  * Throws Error with the same wording as the builder's SystemExit messages for bad configs (show them in the UI). */
 (function (root) {
   var AXIS = { x: 0, y: 1, z: 2 };
@@ -54,7 +54,7 @@
     var hi2 = [0, 1, 2].map(function (k) { return Math.max.apply(null, out.map(function (p) { return p[k]; })); });
     return { verts: out, bboxBefore: [lo, hi], bboxAfter: [lo2, hi2], clamped: clamped };
   }
-  /* Group selection like the builder: groups = [[{o, p:[x,y,z]}, ...], ...] (vertex groups of the part; o = unique vertex id, e.g. ROM offset).
+  /* Group selection like the builder: groups = [[{o, p:[x,y,z]}, ...], ...] (vertex groups of the part; o = unique vertex id, e.g. source offset).
    * entry.groups (optional) lists group indices; default is all. Each unique vertex is deformed once. -> planDeform result plus offsets (same order as verts). */
   function planDeformGroups(groups, entry) {
     var idx = entry.groups || groups.map(function (_, i) { return i; }), seen = {}, offs = [], pts = [];

@@ -20,7 +20,7 @@ const PARTS_DEMOS=(()=>{
     }
     for(let i=1;i<rings-1;i++){tri(0,i+1,i);tri(levels*rings,levels*rings+i,levels*rings+i+1)}
     const bb=[0,1,2].map(k=>Math.min(...verts.map(v=>v[k]))).concat([0,1,2].map(k=>Math.max(...verts.map(v=>v[k]))));
-    return {s,r:0,j:'demo',v:[],t:[],demo:{cols:[{rgba,rom:0}],tris,bb}};
+    return {s,r:0,j:'demo',v:[],t:[],demo:{cols:[{rgba,at:0}],tris,bb}};
   }
   const models={};
   let p=[];

@@ -51,7 +51,7 @@ const point=live.cameraFit([0,0,0],[0,0,0],[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],1);
 assert(point.distance>0 && point.radius>0);
 console.log('Camera: rolled screen-plane pan and all-corner framing at 72 orientation/aspect combinations passed.');
 
-// Run the live input handlers with a minimal canvas, without a browser or ROM.
+// Run the live input handlers with a minimal canvas, without a browser or source files.
 vm.runInContext(`
 var HOME_VIEW=[0.5,0],yaw=0,pit=0,roll=0,dist=500,ctr=[0,0,0],sceneRadius=200,sceneBounds=null;
 var held=new Set(),sheet=true,name='fixture',moveButton='alt',partOffsets={};

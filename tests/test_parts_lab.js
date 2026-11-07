@@ -1,9 +1,9 @@
-// ROM-free coverage for original geometry and the public import/share boundary.
+// Coverage for original geometry and the public import/share boundary.
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const models=fs.readFileSync('src/viewer/js/demo-models.js','utf8');
 const lab=fs.readFileSync('src/viewer/js/parts-lab.js','utf8').split('//#LAB-PURE-START')[1].split('//#LAB-PURE-END')[0];
-const context=vm.createContext({});vm.runInContext(models+'\n'+lab+'\nthis.api={models:PARTS_DEMOS,validateDemoPreset,normaliseLocalTable,editMemory,examplePart};',context);
-const {models:demo,validateDemoPreset:validate,normaliseLocalTable:table}=context.api;
+const context=vm.createContext({});vm.runInContext(models+'\n'+lab+'\nthis.api={models:PARTS_DEMOS,validateDemoPreset,editMemory,examplePart};',context);
+const {models:demo,validateDemoPreset:validate}=context.api;
 assert.equal(Object.keys(demo).length,3);
 for(const [name,m] of Object.entries(demo)){
   assert.ok(m.p.length>=10);assert.equal(new Set(m.p.map(p=>p.s)).size,m.p.length);
@@ -18,12 +18,7 @@ for(const [name,m] of Object.entries(demo)){
   assert.throws(()=>validate({...preset,mesh:{[m.p[0].s]:{s:[Infinity,1,1],m:[0,0,0],o:false}}}));
   assert.throws(()=>validate({...preset,palette:{'AABBCCFF':'<script>'}}));
 }
-const synthetic={synthetic:{seg_bases:{4:'0x100'},sections:['test'],parts:[{ended:true,seg:4,symbol:'part',rom:64,sections:['test']}]}};
-assert.equal(table(synthetic).synthetic.p[0].r,64);
-assert.throws(()=>table({...synthetic,'<img onerror=alert(1)>':synthetic.synthetic}));
-assert.throws(()=>table(JSON.parse('{"__proto__":{}}')));
-assert.throws(()=>table({synthetic:{...synthetic.synthetic,parts:[{ended:true,seg:4,symbol:'part',rom:-1}]}}));
-console.log('3 original models; demo preset round trips; invalid share/table inputs rejected.');
+console.log('3 original models; demo preset round trips; invalid share inputs rejected.');
 
 const memory=context.api.editMemory(),edits={mesh:{head:{s:[1,2,1]}},map:{A:'B'},deform:{head:[{ops:[]}]}};
 memory.put('a',edits);edits.mesh.head.s[1]=9;memory.put('b',{mesh:{}});

@@ -6,7 +6,7 @@
 *{box-sizing:border-box}body{margin:0;display:grid;grid-template-columns:285px minmax(0,1fr) 300px;height:100vh;background:var(--bg);color:var(--fg);font:13px/1.4 system-ui,-apple-system,Segoe UI,sans-serif}
 #side{width:auto;min-width:0;flex:none;overflow:auto;padding:12px;background:var(--pn);border-right:1px solid var(--bd);scrollbar-gutter:stable}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.topbar h3{font-size:16px;letter-spacing:-.02em;margin:0}.topbar button{font-size:10px;padding:5px 7px;white-space:nowrap}#view{position:relative;min-width:0;height:100%;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,color-mix(in srgb,var(--pn) 45%,var(--bg)),var(--bg) 72%)}#cv{width:100%;height:100%;display:block;touch-action:none}
-#rom{display:block;width:100%;font:12px system-ui;margin:4px 0 6px}#msg{padding:7px 8px;border:1px solid var(--bd);border-radius:8px;background:var(--card);overflow-wrap:anywhere;margin:5px 0 9px}
+#source-file{display:block;width:100%;font:12px system-ui;margin:4px 0 6px}#msg{padding:7px 8px;border:1px solid var(--bd);border-radius:8px;background:var(--card);overflow-wrap:anywhere;margin:5px 0 9px}
 select,button{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:7px;padding:7px 9px;margin:3px 0}select{width:100%;min-height:32px}button{cursor:pointer;transition:background .12s,border-color .12s}button:hover:not(:disabled){border-color:var(--ac);background:var(--ac-soft)}button:disabled{opacity:.45;cursor:default}#gallery-toggle{width:100%;font-weight:650;border-color:color-mix(in srgb,var(--ac) 45%,var(--bd))}
 #animal-label{position:absolute;top:14px;left:50%;transform:translateX(-50%);max-width:70%;padding:7px 14px 5px;border:1px solid var(--bd);border-radius:10px;background:color-mix(in srgb,var(--bg) 88%,transparent);color:var(--fg);font-size:15px;font-weight:700;letter-spacing:.02em;text-align:center;pointer-events:none;box-shadow:0 4px 16px #0002;backdrop-filter:blur(8px)}#variant-label{display:block;margin-top:2px;color:var(--mut);font-size:11px;font-weight:500;letter-spacing:0}
 #axes{position:absolute;left:14px;top:14px;width:116px;height:116px;overflow:visible;pointer-events:none;filter:drop-shadow(0 1px 2px #0003)}#axes line{stroke-width:2.7;stroke-linecap:round}#axes text{font:bold 12px system-ui,sans-serif;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--bg);stroke-width:2.5px;stroke-linejoin:round}#axes .x{stroke:var(--x);fill:var(--x)}#axes .y{stroke:var(--y);fill:var(--y)}#axes .z{stroke:var(--z);fill:var(--z)}
@@ -52,7 +52,7 @@ body{--left-width:285px;--right-width:300px;display:grid;grid-template-columns:m
 .theme-dock{position:absolute;top:9px;right:12px;z-index:4;display:flex;align-items:center;gap:6px;border:1px solid var(--bd);border-radius:9px;background:var(--card);padding:3px 7px;box-shadow:0 2px 8px #0002}
 .theme-dock label{color:var(--mut);font-size:10px}.theme-dock select{appearance:none;border:0;background:transparent;width:auto;max-width:150px;padding:2px 4px;min-height:22px;font-size:11px;font-weight:750;color:var(--ac);cursor:pointer}
 .theme-dock select option{background:var(--card);color:var(--ac);font-weight:650}
-#source-panel{padding:5px 8px;margin:3px 0 7px}#source-panel summary{font-size:11px}#source-panel:not([open]){background:transparent;border-color:var(--bd)}#source-panel #msg{font-size:10px;padding:5px 6px;margin:3px 0}#source-panel #forget-rom{padding:4px 6px;font-size:10px}
+#source-panel{padding:5px 8px;margin:3px 0 7px}#source-panel summary{font-size:11px}#source-panel:not([open]){background:transparent;border-color:var(--bd)}#source-panel #msg{font-size:10px;padding:5px 6px;margin:3px 0}#source-panel #forget-source{padding:4px 6px;font-size:10px}
 #gallery-action{margin:8px 0 12px}#gallery-toggle{font-size:11px;padding:7px 10px}
 #edit-side .panel h4{color:var(--fg);font-weight:650}#mesh .axis-tag{color:var(--mut)}#mesh .mesh-group-title{color:var(--mut)}#mesh .axis-value{color:var(--fg);opacity:.75}
 :root[data-theme="dracula-deep"]{color-scheme:dark;--bg:#282a36;--fg:#d8c1ff;--mut:#ac94d2;--pn:#21222c;--card:#343746;--bd:#67538b;--ac:#bd93f9;--ac-soft:#44405c;--x:#ff777b;--y:#78dca1;--z:#8be9fd}
@@ -98,7 +98,7 @@ body.right-collapsed .workbench-row{display:flex!important}body.right-collapsed 
 #floating-labels span{pointer-events:auto;cursor:grab}#floating-labels span:active{cursor:grabbing}
 @media(max-width:700px){.theme-dock{position:static}#side{padding:8px}}
 
-/* Model Editor: original-demo entry point, shared with the private ROM workbench. */
+/* Model Editor: original-demo entry point, shared with pack data sources. */
 .lab-eyebrow{font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--ac)}
 #demo-panel{order:0;background:linear-gradient(135deg,var(--card),var(--ac-soft));padding:13px}
 #demo-panel p{font-size:12px;line-height:1.55;margin:8px 0}

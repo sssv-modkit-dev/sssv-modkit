@@ -41,7 +41,7 @@ label{margin-right:8px}
 .card:hover,.card:focus-visible{border-color:#ffbd78;outline:none}.card[aria-current="true"]{border-color:#ffbd78;box-shadow:0 0 0 1px #ffbd78}
 .card small{color:#9fb0c8;font-size:11px}.card .card-animals{min-height:2.4em}.card-thumb canvas{display:block;width:100%;height:auto;border-radius:4px}.card-thumb{width:100%}
 .card-heads{display:flex;gap:4px;min-height:28px}.card-heads img{border-radius:6px;background:#0d1424}
-#gallery-rom{margin:12px 0 0}.card-rom{max-width:340px;cursor:pointer}
+#gallery-open-file{margin:12px 0 0}.card-open{max-width:340px;cursor:pointer}
 
 #add-panel,#objects-panel{position:absolute;z-index:4;background:#121b29ee;border:1px solid #ffffff26;border-radius:9px;padding:8px;box-sizing:border-box}
 #add-panel{left:62px;bottom:10px;width:340px;max-height:48vh;overflow:auto}#add-panel #palette{position:static;width:100%;max-height:38vh;border:0;padding:4px 0}
