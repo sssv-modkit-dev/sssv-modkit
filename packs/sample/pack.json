@@ -1,0 +1,15 @@
+{
+ "id": "sample",
+ "title": "SSSV Editor",
+ "slots": {
+  "model-noscript": "slots/model-noscript.html",
+  "model-source": "slots/model-source.html",
+  "model-nav": "slots/model-nav.html",
+  "level-noscript": "slots/level-noscript.html",
+  "level-source": "slots/level-source.html",
+  "level-network": "slots/level-network.html"
+ },
+ "scripts": {"model-editor": [], "level-editor": []},
+ "scenes": [],
+ "files": [{"src": "index.html", "dest": "index.html"}]
+}

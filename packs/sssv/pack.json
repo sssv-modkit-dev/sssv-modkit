@@ -1,0 +1,94 @@
+{
+ "id": "sssv",
+ "title": "sssv-modkit",
+ "slots": {
+  "model-noscript": "slots/model-noscript.html",
+  "model-source": "slots/model-source.html",
+  "model-nav": "slots/model-nav.html",
+  "level-noscript": "slots/level-noscript.html",
+  "level-source": "slots/level-source.html",
+  "level-network": "slots/level-network.html"
+ },
+ "scripts": {
+  "model-editor": [
+   "../../src/web/handoff.js",
+   "../../src/viewer/js/model-source-rom.js"
+  ],
+  "level-editor": [
+   "../../src/levels/rom.js",
+   "../../src/levels/scene-import.js",
+   "../../src/levels/edits-export.js",
+   "../../src/levels/level-source-rom.js",
+   "../../src/web/handoff.js"
+  ]
+ },
+ "model_demos": {
+  "models": "../../src/web/demo/animals.json",
+  "poses": "../../src/web/demo/poses"
+ },
+ "scenes": [
+  {
+   "src": "../../src/web/demo/level-4.scene.json",
+   "dest": "demo/level-4.scene.json"
+  }
+ ],
+ "scene_icons": "demo/heads/",
+ "files": [
+  {
+   "src": "../../src/web/index.html",
+   "dest": "index.html"
+  },
+  {
+   "src": "../../src/web/favicon-build-play.svg",
+   "dest": "favicon-build-play.svg"
+  },
+  {
+   "src": "../../src/viewer/assets/icon.png",
+   "dest": "demo/heads/bear.png"
+  },
+  {
+   "src": "../../src/web/model-editor-redirect.html",
+   "dest": "parts_lab.html"
+  },
+  {
+   "src": "../../src/web/level-editor-redirect.html",
+   "dest": "levels.html"
+  },
+  {
+   "src": "../../src/web/play.html",
+   "dest": "play.html"
+  },
+  {
+   "src": "../../src/web/play.js",
+   "dest": "play.js"
+  },
+  {
+   "src": "../../src/web/play-build.js",
+   "dest": "play-build.js"
+  },
+  {
+   "src": "../../src/web/handoff.js",
+   "dest": "handoff.js"
+  },
+  {
+   "src": "../../src/web/builder.js",
+   "dest": "builder.js"
+  },
+  {
+   "src": "../../src/web/builder-worker.js",
+   "dest": "builder-worker.js"
+  },
+  {
+   "src": "../../src/web/builder-core.js",
+   "dest": "builder-core.js"
+  },
+  {
+   "src": "../../src/web/demo",
+   "dest": "demo",
+   "exclude": [
+    "level-4.json"
+   ]
+  }
+ ],
+ "build_hook": "build_hook.py"
+}

@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 
@@ -44,10 +45,8 @@ setTimeout(()=>{
 """
 with tempfile.TemporaryDirectory(prefix='level-startup-') as tmp:
     out=Path(tmp)
-    shutil.copytree(ROOT/'src/web',out,dirs_exist_ok=True)
-    shutil.copytree(ROOT/'src/levels',out/'levels',dirs_exist_ok=True)
-    runtime=(ROOT/'src/levels/runtime.js').read_text(encoding='utf-8').replace('/*EDITOR*/',(ROOT/'src/levels/editor.js').read_text(encoding='utf-8'))
-    with open(out/'levels/runtime.js','w',encoding='utf-8',newline='\n') as f:f.write(runtime)
+    # The real site as published: core pages plus the SSSV pack (slots, scripts, demo scene).
+    subprocess.run([sys.executable,str(ROOT/'src/build_site.py'),'--pack',str(ROOT/'packs/sssv'),'--out',str(out),'--no-vendor'],check=True,capture_output=True)
     # External file, not inline: the page's CSP allows only same-origin scripts.
     (out/'probe.js').write_text(probe,encoding='utf-8')
     with open(out/'level-editor.html','a',encoding='utf-8',newline='\n') as f:f.write('<script src="probe.js"></script>\n')

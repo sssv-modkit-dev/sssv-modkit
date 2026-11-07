@@ -51,7 +51,8 @@ for p in (DEMO / 'heads').glob('*.png'):
 
 html = (ROOT / 'src/web/level-editor.html').read_text(encoding='utf-8')
 assert 'id="gallery"' in html and 'gallery.js' in html and '<select id="lv" hidden' in html
-assert 'level-rom' in html, 'local ROM chooser must remain'
+assert '<!--slot:level-source-->' in html
+assert 'level-rom' in (ROOT / 'packs/sssv/slots/level-source.html').read_text(encoding='utf-8'), 'local ROM chooser must remain in the SSSV pack'
 
 script = """
 const assert=require('assert'),fs=require('fs');

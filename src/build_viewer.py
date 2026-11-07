@@ -16,6 +16,10 @@ args=parser.parse_args()
 if args.public and (args.table or args.animals_dir or args.labels): parser.error('--public rejects private table/source/label inputs; use --out for output')
 out=args.out or args.output or here.parent/('site/dist/model-editor.html' if args.public else 'viewers/parts_viewer.html')
 if args.public:
+    # Public site: the core site builder with the SSSV pack (slots, Play, builder modules, runtimes).
+    import build_site
+    raise SystemExit(build_site.main(['--pack',str(here.parent/'packs/sssv'),'--out',str(out.parent)]+(['--no-vendor'] if args.no_vendor else [])))
+if args.public:
     t={}
 else:
     if args.animals_dir:
@@ -55,17 +59,7 @@ if args.labels:
 base=here/'viewer'
 html=(base/'index.template.html').read_text(encoding='utf-8')
 css=(base/'css'/'app.css').read_text(encoding='utf-8')
-demo_animals=''
-if args.public:
-    # Real animals bundled for the public demo (no ROM read): appended after the three original creatures.
-    bundled=json.loads((here/'web/demo/animals.json').read_text(encoding='utf-8'))['models']
-    demo_animals='\nObject.assign(PARTS_DEMOS,'+json.dumps(bundled,separators=(',',':')).replace('<',r'\u003c')+');\nfor(const n of '+json.dumps(list(bundled))+')BUNDLED_ANIMALS.add(n);\n'
-    # Their assembly poses (part transforms captured from the running game), keyed by animal name.
-    poses={n:json.loads((here/'web/demo/poses'/(n+'.json')).read_text(encoding='utf-8')) for n in bundled if (here/'web/demo/poses'/(n+'.json')).is_file()}
-    demo_animals+='Object.assign(BUNDLED_POSES,'+json.dumps(poses,separators=(',',':')).replace('<',r'\u003c')+');\n'
-# Public builds also embed handoff.js so Build & Play can pass the config to play.html, which ships beside it.
-handoff=(here/'web/handoff.js').read_text(encoding='utf-8')+'\n' if args.public else ''
-js=handoff+(base/'js'/'demo-models.js').read_text(encoding='utf-8')+demo_animals+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')+chr(10)+(base/'js'/'model-source-rom.js').read_text(encoding='utf-8')
+js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')+chr(10)+(base/'js'/'model-source-rom.js').read_text(encoding='utf-8')
 icon_path=next((base/'assets'/name for name in ('icon.png','icon.ico') if (base/'assets'/name).is_file()),None)
 if icon_path and not args.public:
     mime='image/png' if icon_path.suffix=='.png' else 'image/x-icon'
@@ -74,54 +68,11 @@ else:
     svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#202638"/><text x="32" y="41" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="bold" fill="#edf1fa">SS</text></svg>'
     icon='data:image/svg+xml,'+quote(svg,safe='')
 GH='https://github.com/sssv-modkit-dev/sssv-modkit'
-if args.public:
-    # Same-origin only: scripts come from this one inline block (pinned by hash); styles stay inline (the page builds styled elements).
-    script_hash=base64.b64encode(hashlib.sha256(js.encode('utf-8')).digest()).decode('ascii')
-    csp=("default-src 'none'; script-src 'sha256-"+script_hash+"'; style-src 'unsafe-inline'; img-src 'self' data: blob:; "
-         "connect-src 'none'; base-uri 'none'; form-action 'none'")
-    html=html.replace('<title>SSSV Model Editor</title>','<title>Model Editor (sssv-modkit)</title><meta http-equiv="Content-Security-Policy" content="'+csp+'">',1)
-    html=html.replace('<link rel="icon" href="/*VIEWER_ICON*/">','<link rel="icon" type="image/svg+xml" href="favicon-model-editor.svg">',1)
-    html=html.replace('<body>\n','<body>\n<noscript><p style="padding:12px;margin:0;background:#202638;color:#eaf0fa;font:16px/1.5 system-ui,sans-serif;position:relative;z-index:99"><strong>JavaScript is required.</strong> The Model Editor runs entirely in your browser and needs JavaScript turned on; there is no server behind it. It lets you take low-poly animals apart, recolour, bend and stretch them, and export an edit file. Nothing is uploaded, and nothing is loaded from other websites. <a href="'+GH+'" style="color:#ffbd78">Source on GitHub</a> &middot; <a href="'+GH+'/tree/main/docs/guides" style="color:#ffbd78">guides</a>.</p></noscript>\n',1)
 for marker,value in [('/*VIEWER_CSS*/',css),('/*VIEWER_JS*/',js),('/*VIEWER_ICON*/',icon)]:
     if marker not in html:raise SystemExit('missing template marker '+marker)
     html=html.replace(marker,value)
-html=html.replace('<!--PUBLIC_NAV-->', '<nav class="panel" aria-label="Modkit"><a href="index.html">Home</a> &middot; <a href="model-editor.html" aria-current="page">Model Editor</a> &middot; <a href="level-editor.html">Level Editor</a> &middot; <a href="play.html">Play your ROM</a></nav><details class="panel net-note"><summary>Network</summary><p>When opened, this page downloads only itself, its icon (favicon-model-editor.svg) and the demo head pictures (demo/heads/*.png), all from this site (same origin). It makes no other requests and uploads nothing; your files and ROM stay in the browser. Build &amp; Play opens play.html on this site. Details: <a href="'+GH+'/blob/main/docs/NETWORK.md">docs/NETWORK.md</a>.</p></details>' if args.public else '')
+html=html.replace('<!--PUBLIC_NAV-->','').replace('<!--slot:model-source-->',(here.parent/'packs/sssv/slots/model-source.html').read_text(encoding='utf-8'))
 out.parent.mkdir(parents=True,exist_ok=True)
 out.write_text(html,encoding='utf-8')
 print(('Public Model Editor: 8 demo models (bundled), no ROM read' if args.public else f'{len(T)} animals, {sum(len(v["p"]) for v in T.values())} parts')+f' -> {out}')
 
-if args.public:
-    for name in ('favicon.svg','favicon-model-editor.svg','favicon-level-editor.svg','favicon-build-play.svg'):
-        (out.parent/name).write_bytes((here/'web'/name).read_bytes())
-    (out.parent/'parts_lab.html').write_bytes((here/'web/model-editor-redirect.html').read_bytes())
-    (out.parent/'index.html').write_bytes((here/'web/index.html').read_bytes())
-    for name in ('play.html', 'play.js', 'play-build.js', 'handoff.js', 'builder.js', 'builder-worker.js', 'builder-core.js'):
-        (out.parent/name).write_bytes((here/'web'/name).read_bytes())
-    # Pyodide builder: the worker loads these repo sources from py/ (list kept in builder-core.js).
-    core=(here/'web/builder-core.js').read_text(encoding='utf-8')
-    modules=re.findall(r"'(\w+\.py)'",re.search(r'PY_MODULES = \[(.*?)\]',core,re.S).group(1))
-    (out.parent/'py').mkdir(exist_ok=True)
-    for name in modules:
-        (out.parent/'py'/name).write_bytes((here/name).read_bytes())
-
-    (out.parent/'level-editor.html').write_bytes((here/'web/level-editor.html').read_bytes())
-    (out.parent/'levels.html').write_bytes((here/'web/level-editor-redirect.html').read_bytes())
-    levels_out=out.parent/'levels'
-    levels_out.mkdir(exist_ok=True)
-    for name in ('levels.css','rom.js','scene.js','scene-import.js','edits-export.js','selection.js','palette.js','gallery.js','loader.js'):
-        (levels_out/name).write_bytes((here/'levels'/name).read_bytes())
-    runtime=(here/'levels/runtime.js').read_text(encoding='utf-8')
-    editor=(here/'levels/editor.js').read_text(encoding='utf-8')
-    (levels_out/'runtime.js').write_text(runtime.replace('/*EDITOR*/',editor),encoding='utf-8')
-    # Bundled demo level, its models and head icons (generated once by build_demo_assets.js; no ROM is read here).
-    demo_out=out.parent/'demo'
-    # The decoder bundle level-4.json is a build input only; the page loads level-4.scene.json (scene-v1).
-    shutil.copytree(here/'web/demo',demo_out,dirs_exist_ok=True,ignore=shutil.ignore_patterns('level-4.json'))
-    if icon_path:
-        (demo_out/'heads').mkdir(exist_ok=True)
-        shutil.copyfile(icon_path,demo_out/'heads/bear.png')
-    if not args.no_vendor:
-        # Third-party runtimes (Pyodide, EmulatorJS and its N64 cores) are fetched here, hash-checked and served same-origin.
-        sys.path.insert(0,str(here.parent/'tools'))
-        import vendor_deps
-        print(f'Vendored {vendor_deps.vendor(out.parent)/1e6:.1f} MB (SHA-256 verified) -> {out.parent/"vendor"}')

@@ -46,6 +46,8 @@ def main():
         [sys.executable, 'tests/make_build_fixtures.py'],
         [sys.executable, 'tests/test_demo_bundle.py'],
         [sys.executable, 'tests/test_public_build.py'],
+        [sys.executable, 'tests/test_build_site.py'],
+        ['node', '--check', 'src/levels/level-source-rom.js'],
         [sys.executable, 'tests/test_vendor_manifest.py'],
         [sys.executable, 'tests/test_text_encoding.py'],
         [sys.executable, 'tests/test_level_startup.py'],
