@@ -1,6 +1,6 @@
 
 let TABLE=/*TABLE*/null;
-let romTable=TABLE,demoMode=false;
+const EMBEDDED_TABLE=TABLE||{};let demoMode=false;
 const HOME_VIEW=[0.5,0]; // front, turned ~29° so the model's left side (-X) faces the viewer
 
 function readPart(p,B){return p.demo||parseDL(dv,p.r,B)}
@@ -194,7 +194,7 @@ let n=[(b[1]-a[1])*(c[2]-a[2])-(b[2]-a[2])*(c[1]-a[1]),(b[2]-a[2])*(c[0]-a[0])-(
 const l=Math.hypot(...n)||1;n=n.map(x=>x/l);if(!gallery&&(hoverSym===P.sym||selectedSym===P.sym))col.splice(0,3,...col.map(v=>Math.min(1,v*.55+.45)));const vcol=t.c<0&&!map['808080FF']&&useVC&&hoverSym!==P.sym&&selectedSym!==P.sym&&Array.isArray(t0.v[0].c);for(const [i,v] of t.v.entries()){d.push(...v,...(vcol?t0.v[ord[i]].c:col),...n);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],v[k]);mx[k]=Math.max(mx[k],v[k])}}}}
 nv=d.length/9;gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(d),gl.STATIC_DRAW);
 sceneBounds=nv?[mn,mx]:null;if(nv)sceneRadius=Math.max(1,Math.hypot(...mx.map((v,k)=>(v-mn[k])/2)));if(fit)frameCamera();need();updateFloatingLabels()}
-function ui(){const L=$('parts');L.innerHTML='';if(gallery){$('animal-field').style.display='none';$('variant-field').style.display='none';$('edit-side').classList.add('gallery-hidden');$('rom-panel').style.display='none';$('gallery-action').style.margin='8px 0';$('parts-panel').style.display='none';$('palette-panel').style.display='none';$('vc').parentElement.parentElement.style.display='none';$('info').style.display='none';$('mesh').style.display='none';$('actions').style.display='none';return}else{$('animal-field').style.display='';$('variant-field').style.display='';$('edit-side').classList.remove('gallery-hidden');$('rom-panel').style.display='';$('parts-panel').style.display='';$('palette-panel').style.display='';$('vc').parentElement.parentElement.style.display='';$('info').style.display='';$('mesh').style.display='';$('actions').style.display='flex'}
+function ui(){const L=$('parts');L.innerHTML='';if(gallery){$('animal-field').style.display='none';$('variant-field').style.display='none';$('edit-side').classList.add('gallery-hidden');$('source-panel').style.display='none';$('gallery-action').style.margin='8px 0';$('parts-panel').style.display='none';$('palette-panel').style.display='none';$('vc').parentElement.parentElement.style.display='none';$('info').style.display='none';$('mesh').style.display='none';$('actions').style.display='none';return}else{$('animal-field').style.display='';$('variant-field').style.display='';$('edit-side').classList.remove('gallery-hidden');$('source-panel').style.display='';$('parts-panel').style.display='';$('palette-panel').style.display='';$('vc').parentElement.parentElement.style.display='';$('info').style.display='';$('mesh').style.display='';$('actions').style.display='flex'}
 const mk=(t,on,f)=>{const r=document.createElement('button');r.type='button';r.className='row'+(on?' on':'');r.setAttribute('aria-pressed',String(on));r.innerHTML='<span>'+t+'</span>';r.onclick=f;L.appendChild(r)};
 
 cur.p.forEach((p,i)=>{
@@ -240,7 +240,7 @@ function buildGallery(){
 }
 function animalEmoji(n){const x=n.toLowerCase();for(const [key,emoji] of [['bear','🐻'],['dog','🐕'],['fox','🦊'],['mouse','🐭'],['rat','🐀'],['penguin','🐧'],['elephant','🐘'],['lion','🦁'],['sheep','🐑'],['camel','🐪'],['turtle','🐢'],['bird','🐦'],['frog','🐸'],['rabbit','🐇'],['hippo','🦛'],['gorilla','🦍'],['fish','🐟'],['hyena','🐕'],['vulture','🦅']])if(x.includes(key))return emoji;return '🐾'}
 function setGallery(on){returnMode=null;hoverSym=null;$('back-to-sheet').hidden=true;gallery=on;$('gallery-toggle').textContent=gallery?'← RETURN TO EDITOR':'Animals contact sheet';$('gallery-list').style.display=gallery?'block':'none';$('variant').disabled=gallery;$('an').disabled=gallery;$('animal-label').firstChild.textContent=gallery?'Animals contact sheet':name.charAt(0).toUpperCase()+name.slice(1);$('variant-label').textContent=gallery?galleryData.length+' animals · exploded parts sheets':(variant||'All Variants');ui();info();rebuild(true)}
-function pick(n){if(cur)modelEdits.put((demoMode?'demo:':'rom:')+name,{mesh,map,deform,deformOn});selectedSym=null;returnMode=null;hoverSym=null;$('back-to-sheet').hidden=true;gallery=false;$('gallery-toggle').textContent='Animals contact sheet';$('gallery-list').style.display='none';$('variant').disabled=false;$('an').disabled=false;name=n;$('animal-label').firstChild.textContent=n.charAt(0).toUpperCase()+n.slice(1);$('variant-label').textContent='All Variants';cur=TABLE[n];bases={};for(const k in cur.b)bases[k]=parseInt(cur.b[k],16);
+function pick(n){if(cur)modelEdits.put((demoMode?'demo:':'src:')+name,{mesh,map,deform,deformOn});selectedSym=null;returnMode=null;hoverSym=null;$('back-to-sheet').hidden=true;gallery=false;$('gallery-toggle').textContent='Animals contact sheet';$('gallery-list').style.display='none';$('variant').disabled=false;$('an').disabled=false;name=n;$('animal-label').firstChild.textContent=n.charAt(0).toUpperCase()+n.slice(1);$('variant-label').textContent='All Variants';cur=TABLE[n];bases={};for(const k in cur.b)bases[k]=parseInt(cur.b[k],16);
 parsed=cur.p.map(p=>Object.assign(
   readPart(p,bases),
   {sym:p.s,sections:p.v||[],textures:p.t||[]}
@@ -260,42 +260,29 @@ V.onchange=()=>{
   ui();
   rebuild(true);
   info();
-};const saved=modelEdits.get((demoMode?'demo:':'rom:')+n);map=saved.map||{};mesh=saved.mesh||{};deform=saved.deform||{};deformOn=!!saved.deformOn;deformCache.clear();if(demoMode)pose=BUNDLED_POSES[n]||null;assembled=demoMode&&poseOk();sel=0;all=demoMode&&!BUNDLED_ANIMALS.has(n);sheet=!all&&!assembled;SH=sheetLayout(visibleParts());$('an').value=n;buildDemoPicker();ui();rebuild(true);info()}
-const ROM_DB='sssv-modkit-viewer';
-function openRomDB(){return new Promise((resolve,reject)=>{
-  if(!('indexedDB' in window)){reject(new Error('IndexedDB unavailable'));return}
-  const req=indexedDB.open(ROM_DB,1);
-  req.onupgradeneeded=()=>req.result.createObjectStore('state');
-  req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error('Could not open local ROM storage'));
-})}
-async function saveLastROM(ab,filename){const db=await openRomDB();try{await new Promise((resolve,reject)=>{
-  const tx=db.transaction('state','readwrite');tx.objectStore('state').put({buffer:ab,filename},'last-rom');
-  tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Could not save ROM'));
-})}finally{db.close()}}
-async function getLastROM(){const db=await openRomDB();try{return await new Promise((resolve,reject)=>{
-  const req=db.transaction('state','readonly').objectStore('state').get('last-rom');
-  req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||new Error('Could not read saved ROM'));
-})}finally{db.close()}}
-async function forgetLastROM(){const db=await openRomDB();try{await new Promise((resolve,reject)=>{
-  const tx=db.transaction('state','readwrite');tx.objectStore('state').delete('last-rom');
-  tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Could not clear saved ROM'));
-})}finally{db.close()}}
-async function loadROM(ab,filename,restored=false){
-  if(!Object.keys(romTable).length){$('msg').textContent='Choose your local animal_table.json first.';return false}
-  if(ab.byteLength!=0x2000000&&ab.byteLength!=0x1000000&&ab.byteLength<0x800000){$('msg').textContent='That does not look like an N64 ROM.';return false}
-  demoMode=false;TABLE=romTable;document.body.classList.remove('demo-mode');dv=new DataView(ab);let ok='';try{const h=[...new Uint8Array(await crypto.subtle.digest('SHA-1',ab))].map(x=>x.toString(16).padStart(2,'0')).join('');
-    ok=h=='e5e09205aa743a9e5043a42df72adc379c746b0b'?'SHA1 matches US 1.0.':'WARNING: not the unmodified US 1.0 ROM (a patched ROM is fine for previewing).'}catch(_){}
-  $('msg').textContent=(restored?'Restored saved ROM: ':'')+filename+' loaded. '+ok;
-  $('rom-panel').open=false;
-  const A=$('an');A.innerHTML=Object.keys(TABLE).map(n=>'<option value="'+n+'">'+n.charAt(0).toUpperCase()+n.slice(1)+' '+animalEmoji(n)+'</option>').join('');A.disabled=false;A.onchange=()=>pick(A.value);buildGallery();$('gallery-toggle').disabled=false;$('gallery-toggle').onclick=()=>setGallery(!gallery);$('forget-rom').disabled=false;
-  // Pick and render immediately; no extra click is needed after loading/restoring.
-  pick(Object.keys(TABLE)[0]);return true;
+};const saved=modelEdits.get((demoMode?'demo:':'src:')+n);map=saved.map||{};mesh=saved.mesh||{};deform=saved.deform||{};deformOn=!!saved.deformOn;deformCache.clear();if(demoMode)pose=BUNDLED_POSES[n]||null;assembled=demoMode&&poseOk();sel=0;all=demoMode&&!BUNDLED_ANIMALS.has(n);sheet=!all&&!assembled;SH=sheetLayout(visibleParts());$('an').value=n;buildDemoPicker();ui();rebuild(true);info()}
+//#HOST-START
+/* A data-source plug-in hands the editor a parts table plus the geometry bytes it indexes. Returns an error message, or null on success. */
+function makeModelEditorHost(env){
+  const isBuffer=b=>Object.prototype.toString.call(b)==='[object ArrayBuffer]';
+  function useSource(src){
+    if(!src||typeof src!=='object'||!src.table||typeof src.table!=='object'||!Object.keys(src.table).length)return 'Choose a parts table first.';
+    if(!isBuffer(src.bytes))return 'No geometry data was given.';
+    env.setSource(src.table,src.bytes,src.label);
+    env.message((src.label||'Source')+' loaded.'+(src.note?' '+src.note:''));env.panel(false);return null;
+  }
+  return {useSource,message:env.message,panel:env.panel};
 }
-$('rom').onchange=async e=>{const f=e.target.files[0];if(!f)return;const ab=await f.arrayBuffer();
-  try{if(await loadROM(ab,f.name)&&$('remember-rom').checked){try{await saveLastROM(ab,f.name);$('msg').textContent+=' Last ROM saved in this browser.'}catch(err){$('msg').textContent+=' Could not save a local copy for next time: '+err.message}}}catch(err){$('msg').textContent='Could not render ROM with that table: '+err.message}
-};
-$('forget-rom').onclick=async()=>{try{await forgetLastROM();$('forget-rom').disabled=true;$('msg').textContent='Saved ROM forgotten. The currently loaded ROM remains available until you close this page.'}catch(err){$('msg').textContent='Could not clear saved ROM: '+err.message}};
-if(Object.keys(romTable).length)(async()=>{try{const saved=await getLastROM();if(saved&&saved.buffer){$('msg').textContent='Restoring your last ROM from this browser…';await loadROM(saved.buffer,saved.filename||'last ROM',true);$('forget-rom').disabled=false}}catch(err){$('msg').textContent='Choose your ROM file to begin. Local auto-restore is unavailable in this browser: '+err.message}})();
+//#HOST-END
+const ModelEditorHost=window.ModelEditorHost=makeModelEditorHost({
+  setSource(table,bytes){demoMode=false;TABLE=table;document.body.classList.remove('demo-mode');dv=new DataView(bytes);
+    const A=$('an');A.innerHTML=Object.keys(TABLE).map(n=>'<option value="'+n+'">'+n.charAt(0).toUpperCase()+n.slice(1)+' '+animalEmoji(n)+'</option>').join('');A.disabled=false;A.onchange=()=>pick(A.value);buildGallery();$('gallery-toggle').disabled=false;$('gallery-toggle').onclick=()=>setGallery(!gallery);
+    // Pick and render immediately; no extra click is needed after loading.
+    pick(Object.keys(TABLE)[0]);},
+  message:t=>{$('msg').textContent=t},
+  panel:open=>{$('source-panel').open=open}
+});
+ModelEditorHost.embeddedTable=EMBEDDED_TABLE;
 const themeModes=['system','light','dark','matrix','dracula','dracula-deep'];
 function setTheme(mode){
   if(!themeModes.includes(mode))mode='system';

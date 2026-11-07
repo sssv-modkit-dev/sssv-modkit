@@ -65,7 +65,7 @@ if args.public:
     demo_animals+='Object.assign(BUNDLED_POSES,'+json.dumps(poses,separators=(',',':')).replace('<',r'\u003c')+');\n'
 # Public builds also embed handoff.js so Build & Play can pass the config to play.html, which ships beside it.
 handoff=(here/'web/handoff.js').read_text(encoding='utf-8')+'\n' if args.public else ''
-js=handoff+(base/'js'/'demo-models.js').read_text(encoding='utf-8')+demo_animals+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')
+js=handoff+(base/'js'/'demo-models.js').read_text(encoding='utf-8')+demo_animals+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')+chr(10)+(base/'js'/'model-source-rom.js').read_text(encoding='utf-8')
 icon_path=next((base/'assets'/name for name in ('icon.png','icon.ico') if (base/'assets'/name).is_file()),None)
 if icon_path and not args.public:
     mime='image/png' if icon_path.suffix=='.png' else 'image/x-icon'

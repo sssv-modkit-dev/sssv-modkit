@@ -40,6 +40,8 @@ def main():
         ['node', '--check', 'src/viewer/js/parts-lab.js'],
         ['node', '--check', 'src/build_demo_assets.js'],
         ['node', 'tests/test_parts_lab.js'],
+        ['node', 'tests/test_model_source.js'],
+        ['node', '--check', 'src/viewer/js/model-source-rom.js'],
         [sys.executable, 'tests/test_builder.py'],
         [sys.executable, 'tests/make_build_fixtures.py'],
         [sys.executable, 'tests/test_demo_bundle.py'],

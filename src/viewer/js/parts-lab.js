@@ -119,13 +119,6 @@ $('impf').onchange=async e=>{
     else await importGameConfig(e);
   }catch(err){$('demo-status').textContent=err.message;alert(err.message)}finally{e.target.value=''}
 };
-$('local-table').onchange=async e=>{
-  const f=e.target.files[0];if(!f)return;
-  try{if(f.size>16000000)throw new Error('Table is too large (16 MB maximum).');const next=normaliseLocalTable(JSON.parse(await f.text()));romTable=next;
-    $('rom').disabled=false;$('msg').textContent=Object.keys(next).length+' animals indexed locally. Now choose your ROM.';
-  }catch(err){$('msg').textContent='Could not read table: '+err.message}finally{e.target.value=''}
-};
-if(!Object.keys(romTable).length){startDemos();$('rom').disabled=true}
-else $('msg').textContent='Animal table embedded in this private build. Choose your ROM; remembering it is optional.';
+if(!Object.keys(EMBEDDED_TABLE).length)startDemos();
 function readSharedDemo(){if(!location.hash.startsWith('#demo='))return;try{if(location.hash.length>16000)throw new Error('Share link is too large.');applyDemoPreset(JSON.parse(decodeURIComponent(location.hash.slice(6))))}catch(err){$('demo-status').textContent='Could not open shared demo: '+err.message}}
 readSharedDemo();addEventListener('hashchange',readSharedDemo);
