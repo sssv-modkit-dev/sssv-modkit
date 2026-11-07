@@ -1,6 +1,6 @@
 /* Converts the decoder's level bundle into a scene-v1 document. Every bundle field must be mapped; unknown fields are errors. */
 const SceneImport=(()=>{
-  const S=typeof Scene!=='undefined'?Scene:require('./scene.js');
+  const S=typeof Scene!=='undefined'?Scene:require('../../core/src/levels/scene.js');
   const invert=map=>Object.fromEntries(Object.entries(map).map(([k,v])=>[v,k]));
   const LEVEL=invert(S.LEVEL),TERRAIN=invert(S.TERRAIN),OBJECTS=invert(S.OBJECTS),RECORDS=invert(S.RECORDS),DOC=invert(S.DOC);
   const TOP=new Set([...Object.keys(DOC),'LEVELS','EDITOR_STOCK','EDITOR_SHA1','SOURCE_LABEL','format']);

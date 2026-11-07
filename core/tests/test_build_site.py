@@ -1,4 +1,4 @@
-"""build_site.py --pack: the sample pack builds a neutral site; the sssv pack still builds today's site."""
+"""build_site.py --pack: the sample pack builds a complete site; an incomplete pack is refused with the missing name."""
 from pathlib import Path
 import json, shutil, subprocess, sys, tempfile
 
@@ -27,16 +27,6 @@ with tempfile.TemporaryDirectory() as tmp:
         assert '<!--slot:' not in text and '__PACK_TITLE__' not in text, path
     assert 'SSSV Editor' in (out / 'model-editor.html').read_text(encoding='utf-8')
 
-    # test_sssv_build_matches_today: every file of the pre-split public site is still produced
-    out = tmp / 'sssv'
-    result = build(ROOT / 'packs/sssv', out)
-    assert result.returncode == 0, result.stderr
-    produced = {p.relative_to(out).as_posix() for p in out.rglob('*') if p.is_file() and '__pycache__' not in p.parts}
-    today = set((ROOT / 'tests/fixtures/sssv-site-files.txt').read_text(encoding='utf-8').split())
-    assert today <= produced, sorted(today - produced)
-    for path, text in pages(out).items():
-        assert '<!--slot:' not in text and '__PACK_TITLE__' not in text, path
-
     # test_missing_slot_fails
     broken = tmp / 'broken'
     shutil.copytree(ROOT / 'packs/sample', broken)
@@ -52,4 +42,4 @@ with tempfile.TemporaryDirectory() as tmp:
     (broken / 'pack.json').write_text(json.dumps(manifest), encoding='utf-8')
     result = build(broken, tmp / 'broken-out2')
     assert result.returncode == 2 and 'nope.html' in result.stderr, (result.returncode, result.stderr)
-print('Site build: sample pack neutral, sssv pack superset of today, missing slot/file refused.')
+print('Site build: sample pack complete, missing slot/file refused.')

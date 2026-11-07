@@ -45,8 +45,8 @@ setTimeout(()=>{
 """
 with tempfile.TemporaryDirectory(prefix='level-startup-') as tmp:
     out=Path(tmp)
-    # The real site as published: core pages plus the SSSV pack (slots, scripts, demo scene).
-    subprocess.run([sys.executable,str(ROOT/'src/build_site.py'),'--pack',str(ROOT/'packs/sssv'),'--out',str(out),'--no-vendor'],check=True,capture_output=True)
+    # The real site as published: core pages plus the SSSV pack.
+    subprocess.run([sys.executable,str(ROOT/'core/src/build_site.py'),'--pack',str(ROOT/'packs/sssv'),'--out',str(out),'--no-vendor'],check=True,capture_output=True)
     # External file, not inline: the page's CSP allows only same-origin scripts.
     (out/'probe.js').write_text(probe,encoding='utf-8')
     with open(out/'level-editor.html','a',encoding='utf-8',newline='\n') as f:f.write('<script src="probe.js"></script>\n')

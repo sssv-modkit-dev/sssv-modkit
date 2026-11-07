@@ -17,6 +17,7 @@ if args.public and (args.table or args.animals_dir or args.labels): parser.error
 out=args.out or args.output or here.parent/('site/dist/model-editor.html' if args.public else 'viewers/parts_viewer.html')
 if args.public:
     # Public site: the core site builder with the SSSV pack (slots, Play, builder modules, runtimes).
+    sys.path.insert(0,str(here.parent/'core/src'))
     import build_site
     raise SystemExit(build_site.main(['--pack',str(here.parent/'packs/sssv'),'--out',str(out.parent)]+(['--no-vendor'] if args.no_vendor else [])))
 if args.public:
@@ -56,11 +57,12 @@ if args.labels:
             if symbol not in parts or not isinstance(label,str) or not label.strip() or len(label)>120:
                 parser.error('unknown part or invalid label: '+animal+' / '+symbol)
             parts[symbol]['n']=label
-base=here/'viewer'
+base=here.parent/'core/src/viewer'  # core editor sources (synced by tools/sync_core.py)
+pack_js=here/'viewer'/'js'  # SSSV pack modules
 html=(base/'index.template.html').read_text(encoding='utf-8')
 css=(base/'css'/'app.css').read_text(encoding='utf-8')
-js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')+chr(10)+(base/'js'/'parts-table.js').read_text(encoding='utf-8')+chr(10)+(base/'js'/'model-source-rom.js').read_text(encoding='utf-8')
-icon_path=next((base/'assets'/name for name in ('icon.png','icon.ico') if (base/'assets'/name).is_file()),None)
+js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'parts-table.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'model-source-rom.js').read_text(encoding='utf-8')
+icon_path=next((here/'viewer'/'assets'/name for name in ('icon.png','icon.ico') if (here/'viewer'/'assets'/name).is_file()),None)
 if icon_path and not args.public:
     mime='image/png' if icon_path.suffix=='.png' else 'image/x-icon'
     icon='data:'+mime+';base64,'+base64.b64encode(icon_path.read_bytes()).decode('ascii')
@@ -71,7 +73,7 @@ GH='https://github.com/sssv-modkit-dev/sssv-modkit'
 for marker,value in [('/*VIEWER_CSS*/',css),('/*VIEWER_JS*/',js),('/*VIEWER_ICON*/',icon)]:
     if marker not in html:raise SystemExit('missing template marker '+marker)
     html=html.replace(marker,value)
-html=html.replace('<!--PUBLIC_NAV-->','').replace('<!--slot:model-source-->',(here.parent/'packs/sssv/slots/model-source.html').read_text(encoding='utf-8'))
+html=html.replace('__PACK_TITLE__','sssv-modkit').replace('<!--PUBLIC_NAV-->','').replace('<!--slot:model-source-->',(here.parent/'packs/sssv/slots/model-source.html').read_text(encoding='utf-8'))
 out.parent.mkdir(parents=True,exist_ok=True)
 out.write_text(html,encoding='utf-8')
 print(('Public Model Editor: 8 demo models (bundled), no ROM read' if args.public else f'{len(T)} animals, {sum(len(v["p"]) for v in T.values())} parts')+f' -> {out}')

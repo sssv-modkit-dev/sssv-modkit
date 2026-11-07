@@ -1,6 +1,6 @@
 // scene-v1 document: bundle adapter round trip and validation.
 const assert=require('assert'),fs=require('fs'),path=require('path');
-const Scene=require('../src/levels/scene.js'),SceneImport=require('../src/levels/scene-import.js');
+const Scene=require('../core/src/levels/scene.js'),SceneImport=require('../src/levels/scene-import.js');
 const bundle=JSON.parse(fs.readFileSync(path.join(__dirname,'../src/web/demo/level-4.json'),'utf8'));
 delete bundle.format;
 

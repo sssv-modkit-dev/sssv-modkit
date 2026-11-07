@@ -5,7 +5,7 @@ const demo=JSON.parse(fs.readFileSync(path.join(root,'src/web/demo/level-4.json'
 const legacy=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/edits-legacy.json'),'utf8'));
 const edited=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/edits-records.json'),'utf8'));
 const EditsExport=require('../src/levels/edits-export.js');
-const source=fs.readFileSync(path.join(root,'src/levels/editor.js'),'utf8').split('let edRecords=')[0];
+const source=fs.readFileSync(path.join(root,'core/src/levels/editor.js'),'utf8').split('let edRecords=')[0];
 const ctx={Uint8Array,DataView,structuredClone,EDITOR_STOCK:demo.EDITOR_STOCK,EDITOR_SHA1:demo.EDITOR_SHA1};
 vm.createContext(ctx);vm.runInContext(source+';this.api=EditorRecords;',ctx);
 const R=ctx.api,plain=v=>JSON.parse(JSON.stringify(v));
