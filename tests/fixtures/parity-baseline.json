@@ -1,0 +1,38 @@
+{
+ "configs": {
+  "bear": {
+   "ips_sha1": "db15957104a5c82836a4566c440119c8d752a837",
+   "z64_sha1": "1d9cdc3d6deef2caa9e612fa1115994ca3b4c235"
+  },
+  "bear_deform": {
+   "ips_sha1": "c272f8807d92168692192033d7740418d0d1ce01",
+   "z64_sha1": "6d544bf571d428eca9ec072d51967d3535b68a4a"
+  },
+  "dog": {
+   "ips_sha1": "d21f71520170bbdb9f749d45aa1a3a6988d1d329",
+   "z64_sha1": "6d8623aca81fa092a39f576fdf8263d7ffc7f920"
+  },
+  "fox": {
+   "ips_sha1": "41429d01505561f5f7fa838089c0537852423f65",
+   "z64_sha1": "8f4b24885adbb162a5bbf87a8fd1414d59a7b367"
+  },
+  "mouse": {
+   "ips_sha1": "dc9943c6dcb1c05097f584cf5e11f44dae17e129",
+   "z64_sha1": "9dfc796709ea7a7976653c5f788c0fc931156418"
+  },
+  "rat": {
+   "ips_sha1": "b309c7a468edc990e92a31054f0d12be9097210a",
+   "z64_sha1": "ff5671a74bee65f823381ad1df13f714c0e7152c"
+  },
+  "sheep": {
+   "ips_sha1": "7e3d1a856d3df75e0e6f4d2fdcc29dbca0dec77d",
+   "z64_sha1": "01fb6e03ff2df5ab3f4a8838f4c6bbc0ad79067c"
+  }
+ },
+ "levels": {
+  "level-4-move-add": {
+   "ips_sha1": "7c3b204fc9900078ad88f02925f9ca051c18190e",
+   "z64_sha1": "7f9201faa03046bf5d3b9888210dde4c23550510"
+  }
+ }
+}
