@@ -21,6 +21,7 @@ def main():
         [sys.executable, 'tests/test_levels.py'],
         ['node', 'tests/test_level_selection.js'],
         ['node', 'tests/test_level_palette.js'],
+        ['node', 'tests/test_scene.js'],
         ['node', '--check', 'src/web/play.js'],
         ['node', 'tests/test_web_play.js'],
         ['node', '--check', 'src/web/play-build.js'],
