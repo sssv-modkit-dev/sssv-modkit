@@ -3,8 +3,9 @@
    fields stay plausible); otherwise it is all zeros apart from type and pose. Offsets match EditorRecords. */
 const LevelPalette = (() => {
   const SIZE = {props: 22, animals: 16}, YAW = {props: 10, animals: 8};
-  const propTypes = () => Object.keys(LevelSelection.propNames).map(Number).filter(t => t !== 55).sort((a, b) => a - b);
-  const animalTypes = () => LevelSelection.animalNames.map((_, type) => type);
+  const named = () => Object.keys(LevelSelection.propNames).map(Number);
+  const propTypes = () => (named().length ? named() : [...Array(247).keys()]).filter(t => t !== 55).sort((a, b) => a - b);
+  const animalTypes = () => [...Array(68).keys()];
   const initials = name => { const w = name.replace(/[()]/g, '').split(/\s+/).filter(Boolean); return (w.length > 1 ? w[0][0] + w[1][0] : w[0].slice(0, 2)).toUpperCase(); };
   const hue = type => (type * 47) % 360;
   function template(kind, type, stock) {
