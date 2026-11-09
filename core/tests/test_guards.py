@@ -67,11 +67,11 @@ git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qam', 'two')
 assert run(root).returncode == 0
 result = run(root, '--history')
 assert result.returncode == 1 and D in result.stdout, result.stdout
-# commit messages are part of history too
+# commit messages are prose (explainer zone): code-zone words are allowed there
 root = tree({'src/b.js': '// fine'})
 git = lambda *a: subprocess.run(['git', '-C', str(root), *a], check=True, capture_output=True)
 git('init', '-q'); git('-c', 'user.email=t@t', '-c', 'user.name=t', 'add', '-A')
 git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'add ' + D + ' loader')
 result = run(root, '--history')
-assert result.returncode == 1 and 'commit message' in result.stdout, result.stdout
+assert result.returncode == 0, result.stdout
 print('Guards: zones, naming allowed, licences, binaries and history passed.')

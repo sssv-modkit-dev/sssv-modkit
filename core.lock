@@ -1,6 +1,6 @@
 {
- "tag": "v0.1.0-rc4",
- "commit": "2c71522517a211018e8a6d064c1ce510baaec457",
+ "tag": "v0.1.0",
+ "commit": "5b4d2f49058b664a3f77f438ea324d0729cfa682",
  "files": {
   ".gitignore": "3ad2750af909c18ed688f1571f91a873e942cb61dfc71e72ed8a64ef986e2562",
   ".gitlab-ci.yml": "cd5b67aff57cf27a4ceb555e7f2ca96c957d431775570dd5d4e4eb7b1b891b42",
@@ -47,7 +47,7 @@
   "tests/test_build_site.py": "c65a5456144b654e3affcaef6e862faf2449bfabdcbda6199343ca82fbbc4f14",
   "tests/test_camera.js": "b101cdefedeee63e9b10e9c5baeb174faea3f2c19ab25f4d900868318b8b25d2",
   "tests/test_deform_parity.js": "21be646fa877a3a41d019c161dfeb1a437be3064165f8fbea64b1360d2bc0879",
-  "tests/test_guards.py": "6c7ece2e4c967654441bdccf174221c9380e6aaa1e2f3cb0f472ef17a163af57",
+  "tests/test_guards.py": "549088de6b08b801898b52cf1b6c4328a19d52baac345a6e6423ed63e02257ab",
   "tests/test_level_palette.js": "31e88785a67c158fb81f77752ecf9c3d9b5da9c010b2e38ddbfd8e8d62ff3b59",
   "tests/test_level_selection.js": "29fab219085dc8973ed85ff27cd2587232eecf907e34641570efaad50cd3f836",
   "tests/test_level_startup.py": "64066cb0b33473b603801fb93ad15c446ff12efeb58b8945491209238b348ac2",
@@ -58,7 +58,7 @@
   "tests/test_text_encoding.py": "02785edeb7ea831458d25efa6493cb59d331c1680644b0be271b2aa28ef29104",
   "THIRD_PARTY.md": "68fafeed5faa8ab23810b78d49169ae508e42159a9e6326f7faf4ab067f90299",
   "tools/banned-words.txt": "fb4182ce56d7945cfd3894a58a6fe3d00096a1307540e6a9dd0474e12d7e56ff",
-  "tools/guards.py": "1d8826297077bd618e3f24744eccb8abad6eb910d6e5729e8ea8017b570d7ef0",
+  "tools/guards.py": "ed006753e9286e73f4ca2efcab47067382e0b207f5ef46f0cbfc8946f575f7cd",
   "tools/import_baked_model.js": "5640941f76d658667be3276dec67227f843f23bcc72776038e37c17e9624d019",
   "tools/make_island.js": "94ed1ea7b701a362c1dbb2240912850091f21bfa8ff1f40275708467a8c13211",
   "tools/release.py": "aa2789e99c2fa7ef04b8c758871141e55fa9ee25dad8c44939914e30e05abff0"
