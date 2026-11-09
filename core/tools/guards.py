@@ -31,6 +31,8 @@ def load_lists(root):
 def pattern(words):
     # Words are separated by anything but letters and digits, so snake_case (word_x), kebab-case and dotted names are split,
     # while camelCase identifiers such as wordTable stay whole (the next letter continues the word).
+    if not words:
+        return re.compile(r'(?!)')  # matches nothing
     parts = [re.escape(w[:-1]) + r'[A-Za-z0-9]*' if w.endswith('*') else re.escape(w) for w in words]
     return re.compile(r'(?<![A-Za-z0-9])(' + '|'.join(parts) + r')(?![A-Za-z0-9])', re.I)
 

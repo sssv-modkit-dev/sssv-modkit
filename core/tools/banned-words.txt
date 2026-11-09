@@ -1,24 +1,11 @@
 # Words the public core must not contain. Whole words, any case; a trailing * matches any ending.
+# Policy (ADR 0002 amendment, 2026-11-09): naming the game, its platform and ROM files is fine. The hard lines are
+# no ROM bytes, no extracted asset bundles, no decompiled code and no one-click play. Binary and licence rules in
+# guards.py cover the first two; this list keeps decompiled code out of the code zone.
 # [everywhere] applies to every file; [code] to everything outside README.md and docs/ (the explainer zone).
 # [explainer-limits] caps how often a word may appear across the explainer zone.
 [everywhere]
-nintendo
-hack
-hacking
-hacked
-hacker*
 [code]
-n64
-z64
-v64
-rom
-roms
-ips
 decomp*
 recomp*
-emulat*
-cartridge*
-rnc
-patched
 [explainer-limits]
-n64=1

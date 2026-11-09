@@ -4,7 +4,7 @@
 
 A fan-made level and model editor for *Space Station Silicon Valley* (1998, N64). It runs entirely in the browser: open a scene or a model, move and add objects, recolour and reshape parts, then save your edits as a small JSON file you can reopen later.
 
-**Unofficial fan project. Not affiliated with or endorsed by the rights holders. Contains no game data.**
+**Unofficial fan project. Not affiliated with or endorsed by the rights holders. Ships no game code, ROM or extracted assets. Screenshots and the banner are captures or renders from the game, used only for illustration.**
 
 This repository ships with original sample content only: a generated island scene, three original models and three CC0 models by Quaternius (see [THIRD_PARTY.md](THIRD_PARTY.md)).
 
@@ -45,3 +45,5 @@ It runs the unit tests, a headless browser start-up test, and `tools/guards.py`.
 ## Licence
 
 CC0-1.0 ([LICENSE](LICENSE)) for the code and original content. Third-party models keep their own licences, listed in [THIRD_PARTY.md](THIRD_PARTY.md).
+
+**Exception:** the banner (`docs/img/banner-*.png`) is **not** CC0. Its rat head is our render of a character model from the game, which belongs to its rights holders; it is shown for illustration only and is not covered by this project's licence.

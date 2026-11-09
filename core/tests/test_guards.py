@@ -1,10 +1,11 @@
-"""Guards: banned words by zone, the explainer-zone limit, licences, binaries and history. Banned words are built by concatenation."""
+"""Guards: banned words by zone, licences, binaries and history. Banned words are built by concatenation."""
 from pathlib import Path
 import os, shutil, subprocess, sys, tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 GUARDS = [sys.executable, str(ROOT / 'tools/guards.py')]
 R, N, NIN, Z, DEC = 'r' + 'om', 'n' + '64', 'nin' + 'tendo', 'z' + '64', 'decom' + 'pilation'
+D = 'decom' + 'p'
 
 
 def tree(files):
@@ -33,20 +34,14 @@ def passes(files):
     assert result.returncode == 0, (files, result.stdout, result.stderr)
 
 
-# test_hyphen_and_extension
-fails({'src/page.html': '<details id="%s-panel">' % R}, 'src/page.html:1: ' + R)
-fails({'src/load.js': "accept='.%s'" % Z}, Z)
-# test_romTable_allowed (not a whole word)
-passes({'src/app.js': 'let %sTable={};' % R})
+# test_hyphen_and_extension: banned code-zone words are caught, also inside names and attributes
+fails({'src/page.html': '<details id="%s-panel">' % D}, 'src/page.html:1: ' + D)
+fails({'src/app.js': 'let %sTable={};' % D}, D)  # a trailing * matches any ending
+# test_naming_is_allowed: the game, its platform and ROM files may be named anywhere
+passes({'src/load.js': "accept='.%s,.%s'" % (Z, R), 'src/x.js': '// %s %s' % (N, R), 'README.md': '%s %s. %s' % (NIN.title(), N.upper(), N.upper())})
 # test_explainer_zone: the docs may explain, the code may not
-passes({'README.md': 'What is a %s? An %s patch?' % (R.upper(), 'I' + 'PS'), 'docs/HOW.md': DEC + ' vs re' + 'compilation'})
+passes({'README.md': 'An %s patch?' % ('I' + 'PS'), 'docs/HOW.md': DEC + ' vs re' + 'compilation'})
 fails({'src/x.js': '// ' + DEC}, DEC)
-# test_everywhere
-fails({'README.md': 'Not by ' + NIN.title()}, NIN)
-# test_platform_limit
-passes({'README.md': 'A fan editor for an %s game.' % N.upper()})
-fails({'README.md': '%s once. %s twice.' % (N.upper(), N.upper())}, N)
-fails({'README.md': N.upper(), 'docs/a.md': N.upper()}, N)
 # test_gpl_fails
 root = tree({})
 (root / 'THIRD_PARTY.md').write_text('| x | vendor/x.js | GPL-3.0 |\n', encoding='utf-8')
@@ -61,22 +56,22 @@ result = run(root)
 assert result.returncode == 1 and 'docs/img/big.png' in result.stdout, result.stdout
 passes({'docs/img/ok.png': b'\x89PNG\0\0'})
 # test_snake_case_and_paths: underscores separate words; file names are checked too
-fails({'tests/t.js': "x={%s_sha1:1}" % R}, 'tests/t.js:1: ' + R)
-fails({'src/level-source-' + R + '.js': '// ok'}, 'src/level-source-' + R + '.js:path')
+fails({'tests/t.js': "x={%s_sha1:1}" % D}, 'tests/t.js:1: ' + D)
+fails({'src/level-source-' + D + '.js': '// ok'}, 'src/level-source-' + D + '.js:path')
 # test_history: a banned word that was committed and later removed still fails --history
-root = tree({'src/a.js': '// ' + R + ' loader'})
+root = tree({'src/a.js': '// ' + D + ' loader'})
 git = lambda *a: subprocess.run(['git', '-C', str(root), *a], check=True, capture_output=True)
 git('init', '-q'); git('-c', 'user.email=t@t', '-c', 'user.name=t', 'add', '-A'); git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'one')
 (root / 'src/a.js').write_text('// loader', encoding='utf-8')
 git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qam', 'two')
 assert run(root).returncode == 0
 result = run(root, '--history')
-assert result.returncode == 1 and R in result.stdout, result.stdout
+assert result.returncode == 1 and D in result.stdout, result.stdout
 # commit messages are part of history too
 root = tree({'src/b.js': '// fine'})
 git = lambda *a: subprocess.run(['git', '-C', str(root), *a], check=True, capture_output=True)
 git('init', '-q'); git('-c', 'user.email=t@t', '-c', 'user.name=t', 'add', '-A')
-git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'add ' + R + ' loader')
+git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'add ' + D + ' loader')
 result = run(root, '--history')
 assert result.returncode == 1 and 'commit message' in result.stdout, result.stdout
-print('Guards: zones, explainer limit, licences, binaries and history passed.')
+print('Guards: zones, naming allowed, licences, binaries and history passed.')
