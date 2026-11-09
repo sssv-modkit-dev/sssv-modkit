@@ -38,3 +38,14 @@ The site also includes a [Level Editor](LEVEL-EDITOR.md) and experimental
 Game compatibility and performance still need direct testing.
 
 [Viewer reference](VIEWER.md) · [Back to the project](../../README.md)
+
+
+## Model browser and actions
+
+Choose a category under **MODEL**, then an animal. **Custom** contains the three original demos with cached head previews. **Demo** opens the original collection. Each model retains mesh, deformation and palette edits in memory until the page closes; export edits to keep them across sessions.
+
+**Parts** spreads parts radially around the model origin. **Stretch**, **Bend** and **Twist** affect the highlighted part, or choose a random part when none is selected. **Random Palette** recolours the whole model, including a tint for surfaces without a prim colour. Texture sampling is not implemented; these surfaces remain vertex-colour approximations. Click a part to keep its highlight visible. The individual parts list opens mesh editing, with its own Reset button.
+
+**Animals contact sheet** is a separate browsing view. Viewport tools float over the scene; **Reset view** restores the camera. **Save PNG image** downloads a transparent image. Phone layouts follow viewport size and orientation; portrait places scrollable controls in the bottom area.
+
+The local animal-table input remains required. A ROM-only JavaScript implementation is estimated at 250–400 lines (roughly 12–20 KB), including the 170-line Python MIPS tracer/metadata path and equivalent display-list completeness validation. It needs parity coverage before replacing the input.

@@ -1,6 +1,16 @@
 # Release banners
 
-The README uses `docs/images/releases/auburnish-ear-bear-v3.png`, the verified game-head bear render with its fur and ear tips recoloured to the orange palette by this generator (`--name "Auburnish Ear Bear" --version "EDITION SERIES" --palette orange --recolor both --quote-style japanese`). The v3 label identifies the banner edition, not a software release. The AI-made Auburn Flamehound illustration (`auburn-flamehound-v3.png`) is superseded and is not a game render; earlier Ceruleanish Ear Bear banners remain archived.
+The README shows the **Velvet Midnight Rat** edition (pre-alpha v0.01) as a light/dark pair:
+`docs/images/releases/velvet-midnight-rat-light.png` and `velvet-midnight-rat-dark.png`, switched by the
+reader's GitHub theme with a `<picture>` element. They were made with:
+
+```sh
+python src/make_release_banner.py --palette purple --theme light --anchor left --head rat   --head-image RAT.png --name "Velvet Midnight Rat" --version "PRE-ALPHA v0.01" --quote-style anglo
+```
+
+(`--theme dark` for the other one). `RAT.png` is a transparent three-quarter render of the rat model from the
+owner's own ROM, mirrored so it faces the text; it is not committed. The earlier Auburnish Ear Bear banner
+(`auburnish-ear-bear-v3.png`) remains archived.
 
 Generate a minimal banner from the verified local game-head branding render:
 
@@ -32,11 +42,16 @@ The command-line generator and interactive composer share `src/release_banner.js
 for layout, typography, quotation marks and raster recolouring. The generator
 checks that rendering completed and the PNG dimensions match before saving.
 
-Names follow invented colour adjective + animal part + animal. The complete title
-is italic and accent-coloured, with matched quotation marks around the name.
-A fine bottom rule and short accent line complete the minimal layout.
-Optional `--name`, `--version` and `--palette blue|orange|green` control the title,
-secondary label and accent. By default the head fur and ear tips also follow
+Edition names are free-form ("something something animal"). The complete title
+is italic and accent-coloured, with matched quotation marks around the name; the version
+line below it is small and lower case. A fine bottom rule and short accent line complete the layout.
+Optional `--name`, `--version` and `--palette blue|orange|green|purple` control the title,
+secondary label and accent. `--theme dark|light` (purple: Dracula's darkest background or its
+light sibling Alucard) sets background, text and head colours together. `--anchor right|left` puts
+the head on that side and moves the text to the other. `--head bear|dog|fox|seagull|sheep|rat` picks the
+head and its colour rules; `--head-image PATH` supplies your own transparent render. With a two-tone
+scheme (`--bold`, `--light`, or a `--theme`) the head body takes the bold colour and its accented part
+(ears, snout or beak) the light one, keeping facet shading; eyes, noses and teeth keep their colours. By default the head fur and ear tips also follow
 the palette, retaining facet shading and leaving eyes, teeth and mouth unchanged.
 
 For an interactive workflow, open `src/release_banner.html` in a browser,
@@ -49,15 +64,14 @@ punctuation; they do not translate the release name or the word "edition".
 
 ## Available heads
 
-Only the blue bear preset is currently wired in. It uses the existing crazy-bear
-head raster; see `src/viewer/assets/README.md` for provenance and camera setup.
-The viewer can render other animals from the owner's local ROM and private table,
-but those require verified part and camera presets before automatic banner use.
-The current 256 x 256 head export is enlarged in the 1500 x 250 composition.
+Bundled renders: the bear icon (`src/viewer/assets/icon.png`) and the demo heads in
+`src/web/demo/heads/` (dog, fox, seagull, sheep), cropped to their visible pixels. Other animals
+(the rat, for example) need your own transparent render from your ROM, passed with `--head-image`.
+Owner's pick for release banners: EVO, EVO chip, polar bear, camel, elephant, and the rat for v0.01.
 
 ## Publication
 
-The selected README banner is `docs/images/releases/auburnish-ear-bear-v3.png`.
+The selected README banners are `docs/images/releases/velvet-midnight-rat-light.png` and `-dark.png`.
 Future concepts remain local in build; no version numbers or releases are implied.
 Review images under docs/PREPUBLISH.md. Game-head renders remain third-party game
 content, outside the CC0 dedication; see NOTICE.md. Never publish ROMs, extracted
@@ -67,10 +81,11 @@ The earlier AI-made fox concept is superseded and is not a game render.
 
 ## Quotation styles
 
-Each generation randomly chooses English curly quotes, French spaced guillemets,
-Spanish guillemets, German low/high quotes, or Japanese corner brackets. These are
-selected typographic conventions, not an exhaustive rule for each language.
-Use `--quote-style english|french|spanish|german|japanese` to reproduce a choice;
+Styles are named by typographic tradition, not by one language or country: `anglo` “ ”,
+`romance` « » (Spanish, Italian, Portuguese, Catalan…), `francophone` « » with thin spaces,
+`central-european` „ “ (German, Czech, Slovak, Baltic…) and `east-asian` 「 」. Each generation picks one at random.
+Use `--quote-style anglo|romance|francophone|central-european|east-asian` to reproduce a choice (the older
+`english|french|spanish|german|japanese` names still work);
 `random` is the default. The command prints the selected style. Batch mode chooses
 independently per banner unless a style is pinned. The HTML composer holds its
 choice while editing; its shuffle button explicitly chooses again.

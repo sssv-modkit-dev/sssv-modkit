@@ -16,8 +16,27 @@ PRESETS = {
     'blue': ('Ceruleanish Ear Bear', '#8dc4ed'),
     'orange': ('Amberish Ear Bear', '#efb16b'),
     'green': ('Jadeish Ear Bear', '#91cbb1'),
+    'purple': ('Cadet Fox', '#a77bff'),
 }
-STYLES = ('english', 'french', 'spanish', 'german', 'japanese')
+# Optional per-palette backgrounds (default: the navy #111b29 theme). purple = Dracula (#282a36 / #6272a4 / #44475a).
+THEMES = {
+    'purple': {'background': '#282a36', 'muted': '#6272a4', 'rule': '#44475a', 'bold': '#7c3aed', 'light': '#d2bcff'},
+}
+# --theme light|dark per palette: background, title, version text, rule, head body, head accent part.
+# purple-dark = Dracula's darkest background; purple-light = Dracula's light sibling (Alucard) background.
+SCHEMES = {
+    ('purple', 'dark'): {'background': '#191a21', 'accent': '#b48cff', 'muted': '#8b93c4', 'rule': '#343746',
+                         'bold': '#6d28d9', 'light': '#e4d7ff'},
+    ('purple', 'light'): {'background': '#fffbeb', 'accent': '#5a2fc2', 'muted': '#6c664b', 'rule': '#d9d3bf',
+                          'bold': '#5b21b6', 'light': '#c9b2ff'},
+}
+# Head renders: the bear icon plus the demo bundle's 128 px heads. Two-tone roles live in release_banner.js HEAD_ROLES.
+HEADS = {
+    'bear': 'src/viewer/assets/icon.png',
+    **{name: f'src/web/demo/heads/{name}.png' for name in ('dog', 'fox', 'seagull', 'sheep')},
+}
+STYLES = ('anglo', 'romance', 'francophone', 'central-european', 'east-asian')
+ALIASES = {'english': 'anglo', 'french': 'francophone', 'spanish': 'romance', 'german': 'central-european', 'japanese': 'east-asian'}
 
 
 def find_browser(explicit):
@@ -48,11 +67,22 @@ def find_browser(explicit):
 def make_page(options, style):
     # Inline local assets so rendering never needs a server or network request.
     script = (ROOT / 'src/release_banner.js').read_text(encoding='utf-8')
-    icon = base64.b64encode((ROOT / 'src/viewer/assets/icon.png').read_bytes()).decode('ascii')
+    head = getattr(options, 'head', 'bear') or 'bear'
+    image = getattr(options, 'head_image', None) or ROOT / HEADS.get(head, HEADS['bear'])
+    icon = base64.b64encode(Path(image).read_bytes()).decode('ascii')
+    theme = dict(THEMES.get(options.palette, {}))
+    theme.update(SCHEMES.get((options.palette, getattr(options, 'theme', None)), {}))
+    theme['anchor'] = getattr(options, 'anchor', 'right') or 'right'
+    for key in ('bold', 'light'):
+        if getattr(options, key, None):
+            theme[key] = getattr(options, key)
+    if theme.get('bold'):
+        theme['head'] = head  # two-tone: bold body, light accent part
+    accent = getattr(options, 'accent', None) or theme.pop('accent', None) or PRESETS[options.palette][1]
     settings = json.dumps({
         'name': options.name or PRESETS[options.palette][0],
-        'version': options.version, 'accent': PRESETS[options.palette][1],
-        'style': style, 'recolor': options.recolor,
+        'version': options.version, 'accent': accent,
+        'style': ALIASES.get(style, style), 'recolor': options.recolor, **theme,
     }, ensure_ascii=True).replace('<', '\\u003c')
     return r'''<!doctype html><meta charset="utf-8">
 <style>html,body{margin:0;width:1500px;height:250px;overflow:hidden}canvas{display:block}</style>
@@ -75,7 +105,7 @@ img.src='data:image/png;base64,ICON';
 
 
 def render(options, browser, output):
-    style = random.choice(STYLES) if options.quote_style == 'random' else options.quote_style
+    style = random.choice(STYLES) if options.quote_style == 'random' else ALIASES.get(options.quote_style, options.quote_style)
     with tempfile.TemporaryDirectory(prefix='sssv-banner-') as temporary:
         work = Path(temporary)
         page, screenshot = work / 'banner.html', work / 'banner.png'
@@ -100,7 +130,7 @@ def render(options, browser, output):
         # Exclusive creation also protects against a file appearing during rendering.
         with output.open('xb') as destination:
             destination.write(png)
-    print(f'Banner saved: {output}\nQuotation style: {style}\nBear raster recolour: {options.recolor}')
+    print(f'Banner saved: {output}\nQuotation style: {style}\nHead: {getattr(options, "head", "bear")}')
 
 
 def main():
@@ -109,7 +139,16 @@ def main():
     parser.add_argument('--version', default='CONCEPT')
     parser.add_argument('--out', type=Path)
     parser.add_argument('--palette', choices=PRESETS, default='blue')
-    parser.add_argument('--quote-style', choices=('random',) + STYLES, default='random')
+    parser.add_argument('--quote-style', choices=('random',) + STYLES + tuple(ALIASES), default='random',
+                        help='Quotation tradition (old language names are accepted as aliases)')
+    parser.add_argument('--head', choices=tuple(HEADS) + ('rat',), default='bear',
+                        help='Animal head: picks the bundled render and the two-tone colour rules')
+    parser.add_argument('--head-image', type=Path, help='Your own head render (PNG, transparent background); --head still picks the colour rules')
+    parser.add_argument('--anchor', choices=('right', 'left'), default='right', help='Side the head sits on')
+    parser.add_argument('--theme', choices=('dark', 'light'), help='Light or dark banner (palettes that define both)')
+    parser.add_argument('--accent', help='Title colour (#rrggbb), overrides the palette')
+    parser.add_argument('--bold', help='Head body colour (#rrggbb); turns on two-tone head colouring')
+    parser.add_argument('--light', help='Head accent-part colour (#rrggbb)')
     parser.add_argument('--recolor', choices=('original', 'head', 'ears', 'both'), default='both')
     parser.add_argument('--batch', action='store_true')
     parser.add_argument('--browser', help='Path to Chrome, Chromium or Edge')

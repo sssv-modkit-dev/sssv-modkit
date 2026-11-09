@@ -49,19 +49,20 @@ assert heads == ['dog.png', 'fox.png', 'seagull.png', 'sheep.png'], heads
 for p in (DEMO / 'heads').glob('*.png'):
     assert p.read_bytes()[:8] == b'\x89PNG\r\n\x1a\n' and p.stat().st_size < 10_000
 
-html = (ROOT / 'src/web/level-editor.html').read_text(encoding='utf-8')
+html = (ROOT / 'core/src/web/level-editor.html').read_text(encoding='utf-8')
 assert 'id="gallery"' in html and 'gallery.js' in html and '<select id="lv" hidden' in html
-assert 'level-rom' in html, 'local ROM chooser must remain'
+assert '<!--slot:level-source-->' in html
+assert 'level-rom' in (ROOT / 'packs/sssv/slots/level-source.html').read_text(encoding='utf-8'), 'local ROM chooser must remain in the SSSV pack'
 
 script = """
 const assert=require('assert'),fs=require('fs');
-global.LevelSelection=require('./src/levels/selection.js');
-const g=require('./src/levels/gallery.js'),level=JSON.parse(fs.readFileSync('src/web/demo/level-4.json','utf8'));
+global.LevelSelection=require('./core/src/levels/selection.js');
+const g=require('./core/src/levels/gallery.js');global.LevelGallery=g;require('./src/levels/names.js');const level=JSON.parse(fs.readFileSync('src/web/demo/level-4.json','utf8'));
 assert.deepStrictEqual(g.animalNames(level.EDITOR_STOCK[4]).sort(),['Racing Dog','Racing Fox','Ram','Sheep']);
 for(const n of g.animalNames(level.EDITOR_STOCK[4]))if(g.HEADS[n])assert(fs.existsSync('src/web/demo/heads/'+g.HEADS[n]+'.png')||g.HEADS[n]==='bear');
 console.log('Demo level gallery names and head icon mapping passed.');
 // Assembled poses stay compact: every posed vertex (through the viewer's own asmXf) lies near the animal's origin.
-const app=fs.readFileSync('src/viewer/js/app.js','utf8'),xf=new Function('return '+app.split('const asmXf=')[1].split('};')[0]+'}')();
+const app=fs.readFileSync('core/src/viewer/js/app.js','utf8'),xf=new Function('return '+app.split('const asmXf=')[1].split('};')[0]+'}')();
 const animals=JSON.parse(fs.readFileSync('src/web/demo/animals.json','utf8')).models;
 for(const name of Object.keys(animals)){const pose=JSON.parse(fs.readFileSync('src/web/demo/poses/'+name+'.json','utf8'));let r=0,n=0;
   for(const pp of pose.parts){const P=animals[name].p.find(p=>p.s===pp.dl).demo,f=xf(pp);for(const t of P.tris)for(const v of t.v){const w=f(v);r=Math.max(r,Math.hypot(...w));n++}}
@@ -69,6 +70,6 @@ for(const name of Object.keys(animals)){const pose=JSON.parse(fs.readFileSync('s
 console.log('Bundled poses assemble within a compact radius.');
 """
 subprocess.run(['node', '-e', script], cwd=ROOT, check=True)
-subprocess.run(['node', '--check', 'src/levels/gallery.js'], cwd=ROOT, check=True)
-subprocess.run(['node', '--check', 'src/levels/loader.js'], cwd=ROOT, check=True)
+subprocess.run(['node', '--check', 'core/src/levels/gallery.js'], cwd=ROOT, check=True)
+subprocess.run(['node', '--check', 'core/src/levels/loader.js'], cwd=ROOT, check=True)
 print('Demo bundle: level-4.json, animals.json and poses format, size, head icons and gallery wiring passed.')

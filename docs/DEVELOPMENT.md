@@ -91,6 +91,9 @@ It rebuilds `tests/fixtures/builds` byte for byte through the same entry the wor
 compares a derived-table Parts build and a worker level build with CPython and the CLI,
 and drives the worker message protocol. It does not run a browser or a real ROM.
 
+The public build (`python src/build_viewer.py --public`) also downloads Pyodide, EmulatorJS and its N64 cores through `tools/vendor_deps.py`,
+verifying each file against `tools/vendor-manifest.json`; add `--no-vendor` to skip that offline. `python tools/vendor_deps.py --verify-manifest` checks the manifest, license files and `NOTICE.md` entries without network access.
+
 To check bundling without replacing the current generated page:
 
 ```text

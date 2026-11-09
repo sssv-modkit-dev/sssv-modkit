@@ -11,7 +11,7 @@ with tempfile.TemporaryDirectory() as directory:
     # A private-input canary must never be read, even if present in cwd.
     (temp / 'animal_table.json').write_text('PRIVATE_INPUT_CANARY: invalid JSON')
     output = temp / 'model-editor.html'
-    command = [sys.executable, str(ROOT / 'src/build_viewer.py'), '--public', '--out', str(output)]
+    command = [sys.executable, str(ROOT / 'src/build_viewer.py'), '--public', '--no-vendor', '--out', str(output)]
     subprocess.run(command, cwd=temp, check=True, capture_output=True)
     assert output.is_file()
     redirect = (temp / 'parts_lab.html').read_text(encoding='utf-8')
@@ -48,12 +48,38 @@ for (const [search, hash] of [['', ''], ['?rom=1&x=%23%26', '#stage=2'], ['', '#
 """, level_redirect_script], check=True, capture_output=True)
     assert b'level-editor.html' in (temp/'index.html').read_bytes()
     assert b'model-editor.html' in (temp/'index.html').read_bytes()
-    for asset in ('rom.js','selection.js','palette.js','gallery.js','loader.js','runtime.js','levels.css'):
+    for asset in ('rom.js','scene.js','scene-import.js','edits-export.js','selection.js','palette.js','gallery.js','loader.js','runtime.js','levels.css'):
         assert (temp/'levels'/asset).is_file()
-    for asset in ('level-4.json','animals.json','heads/dog.png','heads/sheep.png','heads/bear.png'):
+    assert not (temp/'demo'/'level-4.json').exists()
+    page = (temp/'level-editor.html').read_text(encoding='utf-8')
+    assert page.index('levels/scene.js') < page.index('levels/runtime.js') and 'levels/edits-export.js' in page
+    for asset in ('level-4.scene.json','animals.json','heads/dog.png','heads/sheep.png','heads/bear.png'):
         assert (temp/'demo'/asset).is_file(), asset
     subprocess.run(['node','--check',str(temp/'levels/runtime.js')],check=True,capture_output=True)
     assert b'/*EDITOR*/' not in (temp/'levels/runtime.js').read_bytes()
+    # Every public page: CSP meta, noscript explanation, own favicon, no third-party origin loaded.
+    import base64, hashlib, re
+    titles = {'index.html': 'sssv-modkit', 'model-editor.html': 'Model Editor (sssv-modkit)', 'level-editor.html': 'Level Editor (sssv-modkit)',
+              'play.html': 'Build &amp; Play (sssv-modkit)', 'parts_lab.html': 'Model Editor (sssv-modkit)', 'levels.html': 'Level Editor (sssv-modkit)'}
+    for page, title in titles.items():
+        text = (temp / page).read_text(encoding='utf-8')
+        assert '<title>' + title + '</title>' in text, page
+        assert 'http-equiv="Content-Security-Policy"' in text and '<noscript>' in text, page
+        csp = re.search(r'Content-Security-Policy" content="([^"]+)"', text).group(1)
+        assert "default-src 'none'" in csp and (page == 'play.html' or 'unsafe-eval' not in csp.replace('wasm-unsafe-eval', '')), page  # play.html: Emscripten cores eval strings
+        assert not re.search(r'https?://[^/]*(jsdelivr|cdn\.|unpkg|cloudflare|googleapis|gstatic)', text), page
+        # Only GitHub links (navigation) may be absolute; nothing is fetched from them.
+        for url in re.findall(r'(?:src|href)="(https?://[^"]+)"', text):
+            assert url.startswith(('https://github.com/sssv-modkit-dev/', 'https://emulatorjs.org/', 'https://pyodide.org/')), (page, url)
+        for body in re.findall(r'<script>(.*?)</script>', text, re.S):   # inline scripts must be pinned by hash
+            digest = base64.b64encode(hashlib.sha256(body.encode('utf-8')).digest()).decode('ascii')
+            assert "'sha256-" + digest + "'" in csp, (page, 'inline script not covered by CSP')
+    for icon in ('favicon.svg', 'favicon-model-editor.svg', 'favicon-level-editor.svg', 'favicon-build-play.svg'):
+        assert (temp / icon).read_text(encoding='utf-8').startswith('<svg'), icon
+    for page, icon in (('model-editor.html', 'favicon-model-editor.svg'), ('level-editor.html', 'favicon-level-editor.svg'), ('play.html', 'favicon-build-play.svg')):
+        assert 'href="' + icon + '"' in (temp / page).read_text(encoding='utf-8'), page
+    for script in ('play.js', 'builder-core.js', 'builder-worker.js'):
+        assert not re.search(r'https?://', (temp / script).read_text(encoding='utf-8').replace('https://emulatorjs.org', '')), script
     first = output.read_bytes()
     subprocess.run(command, cwd=temp, check=True, capture_output=True)
     assert first == output.read_bytes()
