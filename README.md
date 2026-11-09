@@ -45,3 +45,5 @@ It runs the unit tests, a headless browser start-up test, and `tools/guards.py`.
 ## Licence
 
 CC0-1.0 ([LICENSE](LICENSE)) for the code and original content. Third-party models keep their own licences, listed in [THIRD_PARTY.md](THIRD_PARTY.md).
+
+**Exception:** the banner (`docs/img/banner-*.png`) is **not** CC0. Its rat head is our render of a character model from the game, which belongs to its rights holders; it is shown for illustration only and is not covered by this project's licence.
