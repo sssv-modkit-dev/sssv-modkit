@@ -1,5 +1,7 @@
 # SSSV Editor
 
+![SSSV Editor, "Velvet Midnight Rat" edition, v0.1.0-rc2](docs/img/banner-dark.png)
+
 A fan-made level and model editor for *Space Station Silicon Valley* (1998, N64). It runs entirely in the browser: open a scene or a model, move and add objects, recolour and reshape parts, then save your edits as a small JSON file you can reopen later.
 
 **Unofficial fan project. Not affiliated with or endorsed by the rights holders. Contains no game data.**

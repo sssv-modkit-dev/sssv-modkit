@@ -57,7 +57,7 @@ assert 'level-rom' in (ROOT / 'packs/sssv/slots/level-source.html').read_text(en
 script = """
 const assert=require('assert'),fs=require('fs');
 global.LevelSelection=require('./core/src/levels/selection.js');
-const g=require('./core/src/levels/gallery.js'),level=JSON.parse(fs.readFileSync('src/web/demo/level-4.json','utf8'));
+const g=require('./core/src/levels/gallery.js');global.LevelGallery=g;require('./src/levels/names.js');const level=JSON.parse(fs.readFileSync('src/web/demo/level-4.json','utf8'));
 assert.deepStrictEqual(g.animalNames(level.EDITOR_STOCK[4]).sort(),['Racing Dog','Racing Fox','Ram','Sheep']);
 for(const n of g.animalNames(level.EDITOR_STOCK[4]))if(g.HEADS[n])assert(fs.existsSync('src/web/demo/heads/'+g.HEADS[n]+'.png')||g.HEADS[n]==='bear');
 console.log('Demo level gallery names and head icon mapping passed.');

@@ -1,6 +1,6 @@
 /* Level gallery: cards with a top-down thumbnail, name and animal head icons. Pure display; no file access. */
 const LevelGallery = (() => {
-  const HEADS = {Bear: 'bear', 'Crazy Bear': 'bear', 'Mystery Bear': 'bear', Dog: 'dog', 'Racing Dog': 'dog', 'Flying Dog': 'dog', Fox: 'fox', 'Fire Fox': 'fox', 'Racing Fox': 'fox', Sheep: 'sheep', Seagull: 'seagull'};
+  const HEADS = {Bear: 'bear', Dog: 'dog', Fox: 'fox', Sheep: 'sheep', Seagull: 'seagull'};  // packs may add more names (Object.assign)
   const b64 = (s, T) => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new T(u.buffer); };
   /* Level ground spans x 256..4352 and y 512..6656 (65 x 97 cells of 64 units). Painter's order by height, vertex colours only. */
   function thumbnail(level, width = 112, height = 168) {

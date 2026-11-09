@@ -1,8 +1,14 @@
 const assert=require('assert'),fs=require('fs'),vm=require('vm');
 const selection=require('../src/levels/selection.js');
-assert.equal(selection.name('animals',33),'Sheep');
-assert.equal(selection.name('props',34),'Power cell');
-assert.match(selection.name('props',999),/Unidentified/);
+// Without a pack table the core names objects by type number only.
+assert.equal(selection.name('animals',33),'Animal 33');
+assert.equal(selection.name('props',34),'Prop 34');
+assert.equal(selection.category('props',56),'other');
+// A pack supplies names and groups through define().
+selection.define({animals:{33:'Goat'},props:{34:'Crystal',41:'Lever'},portals:[56],collectibles:[34],switches:[41]});
+assert.equal(selection.name('animals',33),'Goat');
+assert.equal(selection.name('props',34),'Crystal');
+assert.equal(selection.name('props',999),'Prop 999');
 assert.equal(selection.category('animals',33),'animals');
 assert.equal(selection.category('props',56),'portals');
 assert.equal(selection.category('props',34),'collectibles');

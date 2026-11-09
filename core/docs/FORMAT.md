@@ -49,3 +49,20 @@ Each level has `id`, `atlas`, `group`, `sub`, `bounds` (`[xmin,ymin,zmin,xmax,ym
 | `build_hook` | Optional Python file with `run(out_dir, no_vendor)` |
 
 A missing slot or file stops the build with exit code 2 and names it.
+
+## Object names (pack script)
+
+The core names objects by type number only ("Prop 34", "Animal 33"). A pack can supply names and groups
+from one of its `level-editor` scripts:
+
+```js
+LevelSelection.define({
+  animals: {33: 'Goat'},                 // or an array indexed by type
+  props: {34: 'Crystal', 41: 'Lever'},   // named props are offered in the palette
+  portals: [56], collectibles: [34], switches: [41]
+});
+Object.assign(LevelGallery.HEADS, {Goat: 'sheep'});  // optional: name -> scene_icons file
+```
+
+Every key is optional. Unnamed props fall under "Other props".
+

@@ -18,6 +18,7 @@
    "../../src/viewer/js/model-source-rom.js"
   ],
   "level-editor": [
+   "../../src/levels/names.js",
    "../../src/levels/rom.js",
    "../../src/levels/scene-import.js",
    "../../src/levels/edits-export.js",
