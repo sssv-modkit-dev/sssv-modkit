@@ -4,7 +4,7 @@
 
 A fan-made level and model editor for *Space Station Silicon Valley* (1998, N64). It runs entirely in the browser: open a scene or a model, move and add objects, recolour and reshape parts, then save your edits as a small JSON file you can reopen later.
 
-**Unofficial fan project. Not affiliated with or endorsed by the rights holders. Contains no game data.**
+**Unofficial fan project. Not affiliated with or endorsed by the rights holders. Ships no game code, ROM or extracted assets. Screenshots and the banner are captures or renders from the game, used only for illustration.**
 
 This repository ships with original sample content only: a generated island scene, three original models and three CC0 models by Quaternius (see [THIRD_PARTY.md](THIRD_PARTY.md)).
 
