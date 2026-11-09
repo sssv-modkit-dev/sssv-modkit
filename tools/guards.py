@@ -124,7 +124,7 @@ def check_history(root, lists, report):
             lines.append(('commit ' + commit, raw[1:]))
     flush()
     messages = subprocess.run(['git', '-C', str(root), 'log', '--all', '--format=%h%x00%B%x01'], capture_output=True, check=True)
-    rx = pattern([w for words in (lists['everywhere'], lists['code']) for w in words])
+    rx = pattern(lists['everywhere'])  # commit messages are prose, like the explainer zone
     for entry in messages.stdout.decode('utf-8', 'replace').split('\x01'):
         if '\x00' in entry:
             commit, body = entry.strip().split('\x00', 1)
