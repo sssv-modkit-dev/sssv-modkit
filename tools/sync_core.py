@@ -13,14 +13,19 @@ CORE, LOCK = ROOT / 'core', ROOT / 'core.lock'
 
 
 def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    """SHA-256 with CRLF folded to LF in text files, so the lock holds on any checkout
+    (Windows core.autocrlf=true or Linux/CI LF)."""
+    data = path.read_bytes()
+    if b'\0' not in data:
+        data = data.replace(b'\r\n', b'\n')
+    return hashlib.sha256(data).hexdigest()
 
 
 def local_edits():
     if not CORE.exists():
         return []
     if not LOCK.is_file():
-        return [p.relative_to(CORE).as_posix() for p in CORE.rglob('*') if p.is_file()] if CORE.exists() else []
+        return [p.relative_to(CORE).as_posix() for p in CORE.rglob('*') if p.is_file()]
     recorded = json.loads(LOCK.read_text(encoding='utf-8'))['files']
     present = {p.relative_to(CORE).as_posix() for p in CORE.rglob('*') if p.is_file() and '__pycache__' not in p.parts}
     changed = [n for n, h in recorded.items() if n not in present or digest(CORE / n) != h]
@@ -38,7 +43,7 @@ def main(argv=None):
         return 2
     git = lambda *a: subprocess.run(['git', '-C', str(args.source), *a], capture_output=True, check=True).stdout
     commit = git('rev-parse', args.tag + '^{commit}').decode().strip()
-    archive = git('archive', '--format=tar', args.tag)
+    archive = git('-c', 'core.autocrlf=false', 'archive', '--format=tar', args.tag)
     if CORE.exists():
         shutil.rmtree(CORE)
     CORE.mkdir()
