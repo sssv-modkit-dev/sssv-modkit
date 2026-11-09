@@ -20,6 +20,7 @@ def main():
     commands = [
         [sys.executable, 'core/src/check.py'],
         [sys.executable, 'tests/test_core_lock.py'],
+        [sys.executable, 'core/tools/guards.py', 'core'],
         [sys.executable, 'tests/test_levels.py'],
         ['node', 'tests/test_scene.js'],
         ['node', 'tests/test_scene_edits.js'],
