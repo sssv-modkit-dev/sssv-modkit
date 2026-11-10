@@ -3,7 +3,7 @@
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/releases/velvet-midnight-rat-dark.png">
   <img alt="SSSV Modkit — Velvet Midnight Rat edition, pre-alpha v0.01" src="docs/images/releases/velvet-midnight-rat-light.png">
 </picture>
-<sup>Work In Progress // _last updated: 2026-11-06_</sup>
+<sup>Work In Progress // _last updated: 2026-11-09_</sup>
 
 ***Welcome to the Space Station Silicon Valley (sssv) Modkit public repository!***  
 
@@ -19,6 +19,7 @@ guides in [`docs/`](docs/README.md). For code checks
   - [Was it made with AI?](#was-this-made-using-ai)
 - [How do I play this?](#how-do-i-play-this)
 - [Features](#features)
+  - [Model Editor](#model-editor)
 - [Credits](#credits)
 - [License](#license)
 
@@ -90,42 +91,28 @@ For details, see [AI development details](docs/DEVELOPMENT-NOTES.md):
 
 ### Features
 
-| Feature | Status |
-| --- | --- |
-| Change animal colours | Implemented |
-| Scale and move existing body parts | Implemented; vertex and triangle counts stay the same |
-| Taper, bend, twist and inflate parts | Implemented; a bear deform has been checked in game, but other edits need their own checks |
-| Edit individual vertices | Implemented |
-| Preview parts and import/export edit configs | Implemented in the browser viewer |
-| Try bundled and original demo creatures online | Implemented; no ROM needed |
-| Build an IPS patch and a patched ROM | Implemented, with ROM/version and conflicting-edit checks |
-| Assemble animals from pose transforms | Implemented; the five bundled demo animals ship poses captured from the running game. Imported poses for other animals need their own checks |
-| Import entirely new character models or rigs | Not implemented |
-| Shuffle stages | Prototype only; cannot write a playable stage shuffle to the ROM |
+What the modkit does today, and what is planned. A ticked box means it is in
+this repository and usable; an unticked box says how far it has got.
 
-#### Animal edits
+**Tools**
 
-![Bear, dog and fox in the Model Editor: originals on the top row; recoloured, with bigger bear arms, thicker dog legs and a longer fox tail, on the bottom row](docs/images/features/parts-lab-before-after.png)
+- [x] **Model Editor**: recolour and reshape the animals ([details below](#model-editor))
+- [x] **Level Editor**: move, add and remove objects, save project files, build a ROM or IPS patch. Each edited build still needs its own check in game
+- [x] **Patch builder**: one IPS patch and patched ROM from your edits, with ROM/version and conflicting-edit checks
+- [ ] **Play in the browser**: experimental launcher and Build & Play; compatibility and performance still need testing
+- [ ] **Terrain editing**: the Level Editor shows terrain but cannot change it yet
 
-Originals on top, edited below, as previewed in the online Model Editor (no ROM
-needed). Each new edit still needs testing in game.
+**Game mods** (research prototypes, not in the public build yet)
 
-#### In development
-
-![Private level viewer showing textured terrain and Save view and Open view controls](docs/images/features/level-viewer-prototype.jpg)
-
-This older research capture shows saved camera and display settings. The public
-[Level Editor](docs/guides/LEVEL-EDITOR.md) now supports object editing and project files.
-
-Minimap and HUD changes remain research prototypes.
-
-| Feature | Status |
-| --- | --- |
-| Level viewer | Public local-ROM viewer with textured terrain, props, and rough animal previews |
-| Level editing | Public object editor with project files and ROM/IPS builds; edited builds still need their own in-game verification |
-| Minimap | In-game prototype checked on Level 1; other levels and patch combinations need testing |
-| HUD texture changes | Restyled HUD checked in a patched ROM; public editing controls still needed |
-| Play in the browser | Experimental launcher and Build & Play implemented; game compatibility and performance still need testing |
+- [ ] **Skip the intro**: works as a separate patch; checked on Level 1 only
+- [ ] **Widescreen (16:9)**: works as a separate patch; checked on Level 1 only
+- [ ] **HUD restyle / HUD off**: works as a separate patch; checked on Level 1 only
+- [ ] **Minimap**: in-game prototype on Level 1; cannot be combined with widescreen yet
+- [ ] **Music jukebox**: prototype; song titles are cut off
+- [ ] **HUD icon of the animal you are playing**: icon art drafted; not in the game yet
+- [ ] **One standard build**: all of the above in a single tested patch. Not built yet
+- [ ] **Animal playsets and randomizer**: not started. The older stage shuffle is a prototype that cannot write a playable ROM
+- [ ] **Multiplayer**: idea only
 
 | Minimap prototype | HUD texture prototype |
 | --- | --- |
@@ -133,6 +120,22 @@ Minimap and HUD changes remain research prototypes.
 
 Screenshots show the current prototypes, not a finished mod campaign.
 See [image notes](docs/images/features/README.md) for what each capture demonstrates.
+
+#### Model Editor
+
+- [x] Change animal colours
+- [x] Scale and move existing body parts (vertex and triangle counts stay the same)
+- [x] Taper, bend, twist and inflate parts (a bear deform has been checked in game; other edits need their own checks)
+- [x] Edit individual vertices
+- [x] Preview parts and import/export edit configs in the browser
+- [x] Try bundled and original demo creatures online, no ROM needed
+- [x] Assemble animals from pose transforms (the five bundled demo animals ship poses captured from the running game; imported poses for other animals need their own checks)
+- [ ] Import entirely new character models or rigs
+
+![Bear, dog and fox in the Model Editor: originals on the top row; recoloured, with bigger bear arms, thicker dog legs and a longer fox tail, on the bottom row](docs/images/features/parts-lab-before-after.png)
+
+Originals on top, edited below, as previewed in the online Model Editor (no ROM
+needed). Each new edit still needs testing in game.
 
 See the [config guide](docs/guides/CONFIGS.md) for available edits and
 [project status](docs/PROJECT.md) for unfinished work.
