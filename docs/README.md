@@ -1,24 +1,34 @@
 # Documentation
 
-## Using the modkit
+Start with the guide for what you want to do. The [main README](../README.md) is the project overview; this page is the detailed documentation index.
 
-- [Getting started](guides/GETTING-STARTED.md): local inputs, table generation and your first patch.
-- [Config guide](guides/CONFIGS.md): available edits, examples and combining configs.
-- [Model Editor](guides/MODEL-EDITOR.md): browser demos, editing and Build & Play.
-- [FAQ](FAQ.md): project background and device support.
-- [Level Editor](guides/LEVEL-EDITOR.md): local-ROM stages, named selection, group editing, project files and patch builds.
-- [Viewer guide](guides/VIEWER.md): building the page, inspecting parts and exporting edits.
-- [Deform preview](DEFORM-TRYOUT.md): compare a preview with the builder and game.
-- [Glossary](GLOSSARY.md): parts, variants, rigs, poses and coordinate spaces.
+## Use the modkit
 
-## Working on the tools
+| Goal | Start here |
+| --- | --- |
+| Build an animal ROM patch | [Getting started](guides/GETTING-STARTED.md) · [ROM setup](../rom/README.md) |
+| Understand or combine edit configs | [Config guide](guides/CONFIGS.md) · [Example configs](../configs/) |
+| Try the public Model Editor | [Model Editor guide](guides/MODEL-EDITOR.md) · [Open the editor](https://sssv-modkit-dev.github.io/sssv-modkit/model-editor.html) |
+| Build a private viewer from your own files | [Viewer guide](guides/VIEWER.md) |
+| Edit stages and build level patches | [Level Editor guide](guides/LEVEL-EDITOR.md) · [Open the editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) |
+| Learn about deformation behavior and limits | [Deform preview](DEFORM-TRYOUT.md) · [Glossary](GLOSSARY.md) |
+| Understand project scope and device support | [FAQ](FAQ.md) · [Project status](PROJECT.md) |
 
-- [Development](DEVELOPMENT.md): checks, commands and validation limits.
-- [Architecture](ARCHITECTURE.md): data flow, active sources and extension boundaries.
-- [Project status](PROJECT.md): current capabilities and next tasks.
-- [Agent guidance](../AGENTS.md): repository working rules.
-- [Publication checks](PREPUBLISH.md): reviewing files for release.
-- [Release banners](RELEASE-BANNERS.md): shell/Python generator and browser composer.
-- [Development notes](DEVELOPMENT-NOTES.md): project workflow and assistance.
+## Develop and maintain the tools
 
-Emulator captures and input recipes live in [sssv-modkit-automated-testing](https://github.com/sssv-modkit-dev/sssv-modkit-automated-testing). Private research, ROM-derived tables and generated viewers are not part of this documentation set.
+- [Development guide](DEVELOPMENT.md): setup, checks, focused tests, and validation limits.
+- [Architecture](ARCHITECTURE.md): data flow, active source files, and extension boundaries.
+- [Viewer controls and browser validation](VIEWER-CONTROLS.md): controls, browser evidence, and ROM-free fixtures.
+- [Network audit](NETWORK.md): public-page requests, content security policy, and third-party runtime loading.
+- [Release checks](PREPUBLISH.md): staged-file review and publication safeguards.
+- [Release banners](RELEASE-BANNERS.md): banner generator and browser composer.
+- [Contributing](../CONTRIBUTING.md) · [Code of Conduct](CODE_OF_CONDUCT.md) · [Agent guidance](../AGENTS.md).
+
+## Project and third-party notes
+
+- [Project status](PROJECT.md): current capabilities, evidence, limitations, and next tasks.
+- [AI development details](DEVELOPMENT-NOTES.md): how coding tools assisted the project.
+- [Feature image notes](images/features/README.md): image provenance, approvals, and limitations.
+- [Notice and license information](../NOTICE.md): game/demo assets, third-party software, and CC0 scope.
+
+Emulator input recipes and capture automation are maintained in [sssv-modkit-automated-testing](https://github.com/sssv-modkit-dev/sssv-modkit-automated-testing). ROM-derived tables, generated viewers, and other private inputs should stay local; see [ROM setup](../rom/README.md) and [release checks](PREPUBLISH.md).
