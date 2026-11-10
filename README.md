@@ -5,27 +5,31 @@
   <img alt="SSSV Modkit — Velvet Midnight Rat edition" src="docs/images/releases/velvet-midnight-rat-light.png">
 </picture>
 
-A fan-made toolkit for exploring and editing *Space Station Silicon Valley* (Nintendo 64). Use the browser editors or build ROM patches from your own game files.
+**Explore and edit *Space Station Silicon Valley* (Nintendo 64).** Try the browser editors, or build ROM patches from your own game files with the local tools.
 
-> [!WARNING]
-> This is an unofficial fan project. It is not affiliated with or endorsed by the game's rights holders. **No ROMs or patched ROMs are included.** The site and tools process files you choose locally; see the [network audit](docs/NETWORK.md) for details.
+[**Open Model Editor**](https://sssv-modkit-dev.github.io/sssv-modkit/model-editor.html) · [**Open Level Editor**](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) · [**Try Browser Play**](https://sssv-modkit-dev.github.io/sssv-modkit/play.html)
 
-**Try it:** [Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/model-editor.html) · [Level Editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) · [Browser Play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html)
+> [!IMPORTANT]
+> This is an unofficial fan project, not affiliated with or endorsed by the game's rights holders. **No ROMs or patched ROMs are included.** The tools process files you select locally. Read the [network audit](docs/NETWORK.md) for details about browser requests and third-party runtimes.
 
-**Guides:** [Getting started](docs/guides/GETTING-STARTED.md) · [Documentation index](docs/README.md) · [Project status](docs/PROJECT.md) · [Contributing](CONTRIBUTING.md)
+## See the Model Editor
 
-## What you can do
+![Model Editor showing original demo geometry and Save edits controls](docs/images/features/parts-lab.jpg)
 
-| If you want to… | Start here | Requirements and notes |
+*The public Model Editor demo uses original sample geometry. Game-specific editing requires your own supported game files.* See [image notes](docs/images/features/README.md).
+
+## Choose your path
+
+| I want to… | Start here | What I need to know |
 | --- | --- | --- |
-| Explore and edit demo models | [Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/model-editor.html) | The bundled demos work without a ROM. Use your own supported game files for game-specific edits and builds. |
-| Edit a stage | [Level Editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) · [Guide](docs/guides/LEVEL-EDITOR.md) | Choose your own supported ROM in the browser. Terrain editing is not available; check each build in game. |
-| Try browser play | [Browser Play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html) | Select your own uncompressed ROM or patched build. Experimental; compatibility and performance vary. |
-| Build an animal edit locally | [Getting started](docs/guides/GETTING-STARTED.md) | Requires your own unmodified US 1.0 ROM and Python. |
+| Explore demo models | [Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/model-editor.html) | Bundled demos work without a ROM. |
+| Edit a stage | [Level Editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) · [Guide](docs/guides/LEVEL-EDITOR.md) | Select your own supported ROM. Terrain is read-only; verify edited builds in game. |
+| Play in the browser | [Browser Play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html) | Experimental; compatibility and performance need more testing. Select your own uncompressed ROM or patched build. |
+| Build an animal patch | [Getting started](docs/guides/GETTING-STARTED.md) | Requires your own unmodified US 1.0 ROM and Python. |
 
 ## Build an animal patch
 
-From the repository root, generate a private animal table from your own US 1.0 ROM, then dry-run an example config before building:
+From the repository root, generate a local animal table from your own US 1.0 ROM. Dry-run the example config and review the report before building:
 
 ```sh
 python src/animal_table.py --from-rom --out src/animal_table
@@ -33,29 +37,31 @@ python src/make_animal_mods.py configs/bear.json --out build --name bear --dry-r
 python src/make_animal_mods.py configs/bear.json --out build --name bear
 ```
 
-The builder writes an IPS patch and, by default, a patched ROM under `build/`. It checks the ROM identity and expected bytes, refuses conflicting edits, repairs the header checksum, and verifies the patch round trip. **Always review the dry-run report and test your build.** See [Getting started](docs/guides/GETTING-STARTED.md) for ROM setup and [config guide](docs/guides/CONFIGS.md) for edit formats.
+The builder writes an IPS patch and, by default, a patched ROM under `build/`. It checks ROM identity and expected bytes, refuses conflicting edits, repairs the header checksum, and verifies the IPS round trip. These safeguards do not establish that a change looks or plays correctly in game. See the [ROM setup](rom/README.md) and [config guide](docs/guides/CONFIGS.md).
 
-## Features and limits
+## Features and current limits
 
-- **Model Editor:** recolour and reshape existing animal parts, edit vertices, preview changes, and import or export configs. Geometry edits preserve vertex and triangle counts; shading and in-game appearance still need testing.
-- **Level Editor:** inspect and edit supported stage objects, save projects, and build ROMs or IPS patches. Terrain is read-only, and arbitrary edits are not guaranteed to work in game.
-- **Patch builders:** create animal and level edits locally, with source checks and IPS round-trip validation. Animal configs require the US 1.0 ROM; level-edit support and constraints are described in the [Level Editor guide](docs/guides/LEVEL-EDITOR.md).
-- **Browser Play and Build & Play:** experimental. Game compatibility, controls, and performance need further testing.
-- **Not implemented:** importing entirely new character rigs, terrain editing, and a finished combined mod campaign. See [project status](docs/PROJECT.md) for prototypes and planned work.
+- **Model Editor:** recolour and reshape existing animal parts, edit vertices, preview changes, and import or export configs. Geometry edits preserve vertex and triangle counts; shading and in-game appearance still need checking.
+- **Level Editor:** inspect and edit supported stage objects, save projects, and build ROMs or IPS patches. Terrain editing is not implemented, and arbitrary edits are not guaranteed to work in game.
+- **Patch builders:** create animal and level edits locally with source checks and IPS round-trip validation. Animal configs require the US 1.0 ROM; see the [Level Editor guide](docs/guides/LEVEL-EDITOR.md) for level-build constraints.
+- **Browser Play and Build & Play:** experimental. Compatibility, controls, and performance need further testing.
+- **Not implemented:** importing entirely new character rigs, terrain editing, and a finished combined mod campaign.
 
-## Project background
+For current capabilities, prototypes, and validation status, see [Project status](docs/PROJECT.md).
 
-This project makes **ROM patches**; it is not a decompilation, recompilation, or native PC port. Development has been substantially assisted by AI coding tools. Read the [FAQ](docs/FAQ.md) and [development notes](docs/DEVELOPMENT-NOTES.md) for more context.
+## Contribute and run checks
 
-To run the ROM-free checks, install Python and Node.js and run:
+Contributions are welcome; see [Contributing](CONTRIBUTING.md) and the [documentation index](docs/README.md). With Python and Node.js installed, run the ROM-free checks from the repository root:
 
 ```sh
 python src/check.py
 ```
 
-See [development](docs/DEVELOPMENT.md) for what the checks cover and what still requires browser or in-game testing.
+The checks do not replace browser testing or in-game verification. See [Development](docs/DEVELOPMENT.md) for their scope and limitations.
 
-## Credits and licensing
+## Project and license
+
+This project makes **ROM patches**; it is not a decompilation, recompilation, or native PC port. Development has been substantially assisted by AI coding tools; read the [FAQ](docs/FAQ.md) and [development notes](docs/DEVELOPMENT-NOTES.md) for context.
 
 Created and maintained by [sssv-modkit dev](https://github.com/sssv-modkit-dev). Contact: [sssv-modkit-dev@protonmail.me](mailto:sssv-modkit-dev@protonmail.me).
 
