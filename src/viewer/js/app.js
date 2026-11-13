@@ -19,7 +19,7 @@ const viewBB=[1e9,1e9,1e9,-1e9,-1e9,-1e9];
 for(const t of tris)for(const q of t.v)for(let a=0;a<3;a++){viewBB[a]=Math.min(viewBB[a],q[a]);viewBB[a+3]=Math.max(viewBB[a+3],q[a])}
 return{cols,tris,bb,viewBB,groups}}
 // --- shared op maths: keep every vertex operation here so the deform preview can be added next to it ---
-function applyMesh(v,E,bb){if(!E)return v;const c0=E.o?[0,0,0]:[0,1,2].map(k=>(bb[k]+bb[k+3])/2);return v.map((x,k)=>Math.floor(c0[k]+(x-c0[k])*E.s[k]+E.m[k]+.5))}
+function applyMesh(v,E,bb){if(!E)return v;const c0=E.o?[0,0,0]:[0,1,2].map(k=>(bb[k]+bb[k+3])/2);let q=v.map((x,k)=>(x-c0[k])*E.s[k]);for(let a=0;a<3;a++){const u=(a+1)%3,w=(a+2)%3,t=(E.r?.[a]||0)*Math.PI/180,c=Math.cos(t),sn=Math.sin(t),x=q[u],y=q[w];q[u]=x*c-y*sn;q[w]=x*sn+y*c}return q.map((x,k)=>Math.floor(c0[k]+x+E.m[k]+.5))}
 // true if the part has no G_SETPRIMCOLOR, or has triangles drawn before its first one
 function noOwnColour(P){return P.cols.length==0||P.tris.some(t=>t.c<0)}
 // exploded layout: one grid cell per part, offsets move each part's bbox centre onto its cell centre
@@ -131,7 +131,7 @@ if(rows.every(r=>r.note))throw new Error('none of those parts belong to the anim
 console.table(rows);deform=nd;deformCache.clear();deformOn=true;ui();rebuild(false);info()
 }catch(e){alert('Deform preview: '+e.message)}};
 const $=id=>document.getElementById(id);
-let pickTris=[],hoverSym=null,returnMode=null,partNames={},partOffsets={},labelOffsets={},selectedSym=null,moveButton="alt",showGrid=false,showLabels=false,backgroundOverride=null;let mesh={},dv=null,cur=null,name='',bases={},parsed=[],map={},sel=0,variant='',all=false,sheet=false,SH={},useVC=true,yaw=HOME_VIEW[0],pit=HOME_VIEW[1],roll=0,dist=1,ctr=[0,0,0],nv=0,dirty=false,gallery=false,galleryData=[],galleryLayout=[];
+let pickTris=[],hoverSym=null,returnMode=null,partNames={},partOffsets={},labelOffsets={},selectedSym=null,moveButton="alt",showGrid=false,showGround=true,showLabels=false,backgroundOverride=null;let mesh={},dv=null,cur=null,name='',bases={},parsed=[],map={},sel=0,variant='',all=false,sheet=false,SH={},useVC=true,yaw=HOME_VIEW[0],pit=HOME_VIEW[1],roll=0,dist=1,ctr=[0,0,0],nv=0,dirty=false,gallery=false,galleryData=[],galleryLayout=[];
 let sceneBounds=null,sceneRadius=1;
 const cv=$('cv'),gl=cv.getContext('webgl',{alpha:true});
 if(!gl){$('demo-status').textContent='WebGL is unavailable. Enable hardware acceleration or try another browser.';throw new Error('WebGL unavailable')}
@@ -139,9 +139,21 @@ function sh(t,s){const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShade
 const pg=gl.createProgram();
 gl.attachShader(pg,sh(gl.VERTEX_SHADER,'attribute vec3 p,c,n;uniform mat4 M,N;varying vec3 vc;varying float vl;void main(){gl_Position=M*vec4(p,1.);vc=c;vec3 q=normalize((N*vec4(n,0.)).xyz);vl=.45+.55*abs(dot(q,normalize(vec3(-.3,.5,.8))));}'));
 gl.attachShader(pg,sh(gl.FRAGMENT_SHADER,'precision mediump float;varying vec3 vc;varying float vl;void main(){gl_FragColor=vec4(vc*vl,1.);}'));
-gl.linkProgram(pg);gl.useProgram(pg);gl.enable(gl.DEPTH_TEST);
+['p','c','n'].forEach((a,i)=>gl.bindAttribLocation(pg,i,a));gl.linkProgram(pg);gl.useProgram(pg);gl.enable(gl.DEPTH_TEST);
 const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);const loc={M:gl.getUniformLocation(pg,'M'),N:gl.getUniformLocation(pg,'N')};
-['p','c','n'].forEach((a,i)=>{const l=gl.getAttribLocation(pg,a);gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,3,gl.FLOAT,false,36,i*12)});
+['p','c','n'].forEach((a,i)=>{gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,36,i*12)});
+const gpg=gl.createProgram();
+gl.attachShader(gpg,sh(gl.VERTEX_SHADER,'attribute vec3 p;uniform mat4 M;uniform vec4 G;varying vec2 uv;void main(){uv=p.xy;gl_Position=M*vec4(G.x+p.x*G.w,G.y,G.z+p.y*G.w,1.);}'));
+gl.attachShader(gpg,sh(gl.FRAGMENT_SHADER,'precision mediump float;varying vec2 uv;void main(){float r=length(uv),patch=(1.-smoothstep(.93,1.,r))*.13,rim=smoothstep(.9,.95,r)*(1.-smoothstep(.95,1.,r))*.2,shade=(1.-smoothstep(.05,.62,r))*.4,a=patch+rim;gl_FragColor=vec4(vec3(.62)*a*(1.-shade),a+shade-a*shade);}'));
+gl.bindAttribLocation(gpg,0,'p');gl.linkProgram(gpg);
+const gbuf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,gbuf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,0,1,-1,0,1,1,0,-1,-1,0,1,1,0,-1,1,0]),gl.STATIC_DRAW);gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+const gloc={M:gl.getUniformLocation(gpg,'M'),G:gl.getUniformLocation(gpg,'G')};
+// Drawn after the model without depth writes, so the model hides it from above and it tints the model from below.
+function drawGround(PV){const [mn,mx]=sceneBounds,rad=Math.max(mx[0]-mn[0],mx[2]-mn[2])*.62+(mx[1]-mn[1])*.12;
+gl.useProgram(gpg);gl.bindBuffer(gl.ARRAY_BUFFER,gbuf);gl.disableVertexAttribArray(1);gl.disableVertexAttribArray(2);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
+gl.uniformMatrix4fv(gloc.M,false,PV);gl.uniform4f(gloc.G,(mn[0]+mx[0])/2,mn[1],(mn[2]+mx[2])/2,rad);
+gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);gl.drawArrays(gl.TRIANGLES,0,6);gl.depthMask(true);gl.disable(gl.BLEND);
+gl.useProgram(pg);gl.bindBuffer(gl.ARRAY_BUFFER,buf);for(let i=0;i<3;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,36,i*12)}}
 const mul=(a,b)=>{const r=Array(16).fill(0);for(let i=0;i<4;i++)for(let j=0;j<4;j++)for(let k=0;k<4;k++)r[j*4+i]+=a[k*4+i]*b[j*4+k];return r};
 const rx=a=>{const c=Math.cos(a),s=Math.sin(a);return[1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1]};
 const ry=a=>{const c=Math.cos(a),s=Math.sin(a);return[c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1]};
@@ -166,7 +178,7 @@ function draw(size){dirty=false;const w=Array.isArray(size)?size[0]:(cv.clientWi
 if(cv.width!=w||cv.height!=h){cv.width=w;cv.height=h}gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 const R=cameraRotation(),V=mul(tr(0,0,-dist),mul(R,tr(-ctr[0],-ctr[1],-ctr[2])));
 updateAxes(R);
-gl.uniformMatrix4fv(loc.M,false,mul(projection(),V));gl.uniformMatrix4fv(loc.N,false,R);gl.drawArrays(gl.TRIANGLES,0,nv);if(showLabels)updateFloatingLabels()}
+const PV=mul(projection(),V);gl.uniformMatrix4fv(loc.M,false,PV);gl.uniformMatrix4fv(loc.N,false,R);gl.drawArrays(gl.TRIANGLES,0,nv);if(showGround&&sceneBounds&&!gallery&&!sheet)drawGround(PV);if(showLabels)updateFloatingLabels();updateGizmo()}
 const need=()=>{if(!dirty){dirty=true;requestAnimationFrame(draw)}};
 const NAMED_COLOURS={Black:'000000',White:'FFFFFF',Red:'FF0000',Green:'008000',Blue:'0000FF',Yellow:'FFFF00',Orange:'FFA500',Purple:'800080',Pink:'FFC0CB',Brown:'8B4513',Grey:'808080',Cyan:'00FFFF',Magenta:'FF00FF',Beige:'F5F5DC',Gold:'FFD700',Olive:'808000',Teal:'008080',Navy:'000080'};
 function colourName(hex){const rgb=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));let best='Colour',dist=Infinity;for(const [name,val] of Object.entries(NAMED_COLOURS)){const c=[0,2,4].map(i=>parseInt(val.slice(i,i+2),16));const d=c.reduce((sum,x,i)=>sum+(x-rgb[i])**2,0);if(d<dist){dist=d;best=name}}return best}
@@ -203,7 +215,7 @@ cur.p.forEach((p,i)=>{
     (noOwnColour(parsed[i])?
       ' &nbsp;<i title="No prim colour in this list">vtx col</i>':''),
     !all&&!sheet&&i==sel,
-    ()=>{rememberView();assembled=false;sel=i;all=false;sheet=false;ui();rebuild(true);info()});
+    ()=>{rememberView();assembled=false;selectedSym=parsed[i].sym;sel=i;all=false;sheet=false;ui();rebuild(true);info()});
 });
 const pal=[...new Set(parsed.flatMap(P=>[...P.cols.map(c=>c.rgba),...(noOwnColour(P)?['808080FF']:[])]))],D=$('pal');D.innerHTML='';
 for(const o of pal){const r=document.createElement('div');r.className='row';const cur2=map[o]||o;
@@ -211,13 +223,13 @@ r.title=colourName(o)+' (Original) #'+o.slice(0,6)+(cur2!==o?' → #'+cur2.slice
 r.innerHTML='<div class="sw" style="background:#'+o.slice(0,6)+'"></div>';
 const inp=document.createElement('input');inp.type='color';inp.setAttribute('aria-label',r.title);inp.title=r.title;inp.value='#'+cur2.slice(0,6).toLowerCase();
 inp.oninput=()=>{const n=inp.value.slice(1).toUpperCase()+o.slice(6);if(n==o)delete map[o];else map[o]=n;rebuild(false)};r.appendChild(inp);D.appendChild(r)}}
-function meshUI(){const D=$('mesh');D.innerHTML='';if(gallery)return;const P=parsed[sel];if(all||sheet||!P){D.innerHTML='<div class="mut mesh-hint">Select a part to edit its mesh.</div>';return}const sym=cur.p[sel].s,E=mesh[sym]||{s:[1,1,1],m:[0,0,0],o:false};
-D.innerHTML='<h4>'+labelHTML(sym)+(partLabel(name,sym)?' · '+labelHTML(partLabel(name,sym)):'')+'</h4>';const reset=document.createElement('button');reset.textContent='Reset';reset.onclick=()=>{delete mesh[sym];delete deform[sym];deformCache.clear();rebuild(false);info()};D.appendChild(reset);
+function meshUI(){const D=$('mesh');D.innerHTML='';if(gallery)return;const P=parsed.find(p=>p.sym===selectedSym)||parsed[sel];if((all||sheet)&&!selectedSym||!P){D.innerHTML='<div class="mut mesh-hint">Select a part to edit its mesh.</div>';return}const sym=P.sym,E=mesh[sym]||{s:[1,1,1],m:[0,0,0],o:false};
+D.innerHTML='<h4>'+labelHTML(sym)+(partLabel(name,sym)?' · '+labelHTML(partLabel(name,sym)):'')+'</h4>';const reset=document.createElement('button');reset.textContent='Reset';reset.onclick=()=>{delete mesh[sym];delete deform[sym];deformCache.clear();rebuild(false);info()};D.appendChild(reset);const rename=document.createElement('button');rename.textContent='Part name';rename.onclick=()=>{selectedSym=sym;$('part-inspector').hidden=false;$('part-symbol').textContent=sym;$('part-name').value=partLabel(name,sym)};D.appendChild(rename);
 const axes=['X','Y','Z'];
-for(const [lab,key] of [['Scale','s'],['Move','m']]){const group=document.createElement('div');group.className='mesh-group';group.innerHTML='<div class="mesh-group-title">'+lab+'</div>';
+for(const [lab,key] of [['Scale','s'],['Move','m'],['Rotate','r']]){const group=document.createElement('div');group.className='mesh-group';group.innerHTML='<div class="mesh-group-title">'+lab+'</div>';
 [0,1,2].forEach(k=>{const row=document.createElement('div');row.className='axis-edit';const tag=document.createElement('span');tag.className='axis-tag '+axes[k].toLowerCase();tag.textContent=axes[k];const i=document.createElement('input');i.type='range';const val=document.createElement('span');val.className='axis-value';
-if(key==='s'){i.min='-100';i.max='100';i.step='1';i.value=String(Math.round(Math.log10(Math.max(.1,Math.min(10,E.s[k])))*100));val.textContent=E.s[k].toFixed(2)+'×'}else{i.min='-500';i.max='500';i.step='1';i.value=String(E.m[k]);val.textContent=String(E.m[k])}
-i.setAttribute('aria-label',lab+' '+axes[k]);i.oninput=()=>{const e=mesh[sym]||(mesh[sym]={s:[1,1,1],m:[0,0,0],o:false});if(key==='s'){e.s[k]=Math.pow(10,Number(i.value)/100);val.textContent=e.s[k].toFixed(2)+'×'}else{e.m[k]=Number(i.value);val.textContent=String(e.m[k])}rebuild(false)};row.append(tag,i,val);group.appendChild(row)});D.appendChild(group)}
+if(key==='s'){i.min='-100';i.max='100';i.step='1';i.value=String(Math.round(Math.log10(Math.max(.1,Math.min(10,E.s[k])))*100));val.textContent=E.s[k].toFixed(2)+'×'}else{i.min=key==='r'?'-180':'-500';i.max=key==='r'?'180':'500';i.step='1';i.value=String(E[key]?.[k]||0);val.textContent=i.value}
+i.setAttribute('aria-label',lab+' '+axes[k]);i.oninput=()=>{const e=mesh[sym]||(mesh[sym]={s:[1,1,1],m:[0,0,0],o:false});if(key==='s'){e.s[k]=Math.pow(10,Number(i.value)/100);val.textContent=e.s[k].toFixed(2)+'×'}else{(e[key]||(e[key]=[0,0,0]))[k]=Number(i.value);val.textContent=i.value}rebuild(false)};row.append(tag,i,val);group.appendChild(row)});D.appendChild(group)}
 const l=document.createElement('label');l.innerHTML='<input type="checkbox"> Scale about bone origin (0,0,0), useful for parts sharing a bone';l.firstChild.checked=!!E.o;
 l.firstChild.onchange=()=>{(mesh[sym]||(mesh[sym]={s:[1,1,1],m:[0,0,0],o:false})).o=l.firstChild.checked;rebuild(false)};D.appendChild(l)}
 function info(){meshUI();$('info').textContent=''}
@@ -297,7 +309,7 @@ $('theme-select').onchange=()=>setTheme($('theme-select').value);
 $('vc').onchange=()=>{useVC=$('vc').checked;rebuild(false)};
 $('rst').onclick=()=>{map={};mesh={};deform={};deformOn=false;deformCache.clear();partOffsets[name]={};ui();rebuild(true);info()};
 function gameConfig(){const r={};for(const o in map)r[o]=map[o].slice(6)==o.slice(6)?map[o].slice(0,6):map[o];
-const ms=Object.keys(mesh).filter(k=>mesh[k].s.some(x=>x!=1)||mesh[k].m.some(x=>x!=0)||mesh[k].o).map(k=>(o=>{if(mesh[k].o)o.about=[0,0,0];return o})({symbol:k,scale:mesh[k].s,move:mesh[k].m})),o={animal:name,recolor:r};if(ms.length)o.mesh=ms;return o}
+const ms=Object.keys(mesh).filter(k=>mesh[k].s.some(x=>x!=1)||mesh[k].m.some(x=>x!=0)||mesh[k].o||mesh[k].r?.some(x=>x!==0)).map(k=>(o=>{if(mesh[k].o)o.about=[0,0,0];return o})({symbol:k,scale:mesh[k].s,move:mesh[k].m,rotate:mesh[k].r})),o={animal:name,recolor:r};if(ms.length)o.mesh=ms;return o}
 $('exp').onclick=()=>{if(!cur)return;const o=gameConfig();
 const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o,null,2)],{type:'application/json'}));a.download=name+'.json';a.click()};
 $('imp').onclick=()=>$('impf').click();
@@ -329,7 +341,7 @@ $('save-icon').onclick=()=>{
   a.download=(name||'viewer')+'-icon.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 };
 $('impf').onchange=async e=>{if(gallery)return;const f=e.target.files[0];if(!f||!dv)return;const c=JSON.parse(await f.text());if(!TABLE[c.animal])return;pick(c.animal);
-for(const o in c.recolor||{}){const k=o.toUpperCase(),n=c.recolor[o].toUpperCase();map[k]=n.length==6?n+k.slice(6):n}for(const m of c.mesh||[])mesh[m.symbol]={s:m.scale||[1,1,1],m:m.move||[0,0,0],o:!!m.about&&m.about.every(x=>x==0)};ui();rebuild(false);info()};
+for(const o in c.recolor||{}){const k=o.toUpperCase(),n=c.recolor[o].toUpperCase();map[k]=n.length==6?n+k.slice(6):n}for(const m of c.mesh||[])mesh[m.symbol]={s:m.scale||[1,1,1],m:m.move||[0,0,0],r:m.rotate||[0,0,0],o:!!m.about&&m.about.every(x=>x==0)};ui();rebuild(false);info()};
 // CPU-side screen-space triangle picking. Uses the same MVP as the renderer,
 // then chooses the frontmost triangle under the click (depth interpolation).
 function pickPart(clientX,clientY){
@@ -347,14 +359,17 @@ function pickPart(clientX,clientY){
     const z=u*a[2]+v*b[2]+(1-u-v)*c[2];if(z<depth){depth=z;best=t.sym}
   }return best;
 }
-function inspectPartAt(x,y){const sym=pickPart(x,y);if(!sym)return;selectedSym=sym;rebuild(false);const el=$('part-inspector');el.hidden=false;$('part-symbol').textContent=sym;$('part-name').value=partLabel(name,sym);el.style.left='auto';el.style.right='12px';}
+function inspectPartAt(x,y){const sym=pickPart(x,y);if(!sym)return;selectedSym=sym;info();rebuild(false);const el=$('part-inspector');el.hidden=true;$('part-symbol').textContent=sym;$('part-name').value=partLabel(name,sym);el.style.left='auto';el.style.right='12px';}
 $('part-name').oninput=e=>{if(!selectedSym)return;(partNames[name]||(partNames[name]={}))[selectedSym]=e.target.value;saveViewerPrefs();updateFloatingLabels();};
 function rememberView(){if(!gallery&&cur)returnMode={sheet,all,variant,sel}}
+function namePartAt(x,y){const sym=pickPart(x,y);if(!sym)return;selectedSym=sym;info();rebuild(false);const el=$('part-inspector'),box=$('view').getBoundingClientRect();
+  $('part-symbol').textContent=sym;$('part-name').value=partLabel(name,sym);el.hidden=false;
+  el.style.right='auto';el.style.left=Math.max(8,Math.min(box.width-el.offsetWidth-8,x-box.left+14))+'px';el.style.top=Math.max(8,Math.min(box.height-el.offsetHeight-8,y-box.top+14))+'px';$('part-name').focus();$('part-name').select()}
 function selectMeshAt(x,y){const sym=pickPart(x,y);if(!sym)return;const i=parsed.findIndex(P=>P.sym===sym);if(i<0)return;
   if(sheet||all)returnMode={sheet,all,variant,sel};else if(!returnMode)returnMode={sheet:true,all:false,variant,sel};
   sel=i;all=false;sheet=false;hoverSym=null;$('hover-part').style.display='none';$('back-to-sheet').hidden=false;$('part-inspector').hidden=true;ui();rebuild(true);info();}
 $('back-to-sheet').onclick=()=>{$('back-to-sheet').hidden=true;if(returnMode){({sheet,all,sel}=returnMode);returnMode=null}else{sheet=true;all=false}if(sheet)SH=sheetLayout(visibleParts());ui();rebuild(true);info()};
-function hoverAt(x,y){if(dr||gallery||!sheet&&!all){if(hoverSym){hoverSym=null;rebuild(false)}$('hover-part').style.display='none';cv.style.cursor='grab';return}
+function hoverAt(x,y){if(dr||gallery){if(hoverSym){hoverSym=null;rebuild(false)}$('hover-part').style.display='none';cv.style.cursor='grab';return}
   const next=pickPart(x,y);if(next!==hoverSym){hoverSym=next;rebuild(false)}
   const tip=$('hover-part');tip.style.display=next?'block':'none';if(next){tip.textContent=partLabel(name,next) ? partLabel(name,next)+' · '+next : next;const r=cv.getBoundingClientRect();tip.style.left=Math.min(r.width-120,x-r.left+12)+'px';tip.style.top=Math.max(5,y-r.top-24)+'px'}cv.style.cursor=next?'pointer':'grab';}
 cv.addEventListener('pointerleave',()=>{hoverSym=null;$('hover-part').style.display='none';rebuild(false)});
@@ -383,8 +398,8 @@ cv.onpointerdown=e=>{
   const movePart=e.pointerType!=='touch'&&!modified&&sheet&&(e.altKey||e.button===(moveButton==='left'?0:moveButton==='right'?2:-1));
   const sym=movePart?pickPart(e.clientX,e.clientY):null;
   dr={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false,
-    mode:sym?'part':e.button===1?'zoom':e.button===2||modified?'pan':'orbit',sym,
-    inspect:e.button===0&&!modified&&!e.altKey};
+    mode:e.pointerType==='touch'?(touchMode==='pan'?'pan':touchMode==='orbit'?'orbit':'select'):sym?'part':e.button===1?'zoom':e.button===2||modified?'pan':'orbit',sym,
+    inspect:e.button===0&&!modified&&!e.altKey&&(e.pointerType!=='touch'||touchMode==='select')};
 };
 function endPointer(e){
   pointers.delete(e.pointerId);
@@ -394,13 +409,13 @@ function endPointer(e){
 }
 cv.onpointerup=endPointer;cv.onpointercancel=endPointer;
 cv.onlostpointercapture=e=>{pointers.delete(e.pointerId);dr=null;gesture=null};
-cv.ondblclick=e=>{if(!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey)selectMeshAt(e.clientX,e.clientY)};
+cv.ondblclick=e=>{if(e.altKey||e.ctrlKey||e.metaKey)return;if(e.shiftKey)selectMeshAt(e.clientX,e.clientY);else namePartAt(e.clientX,e.clientY)};
 cv.onpointermove=e=>{
   if(pointers.has(e.pointerId))pointers.set(e.pointerId,[e.clientX,e.clientY]);
   if(gesture&&pointers.size>1){
     const [a,b]=[...pointers.values()],x=(a[0]+b[0])/2,y=(a[1]+b[1])/2,d=Math.hypot(a[0]-b[0],a[1]-b[1]);
     if(d>0&&gesture.d>0)zoomCamera(Math.log(gesture.d/d));
-    panCamera(x-gesture.x,y-gesture.y);gesture={x,y,d};return;
+    if(touchMode==='pan')panCamera(x-gesture.x,y-gesture.y);gesture={x,y,d};return;
   }
   if(!dr){if(!pointers.size)hoverAt(e.clientX,e.clientY);return}
   if(e.pointerId!==dr.id)return;
@@ -412,9 +427,9 @@ cv.onpointermove=e=>{
     const offsets=partOffsets[name]||(partOffsets[name]={}),o=offsets[dr.sym]||(offsets[dr.sym]=[0,0,0]);
     const delta=cameraPlaneDelta(cameraRotation(),dist,cv.clientHeight,dx,dy);
     for(let k=0;k<3;k++)o[k]+=delta[k];rebuild(false);
-  }else if(dr.mode==='pan')panCamera(dx,dy);
+  }else if(dr.mode==='select'){}else if(dr.mode==='pan')panCamera(dx,dy);
   else if(dr.mode==='zoom')zoomCamera(dy*.01);
-  else{const speed=2*Math.PI/Math.max(1,cv.clientHeight);yaw-=dx*speed;pit=Math.max(-Math.PI/2,Math.min(Math.PI/2,pit+dy*speed));need()}
+  else{const speed=2*Math.PI/Math.max(1,cv.clientHeight);yaw+=dx*speed;pit=Math.max(-Math.PI/2,Math.min(Math.PI/2,pit+dy*speed));need()}
   dr.x=e.clientX;dr.y=e.clientY;
 };
 cv.addEventListener('wheel',e=>{e.preventDefault();const pixels=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?cv.clientHeight:1);zoomCamera(pixels*.001)},{passive:false});
@@ -458,6 +473,7 @@ $('part-name').addEventListener('change',()=>{saveViewerPrefs();ui()});
 $('part-name-ok').onclick=()=>{$('part-inspector').hidden=true;saveViewerPrefs()};
 $('part-name').addEventListener('keydown',e=>{if(e.key==='Enter'){$('part-name-ok').click();cv.focus()}});
 cv.addEventListener('pointerup',()=>saveViewerPrefs());
+$('ground-toggle').onchange=e=>{showGround=e.target.checked;need()};
 $('grid-toggle').onchange=e=>{showGrid=e.target.checked;$('view').classList.toggle('show-grid',showGrid)};
 $('move-button').onchange=e=>{moveButton=e.target.value};
 $('labels-toggle').onchange=e=>{showLabels=e.target.checked;updateFloatingLabels()};
@@ -474,3 +490,25 @@ $('floating-labels').addEventListener('pointerup',()=>{if(labelDrag){labelDrag=n
 $('floating-labels').addEventListener('pointercancel',()=>{labelDrag=null;updateFloatingLabels()});
 
 $('view-settings').open=!matchMedia('(max-width:700px) and (orientation:portrait)').matches;
+
+// Projected world-axis handles follow the selected rendered part, including poses.
+let touchMode='select';
+for(const mode of ['select','pan','orbit'])$('touch-'+mode).onclick=()=>{touchMode=mode;for(const m of ['select','pan','orbit'])$('touch-'+m).setAttribute('aria-pressed',String(m===mode))};
+let gizmoDrag=null;
+function updateGizmo(){
+ const host=$('part-gizmo');host.replaceChildren();if(gallery||!selectedSym)return;
+ const pts=pickTris.filter(t=>t.sym===selectedSym).flatMap(t=>t.v);if(!pts.length)return;
+ const [lo,hi]=bboxOf(pts),center=lo.map((v,k)=>(v+hi[k])/2),R=cameraRotation(),M=mul(projection(),mul(tr(0,0,-dist),mul(R,tr(-ctr[0],-ctr[1],-ctr[2]))));
+ const project=q=>{const w=M[3]*q[0]+M[7]*q[1]+M[11]*q[2]+M[15];return w>0?[(M[0]*q[0]+M[4]*q[1]+M[8]*q[2]+M[12])/w*cv.clientWidth/2+cv.clientWidth/2,cv.clientHeight/2-(M[1]*q[0]+M[5]*q[1]+M[9]*q[2]+M[13])/w*cv.clientHeight/2]:null};
+ const c=project(center);if(!c)return;
+ const make=(tag,attrs,action)=>{const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);if(action){el.dataset.action=action;const title=document.createElementNS('http://www.w3.org/2000/svg','title');title.textContent=action==='rotate'?'Rotate around Z':'Translate '+ 'XYZ'[+action];el.append(title)}host.append(el);return el};
+ host.innerHTML='<defs><radialGradient id="gizmo-sphere" cx="30%" cy="25%"><stop offset="0" stop-color="white"/><stop offset=".45" stop-color="var(--ac)"/><stop offset="1" stop-color="#182244"/></radialGradient></defs>';make('circle',{cx:c[0],cy:c[1],r:12,fill:'url(#gizmo-sphere)'});
+ make('ellipse',{cx:c[0],cy:c[1],rx:38,ry:30,fill:'none',stroke:'var(--ac)','stroke-width':7},'rotate');
+ for(let k=0;k<3;k++){const q=center.slice();q[k]+=dist*.12;const end=project(q);if(!end)continue;const dx=end[0]-c[0],dy=end[1]-c[1],l=Math.hypot(dx,dy);if(l<8)continue;const x=c[0]+dx/l*65,y=c[1]+dy/l*65,col=['var(--x)','var(--y)','var(--z)'][k];make('line',{x1:c[0],y1:c[1],x2:x,y2:y,stroke:col,'stroke-width':7},String(k));make('path',{d:`M ${x} ${y} l ${-dx/l*13-dy/l*6} ${-dy/l*13+dx/l*6} l ${dy/l*12} ${-dx/l*12} Z`,fill:col},String(k));make('text',{x:x+8,y:y+5,fill:col,'font-size':14},null).textContent='XYZ'[k]}
+ host.dataset.cx=c[0];host.dataset.cy=c[1];
+}
+$('part-gizmo').onpointerdown=e=>{const action=e.target.dataset.action;if(!action||e.pointerType==='touch'&&touchMode!=='select')return;e.preventDefault();e.stopPropagation();e.target.setPointerCapture(e.pointerId);const sym=selectedSym,E=mesh[sym]||(mesh[sym]={s:[1,1,1],m:[0,0,0],o:false}),rect=cv.getBoundingClientRect(),cx=+e.currentTarget.dataset.cx+rect.left,cy=+e.currentTarget.dataset.cy+rect.top;gizmoDrag={sym,action,x:e.clientX,y:e.clientY,angle:Math.atan2(e.clientY-cy,e.clientX-cx),cx,cy};};
+// Capture on the stable SVG so rebuilding its children cannot end a drag.
+$('part-gizmo').addEventListener('pointerdown',e=>{if(gizmoDrag)e.currentTarget.setPointerCapture(e.pointerId)});
+$('part-gizmo').onpointermove=e=>{const d=gizmoDrag;if(!d)return;const E=mesh[d.sym];if(d.action==='rotate'){const a=Math.atan2(e.clientY-d.cy,e.clientX-d.cx),delta=Math.atan2(Math.sin(a-d.angle),Math.cos(a-d.angle));E.r=E.r||[0,0,0];E.r[2]=((E.r[2]-delta*180/Math.PI+540)%360)-180;d.angle=a}else{const k=+d.action,R=cameraRotation(),dx=R[k*4],dy=-R[k*4+1],n=dx*dx+dy*dy;if(n>.01)E.m[k]=Math.max(-500,Math.min(500,E.m[k]+((e.clientX-d.x)*dx+(e.clientY-d.y)*dy)/n*2*dist*Math.tan(.4)/cv.clientHeight))}d.x=e.clientX;d.y=e.clientY;rebuild(false);info()};
+$('part-gizmo').onpointerup=$('part-gizmo').onpointercancel=$('part-gizmo').onlostpointercapture=()=>{gizmoDrag=null};

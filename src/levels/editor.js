@@ -44,10 +44,10 @@ for(const [value,label] of LevelSelection.categories){const o=document.createEle
 $('ed-category').onchange=()=>edList();
 let edDragMode=false,edDown=[0,0],edPlacedAt=-1e9;
 /* Select shares click and empty-space marquee gestures; modifiers are keyboard-only. */
-const edTools={select:'Select',move:'Move',add:'Add'};
-let edAddMode=false;
-function edTool(mode){edBox=null;edMove=null;edBoxMode=false;edDragMode=mode==='move';edAddMode=mode==='add';for(const id of ['select','move','add'])$('ed-tool-'+id).setAttribute('aria-pressed',String(id===mode));$('ed-tool-name').textContent=edTools[mode];if(edAddMode){$('add-panel').open=true;palRender();}cv.style.cursor=edAddMode?'crosshair':edDragMode?'move':'';}
-for(const id of ['select','move','add'])$('ed-tool-'+id).onclick=()=>edTool(id);
+const edTools={select:'Select',move:'Move',add:'Add',pan:'Camera pan'};
+let edAddMode=false,edPanMode=false;
+function edTool(mode){edPanMode=mode==='pan';edBox=null;edMove=null;edBoxMode=false;edDragMode=mode==='move';edAddMode=mode==='add';for(const id of ['select','move','add','pan'])$('ed-tool-'+id).setAttribute('aria-pressed',String(id===mode));$('ed-tool-name').textContent=edTools[mode];if(edAddMode){$('add-panel').open=true;palRender();}cv.style.cursor=edAddMode?'crosshair':edDragMode?'move':'';}
+for(const id of ['select','move','add','pan'])$('ed-tool-'+id).onclick=()=>edTool(id);
 edList();
 
 let edParts=null;
@@ -79,7 +79,7 @@ window.addEventListener('mouseup',e=>{if(edBox){e.preventDefault();e.stopImmedia
 /* Touch: one finger runs the active tool (tap selects in every mode), two fingers always move the camera. */
 const edTouchUI=()=>matchMedia('(any-pointer: coarse)').matches;let edTouch=null;
 const edFlag=id=>$(id)?.getAttribute('aria-pressed')==='true';
-cv.addEventListener('touchstart',e=>{if(e.touches.length!==1){if(edTouch){edBox=null;edMove=null;edTouch=null;edFields();}return;}const t=e.touches[0],p=edPoint(t);edTouch={x:t.clientX,y:t.clientY,time:performance.now(),moved:false,tool:!edAddMode};if(!edTouch.tool)return;e.preventDefault();e.stopImmediatePropagation();if(!edDragMode)edBox={start:p,end:p,add:edFlag('ed-add')};else edMoveStart(p);},{capture:true,passive:false});
+cv.addEventListener('touchstart',e=>{if(edPanMode)return;if(e.touches.length!==1){if(edTouch){edBox=null;edMove=null;edTouch=null;edFields();}return;}const t=e.touches[0],p=edPoint(t);edTouch={x:t.clientX,y:t.clientY,time:performance.now(),moved:false,tool:!edAddMode};if(!edTouch.tool)return;e.preventDefault();e.stopImmediatePropagation();if(!edDragMode)edBox={start:p,end:p,add:edFlag('ed-add')};else edMoveStart(p);},{capture:true,passive:false});
 cv.addEventListener('touchmove',e=>{if(!edTouch||e.touches.length!==1)return;const t=e.touches[0];if(Math.hypot(t.clientX-edTouch.x,t.clientY-edTouch.y)>8)edTouch.moved=true;if(!edTouch.tool)return;e.preventDefault();e.stopImmediatePropagation();if(!edTouch.moved)return;if(edBox)edBox.end=edPoint(t);else if(edMove)edMoveTo(edPoint(t),edFlag('ed-height'),edFlag('ed-snap'));},{capture:true,passive:false});
 cv.addEventListener('touchend',e=>{const touch=edTouch;if(!touch||e.touches.length)return;edTouch=null;const t=e.changedTouches[0],p=edPoint(t),tap=!touch.moved&&performance.now()-touch.time<500;if(touch.tool){e.stopImmediatePropagation();if(edBox){if(tap)edBox=null;else edBoxEnd(p);}if(edMove){if(tap){edMove=null;edFields();}else edMoveEnd();}}if(tap){if(edAddMode){e.preventDefault();edPlaceAt(p,edFlag('ed-snap'));}else edSelectAt(p,edFlag('ed-add'));}},{capture:true});
 cv.addEventListener('touchcancel',()=>{edTouch=null;edBox=null;if(edMove){edMove=null;edFields();}},{capture:true});
