@@ -89,7 +89,7 @@ function demoProject(){rememberCurrentEdits();const demos=modelEdits.entries().f
 $('exp').onclick=()=>downloadJSON(demoProject(),'model-edits.json');
 function applyModelProject(value){
       if(!Array.isArray(value.demos)||!Array.isArray(value.animals))throw new Error('Invalid model project.');
-      const demos=value.demos.map(validateDemoPreset);window.ModelTextureTools?.validateProjectExtras?.(value);if(value.animals.length&&demoMode)throw new Error('Load your source data before opening a project with animal edits.');
+      const demos=value.demos.map(validateDemoPreset);if(demoMode&&(value.animals.length||value.texture_patches?.length)&&window.ModelEditorHost?.availableSource?.())window.ModelEditorHost.restoreSource();window.ModelTextureTools?.validateProjectExtras?.(value);if(value.animals.length&&demoMode)throw new Error('Load your source data before opening a project with animal edits.');
       if(value.animals.length)importGameConfigs({animals:value.animals});
       rememberCurrentEdits();for(const p of demos)modelEdits.put('demo:'+p.model,{mesh:p.mesh,map:p.palette,partColors:p.partColors||{},deform:p.deform,deformOn:Object.keys(p.deform).length>0,exploded:p.exploded});
       if(demos.length&&!value.animals.length&&!value.texture_patches?.length){cur=null;startDemos(demos[0].model)}window.ModelTextureTools?.loadProjectExtras?.(value);
