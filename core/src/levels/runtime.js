@@ -149,7 +149,7 @@ window.onmousemove=e=>{
  if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;
   if(drag.pan){const s=cam.d/cv.clientHeight*1.2,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);cam.t[0]+=(dx*sy-dy*cy*Math.sin(cam.pitch))*s;cam.t[1]+=(-dx*cy-dy*sy*Math.sin(cam.pitch))*s;}
   else if(fly){const e=EYE.slice();cam.yaw+=dx*.005;cam.pitch=Math.max(-1.5,Math.min(1.5,cam.pitch-dy*.005));const cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);cam.t=[e[0]-cam.d*cp*cy,e[1]-cam.d*cp*sy,e[2]-cam.d*sp];}
-  else{cam.yaw-=dx*.01;cam.pitch=Math.max(-1.5,Math.min(1.5,cam.pitch+dy*.01));}return;}
+  else{cam.yaw+=dx*.01;cam.pitch=Math.max(-1.5,Math.min(1.5,cam.pitch+dy*.01));}return;}
  if($('an').checked&&L.anl){let bi=-1,bd=150;L.anl.forEach((q,k)=>{const z=q[2]+50,x=M[0]*q[0]+M[4]*q[1]+M[8]*z+M[12],y=M[1]*q[0]+M[5]*q[1]+M[9]*z+M[13],w=M[3]*q[0]+M[7]*q[1]+M[11]*z+M[15];if(w<=0)return;
   const d=((x/w*.5+.5)*cv.clientWidth-e.clientX)**2+((1-(y/w*.5+.5))*cv.clientHeight-e.clientY)**2;if(d<bd){bd=d;bi=k;}});
   if(bi>=0){const q=L.anl[bi],t=$('tip');t.style.display='block';t.style.left=e.clientX+12+'px';t.style.top=e.clientY+12+'px';t.textContent=`${LevelSelection.name('animals',q[3])} (species ${q[3]})${bi==0?' — player':''} · yaw ${q[4]} · xyz ${q[0]}, ${q[1]}, ${q[2]}${ANIM.species[q[3]]&&AMOD[ANIM.species[q[3]]]?' · torso+head from game, rough fit':' · placeholder shape'}`;return;}}
@@ -163,8 +163,9 @@ let tch=null;const tinfo=t=>t.length>1?{x:(t[0].clientX+t[1].clientX)/2,y:(t[0].
 cv.addEventListener('touchstart',e=>{e.preventDefault();tch=tinfo(e.touches);tch.n=e.touches.length;},{passive:false});
 cv.addEventListener('touchmove',e=>{e.preventDefault();if(!tch)return;const n=tinfo(e.touches);if(e.touches.length!=tch.n){tch=n;tch.n=e.touches.length;return;}
  const dx=n.x-tch.x,dy=n.y-tch.y;
- if(tch.n==1){cam.yaw-=dx*.01;cam.pitch=Math.max(-1.5,Math.min(1.5,cam.pitch+dy*.01));}
- else{if(tch.d&&n.d)cam.d*=tch.d/n.d;const s=cam.d/cv.clientHeight*1.2,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);cam.t[0]+=(dx*sy-dy*cy*Math.sin(cam.pitch))*s;cam.t[1]+=(-dx*cy-dy*sy*Math.sin(cam.pitch))*s;}
+ if(tch.n==1&&typeof edPanMode!=='undefined'&&edPanMode){const s=cam.d/cv.clientHeight*1.2,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);cam.t[0]+=(dx*sy-dy*cy*Math.sin(cam.pitch))*s;cam.t[1]+=(-dx*cy-dy*sy*Math.sin(cam.pitch))*s;}
+ else if(tch.n==1){cam.yaw+=dx*.01;cam.pitch=Math.max(-1.5,Math.min(1.5,cam.pitch+dy*.01));}
+ else{if(tch.d&&n.d)cam.d*=tch.d/n.d;if(typeof edPanMode!=='undefined'&&!edPanMode){tch=Object.assign(n,{n:e.touches.length});return;}const s=cam.d/cv.clientHeight*1.2,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);cam.t[0]+=(dx*sy-dy*cy*Math.sin(cam.pitch))*s;cam.t[1]+=(-dx*cy-dy*sy*Math.sin(cam.pitch))*s;}
  n.n=tch.n;tch=n;},{passive:false});
 cv.addEventListener('touchend',e=>{tch=e.touches.length?Object.assign(tinfo(e.touches),{n:e.touches.length}):null;});
 let fly=false;const keys={};

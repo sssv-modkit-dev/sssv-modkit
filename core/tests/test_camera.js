@@ -54,7 +54,7 @@ console.log('Camera: rolled screen-plane pan and all-corner framing at 72 orient
 // Run the live input handlers with a minimal canvas, without a browser or source files.
 vm.runInContext(`
 var HOME_VIEW=[0.5,0],yaw=0,pit=0,roll=0,dist=500,ctr=[0,0,0],sceneRadius=200,sceneBounds=null;
-var held=new Set(),sheet=true,name='fixture',moveButton='alt',partOffsets={};
+var held=new Set(),sheet=true,name='fixture',moveButton='alt',partOffsets={},touchMode='select';
 var inspected=0,selected=0,rebuilt=0,buttons={},listeners={},captures=new Set();
 var cv={clientHeight:600,clientWidth:800,style:{},focus(){},
   setPointerCapture(id){captures.add(id)},hasPointerCapture(id){return captures.has(id)},
@@ -76,7 +76,7 @@ run('ctr=[0,0,0];drag(0,{shiftKey:true})');assert(run('ctr[0]<0 && ctr[1]>0'));
 run('ctr=[0,0,0];drag(0,{ctrlKey:true})');assert(run('ctr[0]<0 && ctr[1]>0'));
 run('ctr=[0,0,0];drag(0,{altKey:true})');assert(run('partOffsets.fixture.part[0]>0 && ctr.every(v=>v===0)'));
 run('drag(1)');assert(run('dist>500'));
-run('drag(0)');assert(run('yaw<0 && pit>0'));
+run('drag(0)');assert(run('yaw>0 && pit>0'));
 run('var oldYaw=yaw;cv.onpointerdown(event(100,100));cv.onpointermove(event(102,101));cv.onpointerup(event(102,101,0,{type:"pointerup"}))');
 assert.strictEqual(run('inspected'),1);assert(run('yaw===oldYaw'));
 run('cv.onpointerdown(event(100,100));cv.onpointercancel(event(100,100,0,{type:"pointercancel"}))');assert.strictEqual(run('inspected'),1);
@@ -90,3 +90,8 @@ run('for(let i=0;i<100;i++)listeners.wheel({preventDefault(){},deltaY:-1000,delt
 run('for(let i=0;i<100;i++)listeners.wheel({preventDefault(){},deltaY:1000,deltaMode:1})');close(run('dist'),20000);
 run('buttons["camera-top"].onclick()');close(run('pit'),Math.PI/2);close(run('roll'),0);
 console.log('Live input: right/modified pan, Alt part move, middle zoom, orbit, click threshold, cancel, pinch, zoom limits and presets passed.');
+
+// Rotation is optional for old edits; a quarter turn rotates about the part center.
+assert.deepEqual(Array.from(live.applyMesh([2,0,0],{s:[1,1,1],m:[0,0,0],o:false,r:[0,0,90]},[-2,-2,-2,2,2,2])),[0,2,0]);
+run("touchMode='pan';var oldInspected=inspected;drag(0,{pointerType:'touch'});");assert.strictEqual(run('inspected'),run('oldInspected'));
+run("touchMode='select';var savedCenter=JSON.stringify(ctr);var savedYaw=yaw;drag(0,{pointerType:'touch'});");assert(run('JSON.stringify(ctr)===savedCenter && yaw===savedYaw'));
