@@ -1,0 +1,17 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const app=fs.readFileSync('src/viewer/js/app.js','utf8');
+const project=app.split('//#PROJECT-START')[1].split('//#PROJECT-END')[0];
+const room=app.slice(app.indexOf('function referenceRoomLines('),app.indexOf('function drawReferenceGrid('));
+const context=vm.createContext({});vm.runInContext(project+'\n'+room,context);
+const state={map:{AABBCCFF:'010203FF'},mesh:{},wordEdits:{4100:{word_rom:4100,expect:'AABBCCFF',new:'FF00FFFF'}},partColors:{head:{AABBCCFF:'112233FF'}}};
+const config=JSON.parse(JSON.stringify(context.stateConfig('test',state)));
+assert.deepEqual(config.words,[{word_rom:4100,expect:'AABBCCFF',new:'FF00FFFF'}]);
+assert.deepEqual(config.skip_recolor_words,[4100],'explicit part words override animal-wide recolour without conflicts');
+assert.equal(context.configChanged(config),true);
+assert.equal(context.configChanged(context.stateConfig('test',{partColors:state.partColors})),true,'local demo part colours count as edits');
+assert.equal(context.configChanged(context.stateConfig('test',{})),false);
+const lines=context.referenceRoomLines([-10,0,-5],[10,30,5]);assert.equal(lines.length%6,0);assert.ok(lines.every(Number.isFinite));
+const xs=lines.filter((v,i)=>i%3===0),ys=lines.filter((v,i)=>i%3===1),zs=lines.filter((v,i)=>i%3===2);
+assert.ok(Math.max(...xs)-Math.min(...xs)<=42.001);assert.ok(Math.max(...zs)-Math.min(...zs)<=42.001);
+assert.ok(Math.min(...ys)<0&&Math.max(...ys)>30,'finite floor and corner walls frame the model');
+console.log('Workbench part-word export, local colours and finite 3D room grid pass.');
