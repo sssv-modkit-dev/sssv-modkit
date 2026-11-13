@@ -58,7 +58,19 @@
     }
   }
 
-  const api = { PYODIDE_VERSION, PYODIDE_URL, PY_MODULES, createRuntime, runBuild, pythonMessage };
+  // Read-only ROM indexing shares the already-loaded Python implementation with builds.
+  function deriveTable(runtime, source) {
+    const rom = ArrayBuffer.isView(source) ? new Uint8Array(source.buffer, source.byteOffset, source.byteLength) : new Uint8Array(source);
+    const input = runtime.py.toPy(rom);
+    try {
+      runtime.py.globals.set('_sssv_index_input', input);
+      return JSON.parse(runtime.py.runPython(
+        "import json as _sssv_json\nfrom web_build import derive_table as _sssv_derive\nfrom build_levels import normalize_rom as _sssv_normalize\n_sssv_json.dumps(_sssv_derive(_sssv_normalize(bytes(_sssv_index_input))))"));
+    } catch (error) { throw new Error(pythonMessage(error)); }
+    finally { runtime.py.globals.delete('_sssv_index_input'); input.destroy(); }
+  }
+
+  const api = { PYODIDE_VERSION, PYODIDE_URL, PY_MODULES, createRuntime, runBuild, deriveTable, pythonMessage };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.SSSVBuilderCore = api;
 })(typeof self !== 'undefined' ? self : this);

@@ -17,11 +17,24 @@ function normaliseLocalTable(raw){
     for(const q of a.parts){
       if(!q.ended||q.seg===1)continue;
       if(!safe(q.symbol)||!Number.isInteger(q.rom)||q.rom<0||q.rom>=0x2000000||!Array.isArray(q.sections||[])||!(q.sections||[]).every(safe))throw new Error('Invalid part metadata.');
-      p.push({s:q.symbol,r:q.rom,j:'local',v:q.sections||[],t:[]});
+      const part={s:q.symbol,r:q.rom,j:'local',v:q.sections||[],t:[]};
+      if(q.texture){const t=q.texture;if(t.format!=='ci4'||t.width!==16||t.height!==16||![t.image,t.palette].every(n=>Number.isInteger(n)&&n>=0x1000&&n<0x2000000))throw new Error('Invalid texture metadata.');part.texture={format:'ci4',width:16,height:16,image:t.image,palette:t.palette};}
+      p.push(part);
     }
-    if(p.length)out[name]={b,p,s:sections};
+    if(p.length)out[name]={b,p,s:sections,draw_funcs:a.draw_funcs||[]};
   }
   if(!Object.keys(out).length)throw new Error('No renderable parts in that table.');
   return out;
 }
-if(typeof module!=='undefined')module.exports={normaliseLocalTable};
+// Normalize every supported dump order before hashing, extracting or handing off to Play.
+function normaliseModelROM(source){
+  const bytes=new Uint8Array(source instanceof ArrayBuffer?source.slice(0):source.buffer.slice(source.byteOffset,source.byteOffset+source.byteLength));
+  if(bytes.length<0x800000||bytes.length>0x1000000||bytes.length%4)throw new Error('Use an 8-16 MB SSSV US ROM.');
+  const magic=new DataView(bytes.buffer).getUint32(0);
+  if(magic===0x37804012){for(let i=0;i<bytes.length;i+=2)[bytes[i],bytes[i+1]]=[bytes[i+1],bytes[i]]}
+  else if(magic===0x40123780){for(let i=0;i<bytes.length;i+=4)[bytes[i],bytes[i+1],bytes[i+2],bytes[i+3]]=[bytes[i+3],bytes[i+2],bytes[i+1],bytes[i]]}
+  else if(magic!==0x80371240)throw new Error('Unrecognized N64 ROM byte order.');
+  if(String.fromCharCode(...bytes.slice(0x3B,0x3F))!=='NSVE')throw new Error('Use a US SSSV ROM, not a different game or region.');
+  return bytes.buffer;
+}
+if(typeof module!=='undefined')module.exports={normaliseLocalTable,normaliseModelROM};

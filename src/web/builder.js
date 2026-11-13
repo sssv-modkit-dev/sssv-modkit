@@ -27,7 +27,9 @@
         return;
       }
       pending.delete(message.id);
-      if (message.type === 'done') {
+      if (message.type === 'indexed') {
+        job.resolve(message.table);
+      } else if (message.type === 'done') {
         job.resolve({ rom: new root.Blob([message.rom], { type: 'application/octet-stream' }),
           ips: new root.Blob([message.ips], { type: 'application/octet-stream' }), romSha1: message.romSha1,
           sourceSha1: message.sourceSha1, log: message.log || [], timings: message.timings || {} });
@@ -68,5 +70,13 @@
     });
   }
 
-  root.SSSVBuilder = { build, terminate: () => fail('Build cancelled'), workerUrl: null };
+  async function deriveTable(rom, hooks) {
+    const buffer = await asBuffer(rom), id = nextId++, target = ensureWorker();
+    return new Promise((resolve, reject) => {
+      pending.set(id, { resolve, reject, onProgress: hooks && hooks.onProgress });
+      target.postMessage({ type: 'index', id, rom: buffer }, [buffer]);
+    });
+  }
+
+  root.SSSVBuilder = { build, deriveTable, terminate: () => fail('Build cancelled'), workerUrl: null };
 })(typeof window !== 'undefined' ? window : this);

@@ -55,7 +55,8 @@ for (const [search, hash] of [['', ''], ['?rom=1&x=%23%26', '#stage=2'], ['', '#
     assert page.index('levels/scene.js') < page.index('levels/runtime.js') and 'levels/edits-export.js' in page
     for asset in ('level-4.scene.json','animals.json','heads/dog.png','heads/sheep.png','heads/bear.png'):
         assert (temp/'demo'/asset).is_file(), asset
-    subprocess.run(['node','--check',str(temp/'levels/runtime.js')],check=True,capture_output=True)
+    syntax = subprocess.run(['node','--check',str(temp/'levels/runtime.js')],capture_output=True,text=True)
+    assert syntax.returncode == 0, syntax.stdout + syntax.stderr
     assert b'/*EDITOR*/' not in (temp/'levels/runtime.js').read_bytes()
     # Every public page: CSP meta, noscript explanation, own favicon, no third-party origin loaded.
     import base64, hashlib, re

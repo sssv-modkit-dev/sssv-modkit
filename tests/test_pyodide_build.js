@@ -127,6 +127,10 @@ function derivedTableCase(rt) {
   const rom = copy(ns.get('synthetic_animal_rom')());
   const parts = ns.get('PARTS').toJs({ dict_converter: Object.fromEntries });
   ns.destroy();
+  const indexRom=Uint8Array.from(rom);indexRom.set([0x80,0x37,0x12,0x40]);indexRom.set(Buffer.from('NSVE'),0x3B);
+  const indexed=core.deriveTable(rt,indexRom);
+  assert.equal(indexed.bear.parts[0].symbol,'D_04000100_C7B30');
+  assert.equal(indexed.bear.parts[0].rom,0xC7B30);
   const stages = [], start = Date.now();
   const out = core.runBuild(rt, { rom, parts, options: { strict: false } }, stage => stages.push(stage));
   const ms = Date.now() - start;
@@ -248,7 +252,7 @@ async function clientCase() {
       sent.push({ message, transfer });
       setTimeout(() => {
         this.onmessage({ data: { type: 'progress', id: message.id, stage: 'rom', detail: 'Checking', ms: 1 } });
-        this.onmessage({ data: message.parts === '{"animal":"bad"}'
+        this.onmessage({ data: message.type === 'index' ? { type: 'indexed', id: message.id, table: { bear: { parts: [] } } } : message.parts === '{"animal":"bad"}'
           ? { type: 'error', id: message.id, message: 'nope' }
           : { type: 'done', id: message.id, rom: new ArrayBuffer(8), ips: new ArrayBuffer(3), romSha1: 'a', sourceSha1: 'b', log: ['x'], timings: { total: 2 } } });
       });
@@ -278,6 +282,10 @@ async function clientCase() {
   await assert.rejects(api.build({ rom, parts: '{"animal":"bad"}' }), /nope/);
   await assert.rejects(api.build({ rom }), /level project or a Parts config/);
   await assert.rejects(api.build({ level: '{}' }), /ROM file/);
+  const indexed = await api.deriveTable(rom);
+  assert.deepEqual(JSON.parse(JSON.stringify(indexed)), { bear: { parts: [] } });
+  assert.equal(sent.at(-1).message.type, 'index');
+  assert.equal(rom.length, 4, 'indexing copies the caller ROM too');
   api.terminate();
   assert.equal(FakeWorker.last.terminated, true);
   console.log('  client: builder.js request/transfer/progress/error paths');

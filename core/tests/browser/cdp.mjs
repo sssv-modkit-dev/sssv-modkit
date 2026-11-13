@@ -14,13 +14,13 @@ export function findChrome() {
 
 export async function launch(port = 9335) {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'cdp-'));
-  const chrome = spawn(findChrome(), ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, '--window-size=1400,900',
-    '--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--no-first-run', 'about:blank'], {stdio: 'ignore'});
+  const chrome = spawn(findChrome(), ['--headless=new', ...(process.env.CHROME_TEST_FLAGS||'').split(/\s+/).filter(Boolean), `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, '--window-size=1400,900',
+    '--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--no-first-run', 'about:blank'], {stdio: 'ignore', windowsHide:true});
   let url;
   for (let i = 0; i < 50 && !url; i++) {
     try { url = (await (await fetch(`http://127.0.0.1:${port}/json/version`)).json()).webSocketDebuggerUrl; } catch { await sleep(200); }
   }
-  if (!url) throw Error('Chrome did not start');
+  if (!url) {chrome.kill();throw Error('Chrome did not start');}
   const ws = new WebSocket(url);
   await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
   let id = 0;

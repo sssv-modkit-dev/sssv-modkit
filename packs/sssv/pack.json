@@ -14,7 +14,9 @@
  "scripts": {
   "model-editor": [
    "../../src/web/handoff.js",
+   "../../src/web/builder.js",
    "../../src/viewer/js/parts-table.js",
+   "../../src/viewer/js/animal-textures.js",
    "../../src/viewer/js/model-source-rom.js"
   ],
   "level-editor": [

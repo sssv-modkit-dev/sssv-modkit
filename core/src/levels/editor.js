@@ -46,7 +46,8 @@ let edDragMode=false,edDown=[0,0],edPlacedAt=-1e9;
 /* Select shares click and empty-space marquee gestures; modifiers are keyboard-only. */
 const edTools={select:'Select',move:'Move',add:'Add',pan:'Camera pan'};
 let edAddMode=false,edPanMode=false;
-function edTool(mode){edPanMode=mode==='pan';edBox=null;edMove=null;edBoxMode=false;edDragMode=mode==='move';edAddMode=mode==='add';for(const id of ['select','move','add','pan'])$('ed-tool-'+id).setAttribute('aria-pressed',String(id===mode));$('ed-tool-name').textContent=edTools[mode];if(edAddMode){$('add-panel').open=true;palRender();}cv.style.cursor=edAddMode?'crosshair':edDragMode?'move':'';}
+let edGhostPoint=null,edGhostBuffers=null,edGhostKey='',edTouchPlace=null;
+function edTool(mode){edGhostPoint=null;edTouchPlace=null;edPanMode=mode==='pan';edBox=null;edMove=null;edBoxMode=false;edDragMode=mode==='move';edAddMode=mode==='add';for(const id of ['select','move','add','pan'])$('ed-tool-'+id).setAttribute('aria-pressed',String(id===mode));$('ed-tool-name').textContent=edTools[mode];if(edAddMode){$('add-panel').open=true;palRender();}cv.style.cursor=edAddMode?'crosshair':edDragMode?'move':'';}
 for(const id of ['select','move','add','pan'])$('ed-tool-'+id).onclick=()=>edTool(id);
 edList();
 
@@ -73,15 +74,15 @@ function edMoveTo(point,height,snap){const m=edMove;if(m.height!==height){if(m.p
 function edBoxEnd(point){const box=edBox;edBox=null;box.end=point;const category=$('ed-category').value,chosen=edScreenItems().filter(s=>(category==='all'||s.item.category===category)&&LevelSelection.hitsRect(s,box.start,box.end)).map(s=>s.key);edSelection=new Set(box.add?[...edSelection,...chosen]:chosen);edSelected=Array.from(edSelection)[0];edFields();}
 function edMoveEnd(){const m=edMove;edMove=null;if(L.id!==m.lv)return;edShift(m.entries,['x','y','z'].map((k,i)=>Number($('ed-'+k).value)-m.origin[i+1]));}
 function edShift(entries,delta){try{if(!entries.length||delta.every(v=>v===0))return;const values=LevelSelection.translate(entries.map(e=>e.values),delta),updates=entries.map((entry,i)=>({...entry,hex:EditorRecords.update(entry.hex,entry.kind,values[i])}));edSnapshot();for(const u of updates)edRecords[L.id][u.kind][u.index]=u.hex;edRefresh();edStatus('Moved '+updates.length+' objects by '+delta.join(', ')+'. Undo restores the whole group.');}catch(error){edFields();edStatus(error.message);}}
-cv.addEventListener('mousedown',e=>{if(e.button!==0)return;if(!edAddMode&&!edDragMode&&!e.altKey&&!e.shiftKey){e.preventDefault();e.stopImmediatePropagation();drag=null;const p=edPoint(e);if(LevelSelection.pickAt(edScreenItems(),p))return;edBox={start:p,end:p,add:e.ctrlKey||e.shiftKey};return;}if(!e.altKey&&!edDragMode)return;if(!edCurrent().hex)return;e.preventDefault();e.stopImmediatePropagation();edMoveStart(edPoint(e));},true);
+cv.addEventListener('mousedown',e=>{if(e.button!==0)return;if(!edAddMode&&!edDragMode&&!edPanMode&&!e.altKey&&!e.shiftKey){e.preventDefault();e.stopImmediatePropagation();drag=null;const p=edPoint(e);if(LevelSelection.pickAt(edScreenItems(),p))return;edBox={start:p,end:p,add:e.ctrlKey||e.shiftKey};return;}if(!e.altKey&&!edDragMode)return;if(!edCurrent().hex)return;e.preventDefault();e.stopImmediatePropagation();edMoveStart(edPoint(e));},true);
 window.addEventListener('mousemove',e=>{if(edBox){e.preventDefault();e.stopImmediatePropagation();edBox.end=edPoint(e);return;}if(!edMove)return;e.preventDefault();e.stopImmediatePropagation();edMoveTo(edPoint(e),e.shiftKey||edFlag('ed-height'),e.ctrlKey||edFlag('ed-snap'));},true);
 window.addEventListener('mouseup',e=>{if(edBox){e.preventDefault();e.stopImmediatePropagation();edBoxEnd(edPoint(e));edSuppressClick=true;return;}if(!edMove)return;e.preventDefault();e.stopImmediatePropagation();edSuppressClick=true;edMoveEnd();},true);
 /* Touch: one finger runs the active tool (tap selects in every mode), two fingers always move the camera. */
 const edTouchUI=()=>matchMedia('(any-pointer: coarse)').matches;let edTouch=null;
 const edFlag=id=>$(id)?.getAttribute('aria-pressed')==='true';
-cv.addEventListener('touchstart',e=>{if(edPanMode)return;if(e.touches.length!==1){if(edTouch){edBox=null;edMove=null;edTouch=null;edFields();}return;}const t=e.touches[0],p=edPoint(t);edTouch={x:t.clientX,y:t.clientY,time:performance.now(),moved:false,tool:!edAddMode};if(!edTouch.tool)return;e.preventDefault();e.stopImmediatePropagation();if(!edDragMode)edBox={start:p,end:p,add:edFlag('ed-add')};else edMoveStart(p);},{capture:true,passive:false});
-cv.addEventListener('touchmove',e=>{if(!edTouch||e.touches.length!==1)return;const t=e.touches[0];if(Math.hypot(t.clientX-edTouch.x,t.clientY-edTouch.y)>8)edTouch.moved=true;if(!edTouch.tool)return;e.preventDefault();e.stopImmediatePropagation();if(!edTouch.moved)return;if(edBox)edBox.end=edPoint(t);else if(edMove)edMoveTo(edPoint(t),edFlag('ed-height'),edFlag('ed-snap'));},{capture:true,passive:false});
-cv.addEventListener('touchend',e=>{const touch=edTouch;if(!touch||e.touches.length)return;edTouch=null;const t=e.changedTouches[0],p=edPoint(t),tap=!touch.moved&&performance.now()-touch.time<500;if(touch.tool){e.stopImmediatePropagation();if(edBox){if(tap)edBox=null;else edBoxEnd(p);}if(edMove){if(tap){edMove=null;edFields();}else edMoveEnd();}}if(tap){if(edAddMode){e.preventDefault();edPlaceAt(p,edFlag('ed-snap'));}else edSelectAt(p,edFlag('ed-add'));}},{capture:true});
+cv.addEventListener('touchstart',e=>{if(edPanMode)return;if(e.touches.length!==1){if(edTouch){edBox=null;edMove=null;edTouch=null;edFields();}return;}const t=e.touches[0],p=edPoint(t);edTouch={x:t.clientX,y:t.clientY,time:performance.now(),moved:false,tool:!edAddMode};if(!edTouch.tool){edTouch.place=true;edGhostPoint=p;e.preventDefault();e.stopImmediatePropagation();return;}e.preventDefault();e.stopImmediatePropagation();if(!edDragMode)edBox={start:p,end:p,add:edFlag('ed-add')};else edMoveStart(p);},{capture:true,passive:false});
+cv.addEventListener('touchmove',e=>{if(!edTouch||e.touches.length!==1)return;const t=e.touches[0];if(Math.hypot(t.clientX-edTouch.x,t.clientY-edTouch.y)>8)edTouch.moved=true;if(!edTouch.tool){if(edTouch.place){edGhostPoint=edPoint(t);e.preventDefault();e.stopImmediatePropagation();}return;}e.preventDefault();e.stopImmediatePropagation();if(!edTouch.moved)return;if(edBox)edBox.end=edPoint(t);else if(edMove)edMoveTo(edPoint(t),edFlag('ed-height'),edFlag('ed-snap'));},{capture:true,passive:false});
+cv.addEventListener('touchend',e=>{const touch=edTouch;if(!touch||e.touches.length)return;edTouch=null;const t=e.changedTouches[0],p=edPoint(t),tap=!touch.moved&&performance.now()-touch.time<500;if(touch.tool){e.stopImmediatePropagation();if(edBox){if(tap)edBox=null;else edBoxEnd(p);}if(edMove){if(tap){edMove=null;edFields();}else edMoveEnd();}}if(tap){if(edAddMode){e.preventDefault();e.stopImmediatePropagation();edGhostPoint=p;const now=performance.now();if(edTouchPlace&&now-edTouchPlace.time<650&&Math.hypot(p[0]-edTouchPlace.point[0],p[1]-edTouchPlace.point[1])<28){edPlaceAt(p,edFlag('ed-snap'));edTouchPlace=null;}else{edTouchPlace={time:now,point:p};edStatus('Preview positioned. Tap the same spot again to place.');}}else edSelectAt(p,edFlag('ed-add'));}},{capture:true});
 cv.addEventListener('touchcancel',()=>{edTouch=null;edBox=null;if(edMove){edMove=null;edFields();}},{capture:true});
 window.addEventListener('keydown',e=>{const t=e.target.tagName;if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA')return;if(e.key==='Escape'){edTool('select');edFields();return;}if(e.key==='Delete'){e.preventDefault();$('ed-delete').click();return;}if(edMove||e.ctrlKey||e.metaKey||e.altKey)return;const tool={1:'select',3:'move',4:'add'}[e.key];if(tool){edTool(tool);return;}const delta=LevelSelection.nudge(e.key,cam.yaw,e.shiftKey?64:8);if(!delta||!edCurrent().hex)return;e.preventDefault();edShift(edEntries().filter(x=>edSelection.has(x.key)),delta);});
 /* Palette: pick a type, then click/tap the ground (horizontal plane through the camera target) or use Place at target. */
@@ -89,7 +90,7 @@ let palKind='animals',palChoice=null;
 const palCategories=[['all','All props'],...LevelSelection.categories.filter(c=>!['all','animals','portals'].includes(c[0])),['portals','Portals']];
 for(const [v,t] of palCategories){const o=document.createElement('option');o.value=v;o.textContent=t;$('pal-category').append(o);}
 function palName(kind,type){return LevelSelection.name(kind,type);}
-function palStatus(){return palChoice?`Add: ${palName(palChoice.kind,palChoice.type)} chosen. ${edTouchUI()?'Tap':'Click'} the ground to place it, or use Place at target.`:'Add: choose an object in the palette first.';}
+function palStatus(){return palChoice?`Add: ${palName(palChoice.kind,palChoice.type)} chosen. ${edTouchUI()?'Double-tap':'Click'} the terrain to place it, or use Place at target.`:'Add: choose an object in the palette first.';}
 function palArt(kind,type,art){const name=palName(kind,type),head=kind==='animals'&&LevelGallery.HEADS[name],fallback=()=>{art.textContent=LevelPalette.initials(name);art.style.background=`hsl(${LevelPalette.hue(type)} 35% 30%)`;};
  const iconBase=document.querySelector('meta[name="scene-icons"]')?.content||'';if(!head||!iconBase){fallback();return;}const img=document.createElement('img');img.src=iconBase+head+'.png';img.alt='';img.width=img.height=40;img.onerror=()=>{img.remove();fallback();};art.append(img);}
 function palRender(){
@@ -102,11 +103,12 @@ function palRender(){
  palChoiceText();
 }
 function palChoiceText(){$('pal-choice').textContent=palChoice?palName(palChoice.kind,palChoice.type)+' \u00b7 type '+palChoice.type:'Nothing chosen';$('pal-place').disabled=!palChoice;
- if(palChoice){const t=LevelPalette.template(palChoice.kind,palChoice.type,EDITOR_STOCK);$('pal-hint').textContent=(t?'Copies a stock record of this type for its extra fields.':'No stock record of this type is loaded, so its extra fields start at zero.')+(palChoice.kind==='animals'?' New animals need build_levels.py --new-animals and are not game-verified.':'');}else $('pal-hint').textContent='Objects go on the horizontal plane at the camera target height. Each placement is one undo step.';}
-function palPick(kind,type){palChoice={kind,type};for(const b of $('pal-grid').children)b.setAttribute('aria-selected',String(palKind===kind&&+b.dataset.type===type));palChoiceText();edStatus(palStatus());}
+ if(palChoice){const t=LevelPalette.template(palChoice.kind,palChoice.type,EDITOR_STOCK);$('pal-hint').textContent=(t?'Copies a stock record of this type for its extra fields.':'No stock record of this type is loaded, so its extra fields start at zero.')+(palChoice.kind==='animals'?' New animals need build_levels.py --new-animals and are not game-verified.':'');}else $('pal-hint').textContent='Objects follow the terrain under the cursor. On touch, tap to preview and tap again to place. Each placement is one undo step.';}
+function palPick(kind,type){palChoice={kind,type};edTool('add');for(const b of $('pal-grid').children)b.setAttribute('aria-selected',String(palKind===kind&&+b.dataset.type===type));palChoiceText();edStatus(palStatus());}
 $('pal-tab-animals').onclick=()=>{palKind='animals';palRender();};$('pal-tab-props').onclick=()=>{palKind='props';palRender();};$('pal-category').onchange=palRender;$('pal-close').onclick=()=>edTool('select');
 function edAddObject(x,y,z){if(!palChoice){edStatus(palStatus());return;}try{const {hex,templated}=LevelPalette.make(palChoice.kind,palChoice.type,[x,y,z],EDITOR_STOCK);edSnapshot();edRecords[L.id][palChoice.kind].push(hex);edSelected=palChoice.kind+':'+(edRecords[L.id][palChoice.kind].length-1);edSelection=new Set([edSelected]);$('ed-category').value='all';edRefresh();edStatus(`Added ${palName(palChoice.kind,palChoice.type)} at ${Math.round(x)}, ${Math.round(y)}, ${Math.round(z)}${templated?'':' (extra fields zeroed)'}. Undo removes it; Move (3) repositions it.`);}catch(e){edStatus(e.message);}}
-function edPlaceAt(point,snap){if(!M)return;edPlacedAt=performance.now();const z=Math.round(cam.t[2]),g=LevelSelection.groundPoint(M,cv.clientWidth,cv.clientHeight,point,z)||cam.t,q=snap?64:1;edAddObject(Math.round(g[0]/q)*q,Math.round(g[1]/q)*q,z);}
+function edTerrainAt(point,snap){if(!M)return null;const g=LevelSelection.terrainPoint(M,cv.clientWidth,cv.clientHeight,point,L.pf);if(!g)return null;const q=snap?64:1;return [Math.round(g[0]/q)*q,Math.round(g[1]/q)*q,Math.round(g[2])];}
+function edPlaceAt(point,snap){if(!palChoice){edStatus(palStatus());return;}const g=edTerrainAt(point,snap);if(!g){edStatus('Point at the terrain to place an object.');return;}edPlacedAt=performance.now();edAddObject(...g);}
 $('pal-place').onclick=()=>{const q=edFlag('ed-snap')?64:1;edAddObject(...[0,1].map(i=>Math.round(cam.t[i]/q)*q),Math.round(cam.t[2]));};
 edTool('select');
 palRender();
@@ -117,7 +119,38 @@ function edTree(){const tree=$('object-tree');tree.replaceChildren();const group
 function edTypePicker(kind,type){const grid=$('type-picker');if(grid.dataset.kind===kind){for(const b of grid.children)b.setAttribute('aria-pressed',String(+b.dataset.type===type));return;}grid.dataset.kind=kind;grid.replaceChildren();for(let i=0;i<(kind==='props'?247:68);i++){const b=document.createElement('button'),art=document.createElement('span');art.className='pal-art';palArt(kind,i,art);b.append(art,document.createTextNode(LevelSelection.name(kind,i)));b.dataset.type=i;b.setAttribute('aria-pressed',String(i===type));b.onclick=()=>{$('ed-type').value=i;edTypePicker(kind,i);};grid.append(b);}}
 $('ed-delete').onclick=()=>{if($('ed-delete').disabled)return;edSnapshot();LevelSelection.removeAppended(edRecords[L.id],EDITOR_STOCK[L.id],Array.from(edSelection));edSelection.clear();edSelected=null;edRefresh();edStatus('Appended spawns deleted.');};
 for(const k of ['x','y','z','yaw']){const n=$('ed-'+k),r=$('ed-'+k+'-slider');r.oninput=()=>n.value=r.value;n.oninput=()=>r.value=n.value;}
-function edViewport(){const portrait=innerWidth<=700&&innerHeight>innerWidth;if(document.body.classList.contains('phone-portrait')!==portrait)for(const id of ['editor','objects-panel','add-panel'])$(id).open=!portrait;document.body.classList.toggle('phone-portrait',portrait);}
+function edViewport(){$('tip').style.display='none';edGhostPoint=null;const portrait=matchMedia('(max-width:700px) and (orientation:portrait)').matches;if(document.body.classList.contains('phone-portrait')!==portrait)for(const id of ['editor','objects-panel','add-panel','project-panel'])$(id).open=!portrait;document.body.classList.toggle('phone-portrait',portrait);}
 window.addEventListener('resize',edViewport);window.addEventListener('orientationchange',edViewport);edViewport();
 
 for(const id of ['gm','pm','pal-category']){const select=$(id),picker=document.createElement('div');picker.className='choice-picker';select.after(picker);select.style.display='none';for(const option of select.options){const b=document.createElement('button');b.textContent=option.textContent;b.onclick=()=>{select.value=option.value;select.dispatchEvent(new Event('change'));for(const child of picker.children)child.setAttribute('aria-pressed',String(child===b));};picker.append(b);}if(id==='pal-category'){const update=()=>picker.hidden=palKind!=='props';$('pal-tab-animals').addEventListener('click',update);$('pal-tab-props').addEventListener('click',update);update();}}
+
+
+/* Preview uses the same mesh and placement point as the committed object. It never mutates records. */
+cv.addEventListener('mousemove',e=>{edGhostPoint=edAddMode?edPoint(e):null;});
+cv.addEventListener('mouseleave',()=>{edGhostPoint=null;});
+function edDrawGhost(){
+ if(!edAddMode||!palChoice||!edGhostPoint)return;
+ const key=[L.id,palChoice.kind,palChoice.type,...edGhostPoint,...M,edFlag('ed-snap')].join(',');
+ if(key!==edGhostKey){edGhostKey=key;for(const b of edGhostBuffers?[edGhostBuffers.p,edGhostBuffers.c]:[])gl.deleteBuffer(b);edGhostBuffers=null;
+  const g=edTerrainAt(edGhostPoint,edFlag('ed-snap'));if(!g)return;const positions=[],colours=[],{kind,type}=palChoice;
+  const model=kind==='props'?MODELS[type]:AMOD[ANIM.species[type]],scale=kind==='props'?(+$('ms').value||1):.3;
+  if(model){for(let i=0;i<model.n;i++){positions.push(g[0]+model.p[i*3]*scale,g[1]+model.p[i*3+1]*scale,g[2]+model.p[i*3+2]*scale);colours.push(.25,.95,1);}}
+  else{const dims=kind==='props'?(TBL[type]||[]).slice(2,5):edAnimalDims(type),v=LevelSelection.corners([type,...g,0],dims);for(const f of [[0,1,2,3],[4,5,6,7],[0,1,5,4],[1,2,6,5],[2,3,7,6],[3,0,4,7]])for(const i of [0,1,2,0,2,3]){positions.push(...v[f[i]]);colours.push(.25,.95,1);}}
+  edGhostBuffers={p:buf(new Float32Array(positions)),c:buf(new Float32Array(colours)),n:positions.length/3};
+ }
+ if(!edGhostBuffers)return;gl.useProgram(P);gl.uniformMatrix4fv(uM,false,M);gl.enable(gl.BLEND);gl.blendColor(0,0,0,.5);gl.blendFunc(gl.CONSTANT_ALPHA,gl.ONE_MINUS_CONSTANT_ALPHA);gl.depthMask(false);gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(-1,-1);draw(edGhostBuffers,gl.TRIANGLES);gl.disable(gl.POLYGON_OFFSET_FILL);gl.depthMask(true);gl.disable(gl.BLEND);
+}
+
+/* Drag a panel by its title; resize using its lower-right corner. Portrait keeps panels in readable document flow. */
+function edPanels(){
+ const panels=['ui','add-panel','objects-panel','editor','project-panel'];
+ for(const id of panels){const panel=$(id),handle=id==='ui'?$('hd'):panel.querySelector(':scope > summary');panel.classList.add('floating-panel');handle.classList.add('panel-handle');handle.title='Drag to move this panel';let active=null,moved=false;
+  handle.onpointerdown=e=>{if(e.button!==0||e.target.closest('button,select,input,a')||document.body.classList.contains('phone-portrait'))return;const r=panel.getBoundingClientRect();active={x:e.clientX,y:e.clientY,left:r.left,top:r.top};moved=false;handle.setPointerCapture(e.pointerId);};
+  handle.onpointermove=e=>{if(!active)return;const dx=e.clientX-active.x,dy=e.clientY-active.y;if(!moved&&Math.hypot(dx,dy)<4)return;moved=true;e.preventDefault();panel.classList.add('panel-moved');panel.style.left=Math.max(0,Math.min(innerWidth-48,active.left+dx))+'px';panel.style.top=Math.max(0,Math.min(innerHeight-32,active.top+dy))+'px';panel.style.right='auto';panel.style.bottom='auto';};
+  handle.onpointerup=e=>{if(active){if(moved){e.preventDefault();panel.dataset.dragged='1';}active=null;}};
+  handle.onpointercancel=()=>{active=null;};
+  handle.addEventListener('click',e=>{if(panel.dataset.dragged){e.preventDefault();delete panel.dataset.dragged;}});
+ }
+ $('reset-panels').onclick=()=>{for(const id of panels){const p=$(id);p.removeAttribute('style');p.classList.remove('panel-moved');}edStatus('Panel layout reset.');};
+}
+edPanels();

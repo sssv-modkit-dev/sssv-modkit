@@ -15,6 +15,7 @@ import bisect, struct
 
 OVA_ROM, OVA_END, OVA_VRAM = 0x6A6500, 0x7D1AD0, 0x80294E50
 PART_DRAW_JAL = 0x0C000000 | ((0x802C78B0 & 0x0FFFFFFF) >> 2)
+EYE_TEXTURE_JAL = 0x0C000000 | ((0x80356BD8 & 0x0FFFFFFF) >> 2)
 SEG1_BASE = 0x398D0
 BANKS4 = [(0xC7A30, 0xDD5C0), (0xDD5C0, 0xE75B0), (0xE75B0, 0xF1060), (0xF1060, 0xFFD50), (0xFFD50, 0x116BD0)]
 SP = 29
@@ -129,13 +130,40 @@ class Code:
 
 def _num(v): return '?' if v is None else (str(v) if v < 10 else '0x%X' % v)
 
+def eye_textures(code, lo, hi):
+    """Recover the eye loader's palette/image arguments, then its immediate part draw.
+
+    Only the verified segment-1 CI4 eye strips are accepted. Other materials are
+    left untouched rather than guessed from unrelated calls or stale registers.
+    """
+    pending = None
+    result = {}
+    for pos in range(lo, hi, 4):
+        word = code.w(pos)
+        if word == EYE_TEXTURE_JAL:
+            pal, image = code.reg_arg(pos, 4), code.reg_arg(pos, 5)
+            pending = None
+            if pal in (0x01000CA0, 0x01000CC0, 0x01000D00, 0x01002C20, 0x01002C40) and image in (0x01000620, 0x01002100, 0x010025A0, 0x01000D20):
+                pending = {'format': 'ci4', 'width': 16, 'height': 16,
+                           'image': SEG1_BASE + (image & 0xFFFFFF),
+                           'palette': SEG1_BASE + (pal & 0xFFFFFF)}
+        elif word == PART_DRAW_JAL:
+            dl = code.stack_arg(pos, 0x24)
+            if pending and dl is not None:
+                result[dl] = pending
+            pending = None
+        elif word >> 26 == 3:
+            pending = None
+    return result
+
 def build_from_rom(rom, parse_dl):
     """Same schema as animal_table.build(); parse_dl(rom_addr, segbases) is animal_table.parse_dl."""
     c = Code(rom); result = {}
     for name, (funcs, variants) in ANIMALS.items():
-        calls = []; consts = []
+        calls = []; consts = []; textures = {}
         for start, section in funcs:
             lo, hi = c.func_range(start)
+            textures.update(eye_textures(c, lo, hi))
             ev = [(c.stack_arg(o, 0x24), c.reg_arg(o, 4), c.reg_arg(o, 5), c.stack_arg(o, 0x1C))
                   for o in range(lo, hi, 4) if c.w(o) == PART_DRAW_JAL]
             calls.append((lo, section, [e for e in ev if e[0] is not None]))
@@ -163,6 +191,8 @@ def build_from_rom(rom, parse_dl):
             d.update({'symbol': sym(v), 'seg': v >> 24, 'rom': at(v), 'joint_calls': joint_calls.get(v, []),
                       'sections': sorted({f['section'] for f in dfs if f['section'] for e in f['events'] if e['dl'] == sym(v)})})
             parts.append(d)
+            if v in textures:
+                d['texture'] = textures[v]
         sections = list(dict.fromkeys(sec for _, sec, _ in calls if sec))
         result[name] = {'file': None, 'seg_bases': {k: hex(v) for k, v in bases.items()}, 'parts': parts, 'variants': variants,
                         'sections': sections, 'draw_funcs': dfs,

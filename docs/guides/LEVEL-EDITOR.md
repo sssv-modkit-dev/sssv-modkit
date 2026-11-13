@@ -8,10 +8,18 @@ is included in the site, and Level Editor makes no upload requests.
 
 ## Select and edit
 
+Freecam is the default: right-drag looks around while keeping the camera eye
+fixed, WASD travels, Q/E or Space changes height, and the wheel moves forward or
+back. Choose Orbit in the Camera menu for the previous orbiting view.
+
+Drag panel titles to move them and resize their corners. Save/project controls
+have a separate panel. Reset panels restores the default layout; narrow screens
+stack panels below the viewport.
+
 - **Select (1)**: click an object; click empty space to clear; drag empty space to select a rectangle. Ctrl/Shift adds. The **Objects** panel lists every spawn grouped by type and reflects selection.
 - **Move (3)** or Alt-drag moves the selection. Ctrl snaps to 64 units; Shift changes height. Arrow keys nudge, PageUp/PageDown adjust height. Escape cancels a gesture. Modifier hints are available in the tool tooltip.
 - Use the visual **Change type** picker and paired X/Y/Z/yaw sliders and number fields, then **Apply**. **Focus** frames the selection. **Duplicate prop** copies selected props except player starts.
-- The separate **Add objects** panel offers animal and prop tiles. Choose **Place objects (4)** and a type, then click the ground or **Place at target**. New records copy stock extra fields where available, otherwise use zeros. Player starts cannot be added.
+- The separate **Add objects** panel offers animal and prop tiles. Choose **Place objects (4)** and a type; a translucent preview follows the terrain under the pointer. Click to place it, or tap once to preview and again nearby to place on touch devices. Sky misses create nothing. **Place at target** remains available. New records copy stock extra fields where available, otherwise use zeros. Player starts cannot be added.
 - **Delete** or Del fully removes only appended objects added by this editor or loaded project, with undo/redo. Original spawns cannot be deleted because scripts refer to their indices. Mixed selections containing originals cannot be deleted. No tombstones are written; original indices stay unchanged. Appended objects are not wired to scripts.
 - Terrain is read-only. Hold the right mouse button to look around and fly using WASD/QE (Shift faster). Pan with Shift-left-drag or the middle button; zoom with the wheel. Touch supports tap selection, selection drags and two-finger pinch/pan.
 - **Info** contains level stats, display-save information and camera controls. Phone portrait panels collapse automatically when entering that layout; resizing or rotating updates the layout.
