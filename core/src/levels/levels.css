@@ -69,3 +69,15 @@ body.phone-portrait #objects-panel{order:3}
 body.phone-portrait #editor{order:4}
 body.phone-portrait #palette{max-height:38vh}
 body.phone-portrait #ed-overlay{height:55vh}
+
+/* Independent workspace panels. Native resize preserves access to each panel's scroll area. */
+#project-panel{position:absolute;right:10px;bottom:10px;z-index:4;width:314px;max-height:36vh;overflow:auto;background:#121b29ee;border:1px solid #ffffff26;border-radius:9px;padding:10px;box-sizing:border-box}
+#project-panel p{line-height:1.5}#project-panel button{margin:2px 0}#project-panel [hidden]{display:none}
+#editor{max-height:55vh}
+.floating-panel{resize:both;overflow:auto;min-width:200px;min-height:40px;max-width:calc(100vw - 16px)!important}
+.panel-handle{cursor:move;touch-action:none;user-select:none}.panel-moved{max-height:calc(100vh - 16px)!important}
+#ui.floating-panel{min-width:260px}#hd{flex-wrap:wrap}.camera-options{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+@media(max-width:850px){#project-panel{right:10px;bottom:10px;max-height:26vh;width:260px}#editor{bottom:29vh;max-height:30vh}#objects-panel{right:290px;max-height:30vh}}
+body.phone-portrait #project-panel{position:relative!important;inset:auto!important;margin:0 8px;width:calc(100% - 16px)!important;max-width:none!important;max-height:none!important;height:auto!important;order:5}
+body.phone-portrait .floating-panel{resize:none;min-width:0;left:auto!important;top:auto!important;right:auto!important;bottom:auto!important;height:auto!important}
+body.phone-portrait .panel-handle{cursor:pointer;touch-action:auto}

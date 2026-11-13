@@ -43,10 +43,16 @@ async function handle(message) {
   };
   try {
     if (!(message.rom instanceof ArrayBuffer)) throw new Error('Expected the ROM as an ArrayBuffer');
-    if (message.level == null && message.parts == null) throw new Error('Give a level project or diff, a Parts config, or both');
+    if (message.type !== 'index' && message.level == null && message.parts == null) throw new Error('Give a level project or diff, a Parts config, or both');
     const options = Object.assign({}, message.options);
     if ('strict' in options || 'table' in options) throw new Error('Test-only build options are not accepted by the worker');
     const rt = await loadRuntime(progress);
+    if (message.type === 'index') {
+      progress('table', 'Reading animals from your ROM');
+      const table = core.deriveTable(rt, message.rom);
+      self.postMessage({ type: 'indexed', id, table, timings: { total: Date.now() - started } });
+      return;
+    }
     const out = core.runBuild(rt, { rom: message.rom, level: message.level, parts: message.parts, options }, progress);
     progress('done', 'Build complete');
     const rom = out.rom.buffer, ips = out.ips.buffer;
@@ -59,7 +65,7 @@ async function handle(message) {
 
 self.onmessage = event => {
   const message = event.data || {};
-  if (message.type !== 'build') {
+  if (message.type !== 'build' && message.type !== 'index') {
     self.postMessage({ type: 'error', id: message.id, message: 'Unknown message type' });
     return;
   }

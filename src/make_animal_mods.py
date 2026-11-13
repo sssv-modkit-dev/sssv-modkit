@@ -19,8 +19,9 @@ Config (one JSON file per animal; LLM-friendly, tiny):
   "skip_words": ["0xD0F7C"],                                          // optional: word ROM addresses to leave alone
   "mesh":    [ {"symbol": "D_04002D90_CA7C0", "scale": [1.2,1.2,1.2], "move": [0,0,3]} ]   // optional vertex edits (see below)
 }
-'mesh': every vertex of that part (all its vertex groups, or only "groups":[0,2]) is scaled about the part's bbox centre (or "about":[x,y,z])
-then moved, in the part's own local axes (what the viewer shows). Vertex arrays also used by another part/animal are refused unless "allow_shared": true.
+'mesh': every vertex of that part (all its vertex groups, or only "groups":[0,2]) is scaled about the part's bbox centre (or "about":[x,y,z]),
+then optionally rotated X/Y/Z by "rotate":[degrees,degrees,degrees], then moved in local axes. Position edits preserve UV and normal/colour bytes.
+Vertex arrays also used by another part/animal are refused unless "allow_shared": true.
 Triangle/vertex COUNTS never change; only positions (int16, clamped). Vertex normals/colours (bytes 8-15) are left as they are.
 'deform': parametric shape ops on a part's vertices (positions only, counts never change, same shared-vertex refusal as 'mesh'):
   {"symbol": "D_...", "groups": [0], "about": [x,y,z], "allow_shared": false, "ops": [ ... ]}   // "groups"/"about" optional; ops run in order
@@ -93,6 +94,13 @@ def config_entries(cfg, p, soft=False):
         raise SystemExit(f'{p}: needs an "animal" key (single config), a "code_patch" list or an "animals" list (pack)')
     if cfg.get('mouse'): raise SystemExit(f'{p}: the "mouse" key was removed; use configs/mouse.json (an ordinary animal config) instead')
     entries = cfg['animals'] if 'animals' in cfg else [cfg]
+    if not isinstance(entries, list): raise SystemExit(f'{p}: "animals" must be a list')
+    # Saved editor projects retain texture edits outside per-animal geometry.
+    # Apply the normal expected-byte and overlap safeguards to these too.
+    if cfg.get('format') == 'model-editor-project-v1':
+        patches = cfg.get('texture_patches', [])
+        if not isinstance(patches, list): raise SystemExit(f'{p}: "texture_patches" must be a list')
+        if patches: entries = entries + [{'code_patch': patches}]
     for e in entries:
         if not isinstance(e, dict) or ('animal' not in e and 'code_patch' not in e): raise SystemExit(f'{p}: every entry in "animals" needs an "animal" key (or a "code_patch" list)')
     return [(p, e) for e in entries], (cfg.get('name') or None) if 'animals' in cfg else None
@@ -119,6 +127,12 @@ def _ax(v, what):
 def _degrees(op, an):
     if not isinstance(op.get('degrees'), (int, float)): raise SystemExit(f'{an}: deform {op.get("type")} needs numeric "degrees": {op}')
     return float(op['degrees'])
+
+def _finite_number(value):
+    if type(value) not in (int, float): return False
+    try: return math.isfinite(value)
+    except OverflowError: return False
+
 
 def select_groups(part, entry, an):
     """The vertex groups a mesh/deform entry selects ("groups": [indices], default all)."""
@@ -285,8 +299,9 @@ def plan_edits(table, base, animals, log=print):
         for m in cfg.get('mesh', []):
             part = find_part(table, an, m)
             if part is None: raise SystemExit(f'{an}: mesh part not found: {m}')
-            for key in ('scale', 'move', 'about'):
-                if key in m and (not isinstance(m[key], list) or len(m[key]) != 3): raise SystemExit(f'{an}: mesh "{key}" needs 3 numbers: {m}')
+            for key in ('scale', 'move', 'about', 'rotate'):
+                if key in m and (not isinstance(m[key], list) or len(m[key]) != 3 or not all(_finite_number(v) for v in m[key])):
+                    raise SystemExit(f'{an}: mesh "{key}" needs 3 finite numbers: {m}')
             medits.append((an, part, m))
         for dd in cfg.get('deform', []):
             part = find_part(table, an, dd)
@@ -361,14 +376,22 @@ def apply_plan(base, plan, log=print):
     for an, part, m in plan['mesh']:
         gb = [g['bbox'] for g in part['groups'] if g['bbox']]
         ctr = m.get('about') or [(min(b[k][0] for b in gb) + max(b[k][1] for b in gb)) / 2 for k in range(3)]
-        sc = m.get('scale', [1, 1, 1]); mv = m.get('move', [0, 0, 0])
+        sc = m.get('scale', [1, 1, 1]); mv = m.get('move', [0, 0, 0]); angles = m.get('rotate', [0, 0, 0])
+        rotations = [(math.cos(math.radians(a)), math.sin(math.radians(a))) for a in angles]
         offs = group_offsets(select_groups(part, m, an))
         for o in offs:
             v = struct.unpack('>hhh', bytes(rom[o:o + 6]))
-            nv = [max(-32768, min(32767, int(math.floor(ctr[k] + (v[k] - ctr[k]) * sc[k] + mv[k] + 0.5)))) for k in range(3)]
+            q = [(v[k] - ctr[k]) * sc[k] for k in range(3)]
+            # Preview order: scale about pivot, rotate X/Y/Z, translate,
+            # round once. UV and normal/colour bytes remain unchanged.
+            for axis, (cosine, sine) in enumerate(rotations):
+                u, w = (axis + 1) % 3, (axis + 2) % 3
+                x, y = q[u], q[w]
+                q[u], q[w] = x * cosine - y * sine, x * sine + y * cosine
+            nv = [max(-32768, min(32767, int(math.floor(ctr[k] + q[k] + mv[k] + 0.5)))) for k in range(3)]
             rom[o:o + 6] = struct.pack('>hhh', *nv)
         nvert += len(offs)
-        log(f"mesh [{an}] {part['symbol']}: {len(offs)} vertices, scale={sc} move={mv}")
+        log(f"mesh [{an}] {part['symbol']}: {len(offs)} vertices, scale={sc} rotate={angles} move={mv}")
     for an, part, dd in plan['deform']:
         ch, b0, b1, clip = plan_deform(rom, part, dd, plan['vertices'], an)
         for o, nv in ch: rom[o:o + 6] = struct.pack('>hhh', *nv)

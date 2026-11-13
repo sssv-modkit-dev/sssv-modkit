@@ -62,7 +62,7 @@ try {
   await until(c, s, modelReady);
   await evaluate(c, s, "document.getElementById('demo-colour').click()");
   const before = await evaluate(c, s, 'JSON.stringify(demoPreset())');
-  const model = await download(s, "document.getElementById('exp').click()", JSON.parse(before).model + '.parts-lab.json');
+  const model = await download(s, "document.getElementById('exp').click()", 'model-edits.json');
   s = await open(c, origin + '/model-editor.html');
   await until(c, s, modelReady);
   assert.notEqual(await evaluate(c, s, 'JSON.stringify(demoPreset())'), before, 'fresh page starts unedited');

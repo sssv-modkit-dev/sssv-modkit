@@ -17,6 +17,7 @@ COMMANDS = [
     [sys.executable, 'tests/test_guards.py'],
     [sys.executable, 'tests/test_text_encoding.py'],
     [sys.executable, 'tests/test_level_startup.py'],
+    [sys.executable, 'tests/test_level_usability.py'],
     [sys.executable, 'tools/guards.py', '.'],
     ['node', 'tests/browser/roundtrip.mjs'],
 ]

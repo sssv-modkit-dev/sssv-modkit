@@ -42,7 +42,7 @@ for a,d in t.items():
     for p in d['parts']:
         if not p['ended'] or p['seg']==1:continue
         j=p['joint_calls'][0].split(' | ')[0] if p['joint_calls'] else '?'
-        ps.append({'s':p['symbol'],'r':p['rom'],'j':re.sub(r'(?<=[0-9A-Fa-f])U\b','',j).replace(' ','-'),'v':p.get('sections',[]),'t':tex})
+        ps.append({'s':p['symbol'],'r':p['rom'],'j':re.sub(r'(?<=[0-9A-Fa-f])U\b','',j).replace(' ','-'),'v':p.get('sections',[]),'t':tex,**({'texture':p['texture']} if p.get('texture') else {})})
     if ps:T[a]={'b':d['seg_bases'],'p':ps,'s':d.get('sections',[])}
 if args.labels:
     labels=json.loads(args.labels.read_text(encoding='utf-8-sig'))
@@ -61,7 +61,7 @@ base=here.parent/'core/src/viewer'  # core editor sources (synced by tools/sync_
 pack_js=here/'viewer'/'js'  # SSSV pack modules
 html=(base/'index.template.html').read_text(encoding='utf-8')
 css=(base/'css'/'app.css').read_text(encoding='utf-8')
-js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'parts-table.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'model-source-rom.js').read_text(encoding='utf-8')
+js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'parts-table.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'animal-textures.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'model-source-rom.js').read_text(encoding='utf-8')
 icon_path=next((here/'viewer'/'assets'/name for name in ('icon.png','icon.ico') if (here/'viewer'/'assets'/name).is_file()),None)
 if icon_path and not args.public:
     mime='image/png' if icon_path.suffix=='.png' else 'image/x-icon'

@@ -22,7 +22,10 @@ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'island-'));
 const sha=f=>crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex');
 for(const n of [1,2])execFileSync(process.execPath,[path.join(root,'tools/make_island.js'),'--seed','1','--out',path.join(tmp,n+'.json')]);
 assert.equal(sha(path.join(tmp,'1.json')),sha(path.join(tmp,'2.json')));
-assert.equal(sha(path.join(tmp,'1.json')),sha(path.join(assets,'island.scene.json')),'committed island is the seed-1 output');
+// Compare PNG atlases by decoded image data, not file bytes: deflate output differs between zlib builds (e.g. Debian vs Node's bundled zlib).
+const pngPixels=uri=>{const b=Buffer.from(uri.split(',')[1],'base64'),meta=[],idat=[];for(let o=8;o<b.length;){const n=b.readUInt32BE(o),t=b.toString('latin1',o+4,o+8),d=b.subarray(o+8,o+8+n);if(t==='IDAT')idat.push(d);else if(t!=='IEND')meta.push(t,d.toString('hex'));o+=12+n;}return meta.join(':')+'|'+crypto.createHash('sha1').update(require('node:zlib').inflateSync(Buffer.concat(idat))).digest('hex');};
+const canon=f=>{const j=JSON.parse(fs.readFileSync(f,'utf8'));for(const k of Object.keys(j.atlases||{}))j.atlases[k]=pngPixels(j.atlases[k]);return crypto.createHash('sha1').update(JSON.stringify(j)).digest('hex');};
+assert.equal(canon(path.join(tmp,'1.json')),canon(path.join(assets,'island.scene.json')),'committed island is the seed-1 output');
 // test_models_licensed
 const third=fs.readFileSync(path.join(root,'THIRD_PARTY.md'),'utf8');
 assert.ok(!/GPL/.test(third));
