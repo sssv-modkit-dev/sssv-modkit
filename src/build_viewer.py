@@ -61,7 +61,7 @@ base=here.parent/'core/src/viewer'  # core editor sources (synced by tools/sync_
 pack_js=here/'viewer'/'js'  # SSSV pack modules
 html=(base/'index.template.html').read_text(encoding='utf-8')
 css=(base/'css'/'app.css').read_text(encoding='utf-8')
-js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'parts-table.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'animal-textures.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'model-source-rom.js').read_text(encoding='utf-8')
+js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+'\n'+(base/'js'/'history.js').read_text(encoding='utf-8')+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'parts-table.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'animal-textures.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'model-source-rom.js').read_text(encoding='utf-8')
 icon_path=next((here/'viewer'/'assets'/name for name in ('icon.png','icon.ico') if (here/'viewer'/'assets'/name).is_file()),None)
 if icon_path and not args.public:
     mime='image/png' if icon_path.suffix=='.png' else 'image/x-icon'

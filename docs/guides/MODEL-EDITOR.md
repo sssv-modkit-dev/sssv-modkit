@@ -31,6 +31,14 @@ and follow the [config guide](CONFIGS.md) and [build instructions](GETTING-START
 - Shift/Ctrl-click or enable Multi-select to transform several parts together;
   click empty space to clear selection. Hover highlights parts and gizmo handles.
 - Draggable part-name window with a close button, and a world-space reference grid.
+- Undo/Redo buttons and Ctrl+Z/Ctrl+Y (Cmd+Z/Shift+Cmd+Z on Mac). A drag or
+  brush stroke is one undo step; typing in text fields keeps native undo.
+- Transform sliders have numeric fields: type a value or focus one and scroll
+  to increment it. Bend, twist, taper and inflate are available under Deform.
+- The bottom state picker shows available sections/variants and captured static
+  poses. It does not synthesize the game's procedural animations.
+- Returning to demos retains your source animals and edits; use Return to loaded
+  animals in Categories to get back without selecting the ROM again.
 - Recolouring, scale, position and individual vertex edits.
 - Taper, bend, twist and inflate previews.
 - Config import/export, themes and local ROM storage.
@@ -49,6 +57,20 @@ users of those bytes. Save edits includes the changed texture bytes with their
 expected original values; Build & Play sends them through the protected builder.
 Reset this texture restores its image and palette, while the main Reset restores
 the current animal's supported textures and geometry. The original ROM stays intact.
+
+The image editor includes pencil, bucket, eraser, rectangle selection and local
+copy/cut/paste. Selection restricts painting and filling. Eraser and cut need a
+transparent swatch; if none exists, explicitly make a palette entry transparent
+first. Paste is clipped to the image and maps colours into the destination palette.
+
+## Per-part colours
+
+Choose **Selected parts** in Palette Workbench to change only their primitive
+colour commands. Whole-animal colours remain available; selected-part overrides
+use expected original words and the same builder safeguards. Shared commands
+still affect every user. A sheep leg drawn four times from one part cannot have
+four independent colours without separate material or mesh references. Parts
+that inherit their colour need further material decoding before such overrides.
 
 Existing geometry edits preserve vertex and triangle counts. Importing entirely
 new models or rigs is not implemented. Preview appearance still needs checking

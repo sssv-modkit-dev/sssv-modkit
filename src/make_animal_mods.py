@@ -280,6 +280,7 @@ def plan_edits(table, base, animals, log=print):
         an = cfg['animal']
         if an not in table: raise SystemExit(f'unknown animal {an}')
         skip = {hexint(x) for x in cfg.get('skip_words', [])}
+        recolor_skip = {hexint(x) for x in cfg.get('skip_recolor_words', [])}
         known = {}
         for p in table[an]['parts']:
             if not p['ended'] or p['seg'] == 1: continue
@@ -288,7 +289,7 @@ def plan_edits(table, base, animals, log=print):
         for old, new in cfg.get('recolor', {}).items():
             old = rgba(old); hit = 0
             for w, (rg, sym) in known.items():
-                if rg == old and w not in skip:
+                if rg == old and w not in skip and w not in recolor_skip:
                     add(w, old, rgba(new, old), an, f'{sym} recolor {old}->{rgba(new, old)}'); hit += 1; touch.setdefault(an, set()).add(sym)
             if hit == 0: log(f'WARNING {an}: no colour word with {old} found')
         for e in cfg.get('words', []):

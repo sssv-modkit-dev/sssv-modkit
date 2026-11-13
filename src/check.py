@@ -43,6 +43,7 @@ def main():
         ['node', 'tests/test_animal_textures.js'],
         [sys.executable, 'tests/test_eye_metadata.py'],
         [sys.executable, 'tests/test_mesh_rotation.py'],
+        [sys.executable, 'tests/test_part_colors.py'],
         ['node', '--check', 'src/viewer/js/parts-table.js'],
         ['node', '--check', 'src/viewer/js/model-source-rom.js'],
         [sys.executable, 'tests/test_builder.py'],

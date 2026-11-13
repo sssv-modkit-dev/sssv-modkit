@@ -6,7 +6,7 @@ function validateDemoPreset(value){
   if(!value||value.format!=='sssv-parts-lab-demo-v1'||!Object.hasOwn(PARTS_DEMOS,value.model))throw new Error('Not a Model Editor demo preset.');
   const symbols=new Set(PARTS_DEMOS[value.model].p.map(p=>p.s));
   const vector=(a,lo,hi)=>Array.isArray(a)&&a.length===3&&a.every(n=>Number.isFinite(n)&&n>=lo&&n<=hi);
-  const meshOut={},palette={},deformations={};
+  const meshOut={},palette={},partColours={},deformations={};
   for(const [s,e] of Object.entries(value.mesh||{})){
     if(!symbols.has(s)||!e||!vector(e.s,.1,10)||!vector(e.m,-500,500)||typeof e.o!=='boolean')throw new Error('Invalid mesh settings.');
     if(e.r&&!vector(e.r,-180,180))throw new Error('Invalid rotation.');meshOut[s]={s:e.s,m:e.m,o:e.o,...(e.r?{r:e.r}:{})};
@@ -16,18 +16,29 @@ function validateDemoPreset(value){
     if(!colours.has(a)||typeof b!=='string'||!/^([0-9A-F]{8})$/.test(b))throw new Error('Invalid palette.');
     palette[a]=b;
   }
+  for(const [symbol,entries] of Object.entries(value.partColors||{})){
+    if(!symbols.has(symbol)||!entries||typeof entries!=='object'||Array.isArray(entries))throw new Error('Invalid part palette.');
+    const allowed=new Set(['808080FF',...PARTS_DEMOS[value.model].p.find(p=>p.s===symbol).demo.cols.map(c=>c.rgba)]),out={};
+    for(const [from,to] of Object.entries(entries)){if(!allowed.has(from)||typeof to!=='string'||!/^([0-9A-F]{8})$/.test(to))throw new Error('Invalid part colour.');if(from!==to)out[from]=to;}
+    if(Object.keys(out).length)partColours[symbol]=out;
+  }
   for(const [s,entries] of Object.entries(value.deform||{})){
     if(!symbols.has(s)||!Array.isArray(entries)||entries.length>4)throw new Error('Invalid deformation.');
     deformations[s]=entries.map(e=>{
       if(!e||!Array.isArray(e.ops)||e.ops.length>4)throw new Error('Invalid deformation operations.');
       return {ops:e.ops.map(op=>{
-        if(!['bend','twist'].includes(op.type)||!['x','y','z'].includes(op.axis)||!Number.isFinite(op.degrees)||Math.abs(op.degrees)>180)throw new Error('Invalid bend or twist.');
+        if(!['bend','twist','taper','inflate'].includes(op.type)||(op.type!=='inflate'||op.axis!==undefined)&&!['x','y','z'].includes(op.axis))throw new Error('Invalid deformation type or axis.');
+        const common={type:op.type,axis:op.axis};
+        if(op.range!==undefined){if(!Array.isArray(op.range)||op.range.length!==2||!op.range.every(Number.isFinite)||op.range[0]<0||op.range[0]>=op.range[1]||op.range[1]>1)throw new Error('Invalid deformation range.');common.range=op.range;}
+        if(op.type==='taper'){if(!Number.isFinite(op.from)||!Number.isFinite(op.to)||op.from<.1||op.from>3||op.to<.1||op.to>3)throw new Error('Invalid taper.');return {...common,from:op.from,to:op.to};}
+        if(op.type==='inflate'){if(!Number.isFinite(op.amount)||op.amount<.1||op.amount>3||op.axes!==undefined&&!/^[xyz]{1,3}$/.test(op.axes))throw new Error('Invalid inflate.');return {...common,amount:op.amount,...(op.axes?{axes:op.axes}:{})};}
+        if(!Number.isFinite(op.degrees)||Math.abs(op.degrees)>180)throw new Error('Invalid bend or twist.');
         if(op.type==='bend'&&(!['x','y','z','-x','-y','-z'].includes(op.toward)||op.toward.replace('-','')===op.axis))throw new Error('Invalid bend direction.');
-        return {type:op.type,axis:op.axis,degrees:op.degrees,...(op.type==='bend'?{toward:op.toward}:{})};
+        return {...common,degrees:op.degrees,...(op.type==='bend'?{toward:op.toward}:{})};
       })};
     });
   }
-  return {format:value.format,model:value.model,mesh:meshOut,palette,deform:deformations,exploded:!!value.exploded};
+  return {format:value.format,model:value.model,mesh:meshOut,palette,...(Object.keys(partColours).length?{partColors:partColours}:{}),deform:deformations,exploded:!!value.exploded};
 }
 //#LAB-PURE-END
 const modelEdits=editMemory(),headshots=new Map();
@@ -44,6 +55,8 @@ function buildDemoPicker(){
   const host=$('demo-picker');host.replaceChildren();
   const models=Object.keys(TABLE),groups=[...new Set(models.map(modelGroup))];
   const button=(text,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=text;b.onclick=fn;host.appendChild(b);return b};
+  const retained=window.ModelEditorHost?.availableSource?.();
+  if(demoMode&&retained){const b=button('Loaded animals ('+Object.keys(retained.table).length+')',()=>{window.ModelEditorHost.restoreSource();modelCategory='Animals';buildDemoPicker()});b.id='return-to-source';b.title='Return to your loaded source without selecting its file again';}
   if(!groups.includes(modelCategory))modelCategory='';
   if(!modelCategory){for(const group of groups){const b=button(group,()=>{modelCategory=group;buildDemoPicker()});const icon=document.createElement('span');icon.className='ph';icon.setAttribute('aria-hidden','true');icon.textContent=({'Custom':'◇','Animals':'🐾','Props':'📦'})[group]||'◇';b.prepend(icon);}return}
   button('← Categories',()=>{modelCategory='';buildDemoPicker()});
@@ -57,12 +70,12 @@ function startDemos(model=DEFAULT_DEMO){
   buildGallery();$('gallery-toggle').disabled=false;$('gallery-toggle').onclick=()=>setGallery(!gallery);
   buildDemoPicker();pick(model);markDemoPicker();markDemoPicker();
 }
-function demoPreset(){return validateDemoPreset({format:'sssv-parts-lab-demo-v1',model:name,mesh,palette:map,deform:deformOn?deform:{},exploded:sheet})}
-function applyDemoPreset(raw){const p=validateDemoPreset(raw);startDemos(p.model);mesh=p.mesh;map=p.palette;deform=p.deform;deformOn=Object.keys(deform).length>0;sheet=p.exploded;assembled=!sheet&&poseOk();all=!sheet&&!assembled;SH=sheetLayout(visibleParts());ui();rebuild(true);info()}
+function demoPreset(){return validateDemoPreset({format:'sssv-parts-lab-demo-v1',model:name,mesh,palette:map,partColors:typeof partColors==='undefined'?{}:partColors,deform:deformOn?deform:{},exploded:sheet})}
+function applyDemoPreset(raw){const p=validateDemoPreset(raw);startDemos(p.model);mesh=p.mesh;map=p.palette;partColors=p.partColors||{};deform=p.deform;deformOn=Object.keys(deform).length>0;sheet=p.exploded;assembled=!sheet&&poseOk();all=!sheet&&!assembled;SH=sheetLayout(visibleParts());ui();rebuild(true);info()}
 function downloadJSON(value,filename){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 const DEFAULT_DEMO=Object.keys(PARTS_DEMOS).find(n=>!BUNDLED_ANIMALS.has(n));
 $('demo-start').onclick=()=>startDemos();
-$('demo-assemble').onclick=()=>{assembled=poseOk();all=!assembled;sheet=false;ui();rebuild(true);info()};
+$('demo-assemble').onclick=()=>{if(poseOk()){variant='';$('variant').value='';}assembled=poseOk();all=!assembled;sheet=false;ui();rebuild(true);info()};
 $('demo-explode').onclick=()=>{assembled=false;all=false;sheet=true;roll=0;pit=0;yaw=HOME_VIEW[0];SH={};for(const [i,P] of visibleParts().entries()){const c=[0,1,2].map(k=>(P.bb[k]+P.bb[k+3])/2),length=Math.hypot(...c),size=Math.max(40,...P.bb.slice(3).map((v,k)=>v-P.bb[k]));SH[P.sym]=length?c.map(v=>v/length*size*1.4):[Math.cos(i*2.4)*size,Math.sin(i*2.4)*size,0]}ui();rebuild(true);info()};
 $('demo-colour').onclick=()=>{for(const c of new Set(parsed.flatMap(editableColours)))map[c]=[0,1,2].map(()=>Math.floor(60+Math.random()*180).toString(16).padStart(2,'0')).join('').toUpperCase()+'FF';ui();rebuild(false)};
 $('demo-share').onclick=async()=>{
@@ -72,24 +85,25 @@ $('demo-share').onclick=async()=>{
  }catch(e){status.textContent='Copy the address bar to share, or save your edits. '+e.message}
 };
 const exportGameConfig=$('exp').onclick,importGameConfig=$('impf').onchange;
-function demoProject(){rememberCurrentEdits();const demos=modelEdits.entries().filter(([key,state])=>key.startsWith('demo:')&&configChanged(stateConfig(key.slice(5),state))).map(([key,state])=>validateDemoPreset({format:'sssv-parts-lab-demo-v1',model:key.slice(5),mesh:state.mesh||{},palette:state.map||{},deform:state.deformOn?state.deform:{},exploded:state.exploded??false}));return {format:'model-editor-project-v1',demos,animals:allGameConfigs().animals.filter(e=>e.animal),...(window.ModelTextureTools?.projectExtras?.()||{})}}
+function demoProject(){rememberCurrentEdits();const demos=modelEdits.entries().filter(([key,state])=>key.startsWith('demo:')&&configChanged(stateConfig(key.slice(5),state))).map(([key,state])=>validateDemoPreset({format:'sssv-parts-lab-demo-v1',model:key.slice(5),mesh:state.mesh||{},palette:state.map||{},partColors:state.partColors||{},deform:state.deformOn?state.deform:{},exploded:state.exploded??false}));return {format:'model-editor-project-v1',demos,animals:allGameConfigs().animals.filter(e=>e.animal),...(window.ModelTextureTools?.projectExtras?.()||{})}}
 $('exp').onclick=()=>downloadJSON(demoProject(),'model-edits.json');
 function applyModelProject(value){
       if(!Array.isArray(value.demos)||!Array.isArray(value.animals))throw new Error('Invalid model project.');
-      const demos=value.demos.map(validateDemoPreset);window.ModelTextureTools?.validateProjectExtras?.(value);if(value.animals.length&&demoMode)throw new Error('Load your source data before opening a project with animal edits.');
+      const demos=value.demos.map(validateDemoPreset);if(demoMode&&(value.animals.length||value.texture_patches?.length)&&window.ModelEditorHost?.availableSource?.())window.ModelEditorHost.restoreSource();window.ModelTextureTools?.validateProjectExtras?.(value);if(value.animals.length&&demoMode)throw new Error('Load your source data before opening a project with animal edits.');
       if(value.animals.length)importGameConfigs({animals:value.animals});
-      rememberCurrentEdits();for(const p of demos)modelEdits.put('demo:'+p.model,{mesh:p.mesh,map:p.palette,deform:p.deform,deformOn:Object.keys(p.deform).length>0,exploded:p.exploded});
+      rememberCurrentEdits();for(const p of demos)modelEdits.put('demo:'+p.model,{mesh:p.mesh,map:p.palette,partColors:p.partColors||{},deform:p.deform,deformOn:Object.keys(p.deform).length>0,exploded:p.exploded});
       if(demos.length&&!value.animals.length&&!value.texture_patches?.length){cur=null;startDemos(demos[0].model)}window.ModelTextureTools?.loadProjectExtras?.(value);
 
 }
 $('impf').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
+  window.ModelEditorHistory?.begin();
   try{if(f.size>1000000)throw new Error('Config is too large.');const value=JSON.parse(await f.text());
     if(value.format==='model-editor-project-v1')applyModelProject(value);
     else if(value.format==='sssv-parts-lab-demo-v1')applyDemoPreset(value);
     else if(demoMode)throw new Error('This config needs its source data loaded first.');
     else await importGameConfig(e);
-  }catch(err){$('demo-status').textContent=err.message;alert(err.message)}finally{e.target.value=''}
+  }catch(err){$('demo-status').textContent=err.message;alert(err.message)}finally{e.target.value='';window.ModelEditorHistory?.end()}
 };
 if(!Object.keys(EMBEDDED_TABLE).length)startDemos();
 let pendingSharedProject=null;
@@ -101,3 +115,33 @@ function readSharedDemo(){const legacy=location.hash.startsWith('#demo='),projec
 }
 readSharedDemo();addEventListener('hashchange',readSharedDemo);
 addEventListener('model-source-ready',()=>{if(!pendingSharedProject)return;try{applyModelProject(pendingSharedProject);pendingSharedProject=null;$('msg').textContent='Shared edits opened with your local source.'}catch(err){$('msg').textContent='Could not open shared edits: '+err.message}});
+
+// History stores only edit descriptions. Source bytes remain in the retained host.
+function captureModelHistory(){
+  rememberCurrentEdits();
+  const entries=modelEdits.entries().filter(([key,state])=>configChanged(stateConfig(key.slice(key.indexOf(':')+1),state))||Object.values(state.partColors||{}).some(v=>Object.entries(v).some(([a,b])=>a!==b))||Object.keys(state.wordEdits||{}).length).sort(([a],[b])=>a.localeCompare(b));
+  return {edits:{entries,names:partNames,offsets:partOffsets,labels:labelOffsets,textures:window.ModelTextureTools?.historyExtras?.()||window.ModelTextureTools?.projectExtras?.()||{}},current:{demo:demoMode,name,variant,sheet,all,assembled,sel,selected:[...selectedParts],selectedSym,camera:{yaw,pit,roll,dist,ctr:ctr.slice()}}};
+}
+function restoreModelHistory(snapshot){
+  const state=snapshot.edits,current=snapshot.current;
+  cur=null;for(const [key] of modelEdits.entries())modelEdits.forget(key);
+  for(const [key,value] of state.entries)modelEdits.put(key,value);
+  partNames=state.names||{};partOffsets=state.offsets||{};labelOffsets=state.labels||{};
+  const retained=window.ModelEditorHost?.availableSource?.();
+  if(retained){window.ModelEditorHost.restoreSource();const load=window.ModelTextureTools?.restoreHistoryExtras||window.ModelTextureTools?.loadProjectExtras;load?.(state.textures||{});}
+  if(current.demo){cur=null;startDemos(Object.hasOwn(PARTS_DEMOS,current.name)?current.name:DEFAULT_DEMO);}
+  else if(retained&&Object.hasOwn(TABLE,current.name))pick(current.name);
+  variant=(cur.s||[]).includes(current.variant)?current.variant:'';$('variant').value=variant;
+  sheet=!!current.sheet;all=!!current.all;assembled=!!current.assembled&&poseOk();sel=Math.min(current.sel||0,parsed.length-1);
+  selectedParts.clear();for(const sym of current.selected||[])if(parsed.some(p=>p.sym===sym))selectedParts.add(sym);selectedSym=selectedParts.has(current.selectedSym)?current.selectedSym:[...selectedParts].at(-1)||null;
+  if(current.camera){({yaw,pit,roll,dist}=current.camera);ctr=current.camera.ctr.slice();}
+  SH=sheetLayout(visibleParts());deformCache.clear();saveViewerPrefs();ui();rebuild(false);info();
+}
+if(window.ModelEditorHistory){
+ const H=window.ModelEditorHistory;
+ const buttons=state=>{for(const [id,key] of [['undo-edit','canUndo'],['redo-edit','canRedo']]){const b=$(id);if(b)b.disabled=!state[key];}};
+ H.configure({capture:captureModelHistory,restore:restoreModelHistory,onChange:buttons});
+ for(const [id,method,label] of [['undo-edit','undo','Undo'],['redo-edit','redo','Redo']]){let b=$(id);if(!b){b=document.createElement('button');b.id=id;b.textContent=label;$('actions').prepend(b);}b.type='button';b.title=label+(method==='undo'?' (Ctrl+Z)':' (Ctrl+Y)');b.onclick=()=>H[method]();}
+ buttons(H);let lastSource=window.ModelEditorHost?.availableSource?.()?.bytes;
+ addEventListener('model-source-ready',()=>{if(H.restoring)return;const source=window.ModelEditorHost?.availableSource?.()?.bytes;if(source!==lastSource){lastSource=source;H.reset();}});
+}

@@ -12,6 +12,8 @@ COMMANDS = [
     ['node', 'tests/test_deform_parity.js'],
     ['node', 'tests/test_parts_lab.js'],
     ['node', 'tests/test_model_source.js'],
+    ['node', 'tests/test_model_history.js'],
+    ['node', 'tests/test_model_workbench.js'],
     ['node', 'tests/test_sample_pack.js'],
     [sys.executable, 'tests/test_build_site.py'],
     [sys.executable, 'tests/test_guards.py'],

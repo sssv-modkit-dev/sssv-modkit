@@ -84,6 +84,7 @@ def demo_models_js(demos):
 def model_editor(pack):
     base = HERE / 'viewer'
     js = ((base / 'js/demo-models.js').read_text(encoding='utf-8') + demo_models_js(pack['demos']) + '\n'
+          + (base / 'js/history.js').read_text(encoding='utf-8') + '\n'
           + (base / 'js/app.js').read_text(encoding='utf-8').replace('/*TABLE*/null', '{}') + '\n'
           + (base / 'js/parts-lab.js').read_text(encoding='utf-8'))
     for script in pack['scripts']['model-editor']:
