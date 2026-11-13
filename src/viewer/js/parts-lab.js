@@ -32,7 +32,7 @@ function validateDemoPreset(value){
 //#LAB-PURE-END
 const modelEdits=editMemory(),headshots=new Map();
 let modelCategory='';
-function modelGroup(n){if(!BUNDLED_ANIMALS.has(n)&&Object.hasOwn(PARTS_DEMOS,n))return 'Custom';if(/bird|parrot|penguin|seagull|vulture/.test(n))return 'Birds';if(/fish|cod|pirana|frog|tortoise|turtle/.test(n))return 'Water & reptiles';return 'Mammals'}
+function modelGroup(n){if(!BUNDLED_ANIMALS.has(n)&&Object.hasOwn(PARTS_DEMOS,n))return 'Custom';return /^prop[_-]/.test(n)?'Props':'Animals'}
 function headshot(n){
   if(headshots.has(n))return headshots.get(n);
   const P=PARTS_DEMOS[n].p.find(p=>/head/i.test(p.s))||PARTS_DEMOS[n].p[0],canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;
@@ -45,7 +45,7 @@ function buildDemoPicker(){
   const models=Object.keys(TABLE),groups=[...new Set(models.map(modelGroup))];
   const button=(text,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=text;b.onclick=fn;host.appendChild(b);return b};
   if(!groups.includes(modelCategory))modelCategory='';
-  if(!modelCategory){for(const group of groups){const b=button(group,()=>{modelCategory=group;buildDemoPicker()});const icon=document.createElement('span');icon.className='ph';icon.setAttribute('aria-hidden','true');icon.textContent=({'Custom':'◇','Mammals':'🐾','Birds':'🐦','Water & reptiles':'🐢'})[group]||'◇';b.prepend(icon);}return}
+  if(!modelCategory){for(const group of groups){const b=button(group,()=>{modelCategory=group;buildDemoPicker()});const icon=document.createElement('span');icon.className='ph';icon.setAttribute('aria-hidden','true');icon.textContent=({'Custom':'◇','Animals':'🐾','Props':'📦'})[group]||'◇';b.prepend(icon);}return}
   button('← Categories',()=>{modelCategory='';buildDemoPicker()});
   for(const n of models.filter(n=>modelGroup(n)===modelCategory)){const b=button(n.replaceAll('_',' '),()=>{$('an').value=n;pick(n);if(demoMode)markDemoPicker()});b.dataset.model=n;b.setAttribute('aria-pressed',String(n===name));if(modelCategory==='Custom'){const img=new Image();img.alt='';img.src=headshot(n);b.prepend(img)}}
 }
