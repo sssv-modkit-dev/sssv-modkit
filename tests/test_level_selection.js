@@ -89,3 +89,24 @@ selection.removeAppended(records,originals,['props:2','props:4','animals:1']);
 assert.deepEqual(records,{props:['original0','original1','addedB'],animals:['animal0']});
 assert.equal(selection.pickAt(items,[9999,9999]),null);
 assert(selection.hitsRect(items[0],[100,100],[0,0]));
+
+// Actual terrain ray placement: nearest surface wins, slope height follows the mesh, sky misses.
+const view=viewMatrix([2000,3000,0],.6,.8,5000,1280,800);
+const terrain=[1500,2500,0,2500,2500,0,2500,3500,200,1500,2500,0,2500,3500,200,1500,3500,200];
+const target=[2100,3100,120],pixel=selection.project(target,view,1280,800);
+const hit=selection.terrainPoint(view,1280,800,pixel,terrain);
+assert(hit&&Math.hypot(...hit.map((v,i)=>v-target[i]))<.1);
+assert.equal(selection.terrainPoint(view,1280,800,[-10000,-10000],terrain),null);
+const under=[...terrain.map((v,i)=>i%3===2?v-100:v),...terrain];
+assert(Math.abs(selection.terrainPoint(view,1280,800,pixel,under)[2]-120)<.1);
+// Free-look pivots the direction around a fixed eye, whereas orbit retains the target.
+const free={t:[2000,3000,100],d:5000,yaw:.6,pitch:.8},eye=selection.cameraEye(free);
+selection.cameraLook(free,80,-30,true);
+assert(Math.hypot(...selection.cameraEye(free).map((v,i)=>v-eye[i]))<1e-8);
+const orbit={t:[2000,3000,100],d:5000,yaw:.6,pitch:.8},targetBefore=orbit.t.slice();
+selection.cameraLook(orbit,80,-30,false);assert.deepEqual(orbit.t,targetBefore);
+const moving={t:[0,0,0],d:1000,yaw:0,pitch:0};selection.cameraTravel(moving,1,1,1,100);assert.deepEqual(moving.t,[-100,100,100]);
+console.log('Terrain slope/nearest-hit placement and eye-preserving freecam checks passed.');
+
+const look={t:[0,0,0],d:1000,yaw:0,pitch:0};selection.cameraLook(look,100,100,true);
+assert(look.yaw<0&&look.pitch>0,'mouse right/down looks right/down in freecam');

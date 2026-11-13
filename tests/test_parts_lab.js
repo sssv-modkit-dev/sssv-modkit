@@ -29,3 +29,6 @@ assert.equal(context.api.examplePart(candidates,null,()=>.8).sym,'paw');
 assert.equal(context.api.examplePart(candidates,'tail',()=>0).sym,'tail');
 assert.equal(context.api.examplePart([],null,()=>0),undefined);
 console.log('Per-model edits isolated and restored; examples select a random part unless selected.');
+
+const snapshots=memory.entries();assert.equal(snapshots.length,2);snapshots[0][1].mesh.head.s[1]=100;assert.equal(memory.get('a').mesh.head.s[1],2);
+console.log('Project snapshots enumerate model edits without sharing mutable references.');

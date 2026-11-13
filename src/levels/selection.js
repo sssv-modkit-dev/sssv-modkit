@@ -40,11 +40,26 @@ const LevelSelection = (() => {
   function groundPoint(m,width,height,point,z){const inv=invert(m);if(!inv)return null;const nx=point[0]/width*2-1,ny=1-point[1]/height*2;
     const un=nz=>{const w=inv[3]*nx+inv[7]*ny+inv[11]*nz+inv[15];if(!w)return null;return [0,1,2].map(i=>(inv[i]*nx+inv[4+i]*ny+inv[8+i]*nz+inv[12+i])/w);};
     const a=un(-1),b=un(1);if(!a||!b)return null;const dz=b[2]-a[2];if(Math.abs(dz)<1e-9)return null;const t=(z-a[2])/dz;if(t<0||t>1)return null;return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];}
+  /* Nearest visible terrain triangle under the cursor, including slopes and stacked surfaces. */
+  function terrainPoint(m,width,height,point,positions){
+    const inv=invert(m);if(!inv||width<=0||height<=0)return null;
+    const nx=point[0]/width*2-1,ny=1-point[1]/height*2;
+    const un=z=>{const w=inv[3]*nx+inv[7]*ny+inv[11]*z+inv[15];return [0,1,2].map(i=>(inv[i]*nx+inv[4+i]*ny+inv[8+i]*z+inv[12+i])/w);};
+    const a=un(-1),b=un(1),d=b.map((v,i)=>v-a[i]),cross=(u,v)=>[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],dot=(u,v)=>u.reduce((s,x,i)=>s+x*v[i],0);
+    let nearest=Infinity,hit=null;
+    for(let i=0;i+8<positions.length;i+=9){const p=Array.from(positions.slice(i,i+3)),u=[0,1,2].map(k=>positions[i+3+k]-p[k]),v=[0,1,2].map(k=>positions[i+6+k]-p[k]),h=cross(d,v),det=dot(u,h);if(Math.abs(det)<1e-9)continue;
+      const s=a.map((x,k)=>x-p[k]),beta=dot(s,h)/det;if(beta<0||beta>1)continue;const q=cross(s,u),gamma=dot(d,q)/det;if(gamma<0||beta+gamma>1)continue;const t=dot(v,q)/det;
+      if(t>=0&&t<=1&&t<nearest){nearest=t;hit=a.map((x,k)=>x+d[k]*t);}}
+    return hit;
+  }
+  function cameraEye(camera){const cp=Math.cos(camera.pitch);return [camera.t[0]+camera.d*cp*Math.cos(camera.yaw),camera.t[1]+camera.d*cp*Math.sin(camera.yaw),camera.t[2]+camera.d*Math.sin(camera.pitch)];}
+  function cameraLook(camera,dx,dy,free=true){const eye=cameraEye(camera);camera.yaw+=(free?-dx:dx)*.005;camera.pitch=Math.max(-1.5,Math.min(1.5,camera.pitch+(free?dy:-dy)*.005));if(free){const next=cameraEye(camera);camera.t=camera.t.map((v,i)=>v+eye[i]-next[i]);}}
+  function cameraTravel(camera,forward,right,up,distance){const cp=Math.cos(camera.pitch),cy=Math.cos(camera.yaw),sy=Math.sin(camera.yaw),direction=[-cp*cy*forward-sy*right,-cp*sy*forward+cy*right,-Math.sin(camera.pitch)*forward+up];camera.t=camera.t.map((v,i)=>v+direction[i]*distance);}
   /* Object drag: the X/Y offset that keeps the grabbed ground point under the cursor (null: caller falls back to screen scaling). */
   function dragDelta(m,width,height,start,now,z){const a=groundPoint(m,width,height,start,z),b=groundPoint(m,width,height,now,z);return a&&b?[b[0]-a[0],b[1]-a[1]]:null;}
   /* Fallback when the ray misses the plane: screen right is (-sin yaw, cos yaw), screen down is towards the camera (cos yaw, sin yaw). */
   function screenDelta(dx,dy,yaw,scale){const c=Math.cos(yaw),s=Math.sin(yaw);return [(-dx*s+dy*c)*scale,(dx*c+dy*s)*scale];}
   function removeAppended(records,stock,keys){for(const key of keys){const [kind,index]=key.split(':');if(!stock[kind]||!Number.isInteger(+index)||+index<stock[kind].length||+index>=records[kind].length)throw Error('Only appended spawns can be deleted');}for(const kind of ['props','animals']){const indices=keys.filter(k=>k.startsWith(kind+':')).map(k=>+k.split(':')[1]).sort((a,b)=>b-a);for(const index of new Set(indices))records[kind].splice(index,1);}}
-  return {define,removeAppended,animalNames,propNames,categories,name,category,project,inRectangle,translate,corners,screenRect,pickAt,hitsRect,nudge,invert,groundPoint,dragDelta,screenDelta};
+  return {define,removeAppended,animalNames,propNames,categories,name,category,project,inRectangle,translate,corners,screenRect,pickAt,hitsRect,nudge,invert,groundPoint,terrainPoint,cameraEye,cameraLook,cameraTravel,dragDelta,screenDelta};
 })();
 if(typeof module!=='undefined')module.exports=LevelSelection;

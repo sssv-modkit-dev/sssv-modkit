@@ -1,3 +1,4 @@
+document.addEventListener('click',e=>{const button=e.target.closest('#level-network-ok');if(button)button.closest('details').hidden=true;});
 function startLevelEditor(data){
 const {ANIM,MODEL,TBL,ATLAS,LEVELS,EDITOR_STOCK,EDITOR_SHA1}=data;
 
@@ -104,7 +105,7 @@ function buildMeshes(){
  L.minfo=` | ${ni} mesh instances, ${nt} tris`;
 }
 function matrix(){
- const a=cv.width/cv.height,f=1/Math.tan(.4),n=cam.d/100,fa=cam.d*20;
+ const a=cv.width/cv.height,f=1/Math.tan(.4),n=cameraMode==='free'?4:cam.d/100,fa=Math.max(20000,cam.d*20);
  const pr=new Float32Array([f/a,0,0,0,0,f,0,0,0,0,(fa+n)/(n-fa),-1,0,0,2*fa*n/(n-fa),0]);
  const cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);
  const e=[cam.t[0]+cam.d*cp*cy,cam.t[1]+cam.d*cp*sy,cam.t[2]+cam.d*sp];EYE=e;ASP=a;
@@ -131,7 +132,7 @@ function frame(){
  if($('sea').checked){gl.useProgram(SW);gl.uniformMatrix4fv(swM,false,M);gl.uniform1f(swT,performance.now()/1000);gl.bindBuffer(gl.ARRAY_BUFFER,L.sea.p);gl.enableVertexAttribArray(swP);gl.vertexAttribPointer(swP,3,gl.FLOAT,false,0,0);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.drawArrays(gl.TRIANGLES,0,6);gl.disable(gl.BLEND);gl.useProgram(P);}
  if($('gr').checked)draw(grid,gl.POINTS,2);
  if($('sp').checked){if($('bx').checked){const pv=$('pm').value,mm=pv!='0';if(mm)draw(msh,gl.TRIANGLES);if(pv!='2'){draw(mm?bxo:bxs,gl.TRIANGLES);draw(mm?bxlo:bxl,gl.LINES);}}else draw(spw,gl.POINTS,9);}
- edOverlay();flyStep();requestAnimationFrame(frame);
+ edOverlay();edDrawGhost();flyStep();requestAnimationFrame(frame);
 }
 function pick(mx,my){let best=-1,bd=100;if(!$('sp').checked)return -1;L.spw.forEach((s,i)=>{const x=M[0]*s[0]+M[4]*s[1]+M[8]*s[2]+M[12],y=M[1]*s[0]+M[5]*s[1]+M[9]*s[2]+M[13],w=M[3]*s[0]+M[7]*s[1]+M[11]*s[2]+M[15];if(w<=0)return;
  const px=(x/w*.5+.5)*cv.clientWidth,py=(1-(y/w*.5+.5))*cv.clientHeight,d=(px-mx)**2+(py-my)**2;if(d<bd){bd=d;best=i;}});return best;}
@@ -148,7 +149,7 @@ window.onmouseup=()=>{drag=null;fly=false;};cv.oncontextmenu=e=>e.preventDefault
 window.onmousemove=e=>{
  if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;
   if(drag.pan){const s=cam.d/cv.clientHeight*1.2,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);cam.t[0]+=(dx*sy-dy*cy*Math.sin(cam.pitch))*s;cam.t[1]+=(-dx*cy-dy*sy*Math.sin(cam.pitch))*s;}
-  else if(fly){const e=EYE.slice();cam.yaw+=dx*.005;cam.pitch=Math.max(-1.5,Math.min(1.5,cam.pitch-dy*.005));const cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);cam.t=[e[0]-cam.d*cp*cy,e[1]-cam.d*cp*sy,e[2]-cam.d*sp];}
+  else if(fly)LevelSelection.cameraLook(cam,dx,dy,cameraMode==='free');
   else{cam.yaw+=dx*.01;cam.pitch=Math.max(-1.5,Math.min(1.5,cam.pitch+dy*.01));}return;}
  if($('an').checked&&L.anl){let bi=-1,bd=150;L.anl.forEach((q,k)=>{const z=q[2]+50,x=M[0]*q[0]+M[4]*q[1]+M[8]*z+M[12],y=M[1]*q[0]+M[5]*q[1]+M[9]*z+M[13],w=M[3]*q[0]+M[7]*q[1]+M[11]*z+M[15];if(w<=0)return;
   const d=((x/w*.5+.5)*cv.clientWidth-e.clientX)**2+((1-(y/w*.5+.5))*cv.clientHeight-e.clientY)**2;if(d<bd){bd=d;bi=k;}});
@@ -164,24 +165,23 @@ cv.addEventListener('touchstart',e=>{e.preventDefault();tch=tinfo(e.touches);tch
 cv.addEventListener('touchmove',e=>{e.preventDefault();if(!tch)return;const n=tinfo(e.touches);if(e.touches.length!=tch.n){tch=n;tch.n=e.touches.length;return;}
  const dx=n.x-tch.x,dy=n.y-tch.y;
  if(tch.n==1&&typeof edPanMode!=='undefined'&&edPanMode){const s=cam.d/cv.clientHeight*1.2,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);cam.t[0]+=(dx*sy-dy*cy*Math.sin(cam.pitch))*s;cam.t[1]+=(-dx*cy-dy*sy*Math.sin(cam.pitch))*s;}
- else if(tch.n==1){cam.yaw+=dx*.01;cam.pitch=Math.max(-1.5,Math.min(1.5,cam.pitch+dy*.01));}
- else{if(tch.d&&n.d)cam.d*=tch.d/n.d;if(typeof edPanMode!=='undefined'&&!edPanMode){tch=Object.assign(n,{n:e.touches.length});return;}const s=cam.d/cv.clientHeight*1.2,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);cam.t[0]+=(dx*sy-dy*cy*Math.sin(cam.pitch))*s;cam.t[1]+=(-dx*cy-dy*sy*Math.sin(cam.pitch))*s;}
+ else if(tch.n==1)LevelSelection.cameraLook(cam,dx,dy,cameraMode==='free');
+ else{if(tch.d&&n.d){if(cameraMode==='free')LevelSelection.cameraTravel(cam,(n.d-tch.d)*.006,0,0,Math.max(200,cam.d*.35));else cam.d=Math.max(10,cam.d*tch.d/n.d);}if(typeof edPanMode!=='undefined'&&!edPanMode){tch=Object.assign(n,{n:e.touches.length});return;}const s=cam.d/cv.clientHeight*1.2,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);cam.t[0]+=(dx*sy-dy*cy*Math.sin(cam.pitch))*s;cam.t[1]+=(-dx*cy-dy*sy*Math.sin(cam.pitch))*s;}
  n.n=tch.n;tch=n;},{passive:false});
 cv.addEventListener('touchend',e=>{tch=e.touches.length?Object.assign(tinfo(e.touches),{n:e.touches.length}):null;});
-let fly=false;const keys={};
-/* WASD/QE always move the camera; the look button only switches dragging between orbit and fly-style mouse look. */
+let fly=false,cameraMode='free';const keys={};
+$('camera-mode').onchange=()=>{cameraMode=$('camera-mode').value;setFly(false);};
+/* Freecam keeps the eye fixed while looking; keyboard travel works without holding a mouse button. */
 function setFly(on){fly=on;}
 $('mn').onclick=()=>{const u=$('ui');u.classList.toggle('min');$('mn').innerHTML=u.classList.contains('min')?'+':'&ndash;';};
-window.addEventListener('keydown',e=>{const t=e.target.tagName;if(t=='INPUT'||t=='SELECT'||t=='TEXTAREA'||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();keys[k]=true;if(k.length==1&&'wasdqe'.includes(k))e.preventDefault();});
+window.addEventListener('keydown',e=>{const t=e.target.tagName;if(t=='INPUT'||t=='SELECT'||t=='TEXTAREA'||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();keys[k]=true;if(k.length==1&&'wasdqe '.includes(k))e.preventDefault();});
 window.addEventListener('blur',()=>{for(const k of Object.keys(keys))delete keys[k];drag=null;fly=false;});
 window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 let lastT=performance.now();
-function flyStep(){const now=performance.now(),dt=Math.min(.05,(now-lastT)/1000);lastT=now;if(!fly)return;
- const sp=(keys.shift?3.4:1)*Math.max(700,cam.d*.35)*dt,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cp=Math.cos(cam.pitch),spp=Math.sin(cam.pitch);
- const fw=[-cp*cy,-cp*sy,-spp],rt=[-sy,cy,0],m=[0,0,0],add=(v,k)=>{for(let j=0;j<3;j++)m[j]+=v[j]*k;};
- if(keys.w)add(fw,1);if(keys.s)add(fw,-1);if(keys.d)add(rt,1);if(keys.a)add(rt,-1);if(keys.e)m[2]+=1;if(keys.q)m[2]-=1;
- for(let j=0;j<3;j++)cam.t[j]+=m[j]*sp;}
-cv.onwheel=e=>{e.preventDefault();cam.d*=Math.exp(e.deltaY*.001);};
+function flyStep(){const now=performance.now(),dt=Math.min(.05,(now-lastT)/1000);lastT=now;if(!fly&&cameraMode!=='free')return;
+ const sp=(keys.shift?3.4:1)*Math.max(700,cam.d*.35)*dt;
+ LevelSelection.cameraTravel(cam,(keys.w?1:0)-(keys.s?1:0),(keys.d?1:0)-(keys.a?1:0),(keys.e||keys[' ']?1:0)-(keys.q?1:0),sp);}
+cv.onwheel=e=>{e.preventDefault();if(cameraMode==='free')LevelSelection.cameraTravel(cam,-e.deltaY*.001,0,0,Math.max(200,cam.d*.35));else cam.d=Math.max(10,Math.min(100000,cam.d*Math.exp(e.deltaY*.001)));};
 LEVELS.forEach((l,i)=>{const o=document.createElement('option');o.value=i;o.textContent='Level '+l.id;$('lv').appendChild(o);});
 $('gm').onchange=recolor;$('ms').onchange=()=>{buildMeshes();};
 $('lv').onchange=()=>load(+$('lv').value);
@@ -191,13 +191,13 @@ $('lv').onchange=()=>load(+$('lv').value);
   const number=(v,min,max)=>typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max;
   function validate(v,levelIds){
     if(!v||v.format!=='sssv-level-view-v1'||!levelIds.includes(v.level))throw Error('Choose a compatible SSSV level view file.');
-    const c=v.camera,s=v.settings;
+    const c=v.camera,s=v.settings;if(c?.mode!==undefined&&!['free','orbit'].includes(c.mode))throw Error('Invalid camera mode.');
     if(!c||!Array.isArray(c.target)||c.target.length!==3||!c.target.every(n=>number(n,-10000000,10000000))||!number(c.yaw,-1000000,1000000)||!number(c.pitch,-1.5,1.5)||!number(c.distance,0.01,10000000)||typeof v.fly!=='boolean')throw Error('Invalid camera settings.');
     if(!s||!['0','1','2','3'].includes(s.gm)||!['0','1','2'].includes(s.pm)||!number(s.ms,0.1,100)||!checks.every(k=>typeof s[k]==='boolean')||typeof s.panelCollapsed!=='boolean')throw Error('Invalid display settings.');
     // Reconstruct a whitelist: scene meshes, textures and arbitrary fields never enter a saved preset.
     const settings={gm:s.gm,pm:s.pm,ms:s.ms,panelCollapsed:s.panelCollapsed};
     for(const k of checks)settings[k]=s[k];
-    return {format:'sssv-level-view-v1',level:v.level,camera:{target:c.target.slice(),yaw:c.yaw,pitch:c.pitch,distance:c.distance},fly:v.fly,settings};
+    return {format:'sssv-level-view-v1',level:v.level,camera:{target:c.target.slice(),yaw:c.yaw,pitch:c.pitch,distance:c.distance,mode:c.mode||'free'},fly:v.fly,settings};
   }
   const api={validate,checks};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.ViewPreset=api;
@@ -206,14 +206,14 @@ $('lv').onchange=()=>load(+$('lv').value);
 function currentView(){
  const settings={gm:$('gm').value,pm:$('pm').value,ms:Number($('ms').value),panelCollapsed:$('ui').classList.contains('min')};
  for(const k of ViewPreset.checks)settings[k]=k==='ml'?false:$(k).checked;
- return ViewPreset.validate({format:'sssv-level-view-v1',level:L.id,camera:{target:cam.t.slice(),yaw:cam.yaw,pitch:cam.pitch,distance:cam.d},fly,settings},LEVELS.map(l=>l.id));
+ return ViewPreset.validate({format:'sssv-level-view-v1',level:L.id,camera:{target:cam.t.slice(),yaw:cam.yaw,pitch:cam.pitch,distance:cam.d,mode:cameraMode},fly,settings},LEVELS.map(l=>l.id));
 }
 function openView(value){
  const v=ViewPreset.validate(value,LEVELS.map(l=>l.id)); // Validate everything before changing the view.
  for(const k of ViewPreset.checks)if(k!=='ml')$(k).checked=v.settings[k];
  $('gm').value=v.settings.gm;$('pm').value=v.settings.pm;$('ms').value=v.settings.ms;
  const i=LEVELS.findIndex(l=>l.id===v.level);load(i);$('lv').value=i;
- setFly(false);cam={t:v.camera.target.slice(),yaw:v.camera.yaw,pitch:v.camera.pitch,d:v.camera.distance};
+ setFly(false);cameraMode=v.camera.mode;$('camera-mode').value=cameraMode;cam={t:v.camera.target.slice(),yaw:v.camera.yaw,pitch:v.camera.pitch,d:v.camera.distance};
  for(const k of Object.keys(keys))delete keys[k];drag=null;tch=null;
  $('ui').classList.toggle('min',v.settings.panelCollapsed);$('mn').innerHTML=v.settings.panelCollapsed?'+':'&ndash;';
  $('ui').style.display='';$('view-status').textContent='View opened. This file contains display settings, not level edits.';
