@@ -1,5 +1,5 @@
 //#LAB-PURE-START
-function editMemory(){const entries=new Map();return {put:(key,value)=>entries.set(key,JSON.parse(JSON.stringify(value))),get:key=>JSON.parse(JSON.stringify(entries.get(key)||{}))}}
+function editMemory(){const entries=new Map();return {put:(key,value)=>entries.set(key,JSON.parse(JSON.stringify(value))),get:key=>JSON.parse(JSON.stringify(entries.get(key)||{})),entries:()=>JSON.parse(JSON.stringify([...entries])),forget:key=>entries.delete(key)}}
 function examplePart(parts,selected,random=Math.random){return parts.find(p=>p.sym===selected)||parts[Math.min(parts.length-1,Math.floor(random()*parts.length))]}
 
 function validateDemoPreset(value){
@@ -51,7 +51,7 @@ function buildDemoPicker(){
 }
 function markDemoPicker(){const real=BUNDLED_ANIMALS.has(name),posed=real&&!!BUNDLED_POSES[name];$('variant-label').textContent=posed?'Game model · drag to orbit':real?'Parts view · drag to orbit':'Original CC0 demo · drag to orbit';$('demo-assemble').hidden=real&&!posed;$('demo-status').textContent=posed?'Real game parts, assembled in a pose captured from the running game. Explode parts shows each part on its own.':real?'Parts view: no assembly pose is bundled for this animal, so its parts are laid out flat.':'Original CC0 demo geometry. No game assets included.';for(const b of $('demo-picker').children)b.setAttribute('aria-pressed',String(b.dataset.model===name))}
 function startDemos(model=DEFAULT_DEMO){
-  demoMode=true;TABLE=PARTS_DEMOS;dv=new DataView(new ArrayBuffer(0));pose=null;
+  rememberCurrentEdits();cur=null;demoMode=true;TABLE=PARTS_DEMOS;dv=new DataView(new ArrayBuffer(0));pose=null;
   document.body.classList.add('demo-mode');
   const A=$('an');A.replaceChildren(...Object.keys(TABLE).map(n=>new Option(n,n)));A.disabled=false;A.onchange=()=>pick(A.value);
   buildGallery();$('gallery-toggle').disabled=false;$('gallery-toggle').onclick=()=>setGallery(!gallery);
@@ -61,31 +61,43 @@ function demoPreset(){return validateDemoPreset({format:'sssv-parts-lab-demo-v1'
 function applyDemoPreset(raw){const p=validateDemoPreset(raw);startDemos(p.model);mesh=p.mesh;map=p.palette;deform=p.deform;deformOn=Object.keys(deform).length>0;sheet=p.exploded;assembled=!sheet&&poseOk();all=!sheet&&!assembled;SH=sheetLayout(visibleParts());ui();rebuild(true);info()}
 function downloadJSON(value,filename){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 const DEFAULT_DEMO=Object.keys(PARTS_DEMOS).find(n=>!BUNDLED_ANIMALS.has(n));
-$('demo-start').onclick=()=>{cur=null;startDemos()};
+$('demo-start').onclick=()=>startDemos();
 $('demo-assemble').onclick=()=>{assembled=poseOk();all=!assembled;sheet=false;ui();rebuild(true);info()};
 $('demo-explode').onclick=()=>{assembled=false;all=false;sheet=true;roll=0;pit=0;yaw=HOME_VIEW[0];SH={};for(const [i,P] of visibleParts().entries()){const c=[0,1,2].map(k=>(P.bb[k]+P.bb[k+3])/2),length=Math.hypot(...c),size=Math.max(40,...P.bb.slice(3).map((v,k)=>v-P.bb[k]));SH[P.sym]=length?c.map(v=>v/length*size*1.4):[Math.cos(i*2.4)*size,Math.sin(i*2.4)*size,0]}ui();rebuild(true);info()};
-$('demo-stretch').onclick=()=>{const P=examplePart(visibleParts(),selectedSym);if(!P)return;selectedSym=P.sym;mesh[P.sym]={s:[1,1.8,1],m:[0,0,0],o:false};ui();rebuild(true);info()};
-for(const type of ['bend','twist'])$('demo-'+type).onclick=()=>{
-  const P=examplePart(visibleParts(),selectedSym);if(!P)return;selectedSym=P.sym;
-  deform[P.sym]=[{ops:[{type,axis:'y',degrees:65,...(type==='bend'?{toward:'x'}:{})}]}];deformOn=true;deformCache.clear();ui();rebuild(true);info();
-  $('demo-status').textContent=type+' applied to '+P.sym+'. Reset clears edits.';
-};
-$('demo-colour').onclick=()=>{for(const c of new Set(parsed.flatMap(P=>[...P.cols.map(c=>c.rgba),...(noOwnColour(P)?['808080FF']:[])])))map[c]=[0,1,2].map(()=>Math.floor(60+Math.random()*180).toString(16).padStart(2,'0')).join('').toUpperCase()+'FF';ui();rebuild(false)};
+$('demo-colour').onclick=()=>{for(const c of new Set(parsed.flatMap(editableColours)))map[c]=[0,1,2].map(()=>Math.floor(60+Math.random()*180).toString(16).padStart(2,'0')).join('').toUpperCase()+'FF';ui();rebuild(false)};
 $('demo-share').onclick=async()=>{
-  try{const hash='#demo='+encodeURIComponent(JSON.stringify(demoPreset()));if(hash.length>16000)throw new Error('Preset is too large; export it instead.');
-    history.replaceState(null,'',hash);await navigator.clipboard.writeText(location.href);$('demo-status').textContent='Share link copied. It contains only original-demo settings.';
-  }catch(e){$('demo-status').textContent='Copy the address bar to share, or export the preset. '+e.message}
+ const status=demoMode?$('demo-status'):$('msg');
+ try{const hash='#project='+encodeURIComponent(JSON.stringify(demoProject()));if(hash.length>16000)throw new Error('Project is too large for a share link; save the edits file instead.');
+   history.replaceState(null,'',hash);await navigator.clipboard.writeText(location.href);status.textContent='Share link copied. It contains edits only; recipients supply their own source files.';
+ }catch(e){status.textContent='Copy the address bar to share, or save your edits. '+e.message}
 };
 const exportGameConfig=$('exp').onclick,importGameConfig=$('impf').onchange;
-$('exp').onclick=()=>demoMode?downloadJSON(demoPreset(),name+'.parts-lab.json'):exportGameConfig();
+function demoProject(){rememberCurrentEdits();const demos=modelEdits.entries().filter(([key,state])=>key.startsWith('demo:')&&configChanged(stateConfig(key.slice(5),state))).map(([key,state])=>validateDemoPreset({format:'sssv-parts-lab-demo-v1',model:key.slice(5),mesh:state.mesh||{},palette:state.map||{},deform:state.deformOn?state.deform:{},exploded:state.exploded??false}));return {format:'model-editor-project-v1',demos,animals:allGameConfigs().animals.filter(e=>e.animal),...(window.ModelTextureTools?.projectExtras?.()||{})}}
+$('exp').onclick=()=>downloadJSON(demoProject(),'model-edits.json');
+function applyModelProject(value){
+      if(!Array.isArray(value.demos)||!Array.isArray(value.animals))throw new Error('Invalid model project.');
+      const demos=value.demos.map(validateDemoPreset);window.ModelTextureTools?.validateProjectExtras?.(value);if(value.animals.length&&demoMode)throw new Error('Load your source data before opening a project with animal edits.');
+      if(value.animals.length)importGameConfigs({animals:value.animals});
+      rememberCurrentEdits();for(const p of demos)modelEdits.put('demo:'+p.model,{mesh:p.mesh,map:p.palette,deform:p.deform,deformOn:Object.keys(p.deform).length>0,exploded:p.exploded});
+      if(demos.length&&!value.animals.length&&!value.texture_patches?.length){cur=null;startDemos(demos[0].model)}window.ModelTextureTools?.loadProjectExtras?.(value);
+
+}
 $('impf').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{if(f.size>1000000)throw new Error('Config is too large.');const value=JSON.parse(await f.text());
-    if(value.format==='sssv-parts-lab-demo-v1')applyDemoPreset(value);
+    if(value.format==='model-editor-project-v1')applyModelProject(value);
+    else if(value.format==='sssv-parts-lab-demo-v1')applyDemoPreset(value);
     else if(demoMode)throw new Error('This config needs its source data loaded first.');
     else await importGameConfig(e);
   }catch(err){$('demo-status').textContent=err.message;alert(err.message)}finally{e.target.value=''}
 };
 if(!Object.keys(EMBEDDED_TABLE).length)startDemos();
-function readSharedDemo(){if(!location.hash.startsWith('#demo='))return;try{if(location.hash.length>16000)throw new Error('Share link is too large.');applyDemoPreset(JSON.parse(decodeURIComponent(location.hash.slice(6))))}catch(err){$('demo-status').textContent='Could not open shared demo: '+err.message}}
+let pendingSharedProject=null;
+function readSharedDemo(){const legacy=location.hash.startsWith('#demo='),project=location.hash.startsWith('#project=');if(!legacy&&!project)return;
+ try{if(location.hash.length>16000)throw new Error('Share link is too large.');const value=JSON.parse(decodeURIComponent(location.hash.slice(legacy?6:9)));
+  if(legacy)applyDemoPreset(value);else if((value.animals?.length||value.texture_patches?.length)&&demoMode){pendingSharedProject=value;$('demo-status').textContent='Shared edits are ready. Open your matching source files to apply them.';}
+  else {applyModelProject(value);pendingSharedProject=null;}
+ }catch(err){(demoMode?$('demo-status'):$('msg')).textContent='Could not open shared edits: '+err.message}
+}
 readSharedDemo();addEventListener('hashchange',readSharedDemo);
+addEventListener('model-source-ready',()=>{if(!pendingSharedProject)return;try{applyModelProject(pendingSharedProject);pendingSharedProject=null;$('msg').textContent='Shared edits opened with your local source.'}catch(err){$('msg').textContent='Could not open shared edits: '+err.message}});

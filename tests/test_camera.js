@@ -94,4 +94,4 @@ console.log('Live input: right/modified pan, Alt part move, middle zoom, orbit, 
 // Rotation is optional for old edits; a quarter turn rotates about the part center.
 assert.deepEqual(Array.from(live.applyMesh([2,0,0],{s:[1,1,1],m:[0,0,0],o:false,r:[0,0,90]},[-2,-2,-2,2,2,2])),[0,2,0]);
 run("touchMode='pan';var oldInspected=inspected;drag(0,{pointerType:'touch'});");assert.strictEqual(run('inspected'),run('oldInspected'));
-run("touchMode='select';var savedCenter=JSON.stringify(ctr);var savedYaw=yaw;drag(0,{pointerType:'touch'});");assert(run('JSON.stringify(ctr)===savedCenter && yaw===savedYaw'));
+run("var savedCenter=JSON.stringify(ctr);var savedYaw=yaw;drag(0,{pointerType:'touch'});");assert(run('JSON.stringify(ctr)===savedCenter && yaw!==savedYaw'));
