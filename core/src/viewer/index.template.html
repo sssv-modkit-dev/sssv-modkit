@@ -18,16 +18,17 @@
 <details class="help"><summary>About &amp; controls</summary><p>Original demos are authored from primitives under CC0. They are not extracted or randomized game models. Unofficial fan project, not affiliated with the game’s rights holders.</p><p>Left-drag: orbit. Right-drag or Shift/Ctrl + left-drag: pan. Wheel or middle-drag: zoom. Alt + drag: move a sheet part. Touch: one finger orbits; two fingers pan and pinch to zoom. Focus the viewport for Home: reset, 1/3/7: front/right/top, arrows: pan, +/−: zoom, WASD: travel, Space: up, Q/E: roll, Shift: faster.</p><p>Game mode: exploded sheets are browsing layouts, not assembled animals. Vertex colours approximate triangles without a colour word.</p><!--SOURCE_LINK--></details>
 </div>
 <div class="resize-handle" id="resize-left" role="separator" aria-label="Resize left sidebar" aria-orientation="vertical" tabindex="0"></div>
-<div id="view"><div id="part-inspector" hidden><div id="part-symbol"></div><label>Custom name <input id="part-name" placeholder="e.g. Head, left paw"></label><div class="inspector-actions"><small>Double-click to edit mesh</small><button id="part-name-ok">OK</button></div></div><div id="floating-labels"></div>
-<canvas id="cv"></canvas><div id="hover-part" aria-hidden="true"></div><button id="back-to-sheet" hidden>← BACK</button><div id="nav-hint">Drag orbit · Shift-drag pan · Wheel zoom · Home reset</div>
+<div id="view"><div id="part-inspector" hidden><div id="part-symbol"></div><label>Custom name <input id="part-name" placeholder="e.g. Head, left paw"></label><div class="inspector-actions"><small>Drag arrows to move; ring rotates Z</small><button id="part-name-ok">OK</button></div></div><div id="floating-labels"></div>
+<canvas id="cv"></canvas><svg id="part-gizmo" aria-label="Selected part transform gizmo"></svg><div id="hover-part" aria-hidden="true"></div><button id="back-to-sheet" hidden>← BACK</button><div id="nav-hint">Drag orbit · Shift-drag pan · Wheel zoom · Home reset</div>
 <div id="animal-label" aria-live="polite">Choose a model to begin<span id="variant-label"></span></div>
 <details id="view-settings" class="panel"><summary>Viewport &amp; tools</summary>
 <label class="setting-row"><span>Floating labels</span><input id="labels-toggle" type="checkbox"></label>
 <label class="setting-row"><span>Reference grid</span><input id="grid-toggle" type="checkbox"></label>
+<label class="setting-row"><span>Ground patch</span><input id="ground-toggle" type="checkbox" checked></label>
 <label class="setting-row"><span>Background</span><input id="background-color" type="color" value="#282a36"></label>
 <label class="setting-row" for="move-button"><span>Move sheet parts</span><select id="move-button"><option value="alt">Alt + drag</option><option value="right">Right-drag</option><option value="left">Left-drag</option></select></label>
-<p class="mut">Alt + drag a part to reposition it on the camera-facing plane. Choosing left/right-drag overrides that camera gesture on parts. Double-click to edit its mesh.</p></details><div id="camera-tools" role="toolbar" aria-label="Camera controls">
-<button id="camera-reset" title="Reset view (Home)">Reset view</button>
+<p class="mut">Alt + drag a part to reposition it on the camera-facing plane. Choosing left/right-drag overrides that camera gesture on parts. Double-click a part to name it; Shift + double-click isolates it.</p></details><div id="camera-tools" role="toolbar" aria-label="Camera controls">
+<button id="touch-select" aria-pressed="true">Select</button><button id="touch-pan" aria-pressed="false">Pan</button><button id="touch-orbit" aria-pressed="false">Orbit</button><button id="camera-reset" title="Reset view (Home)">Reset view</button>
 <button id="camera-front" title="Front, looking along −Z (1)">Front</button><button id="camera-right" title="Right, looking along −X (3)">Right</button><button id="camera-top" title="Top, looking along −Y (7)">Top</button>
 <button id="camera-in" aria-label="Zoom in" title="Zoom in (+)">+</button><button id="camera-out" aria-label="Zoom out" title="Zoom out (−)">−</button>
 <button id="camera-roll-left" aria-label="Roll left 15 degrees" title="Roll left 15°">↶</button><button id="camera-roll-right" aria-label="Roll right 15 degrees" title="Roll right 15°">↷</button>
