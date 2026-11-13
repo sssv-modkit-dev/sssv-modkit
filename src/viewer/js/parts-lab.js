@@ -9,7 +9,7 @@ function validateDemoPreset(value){
   const meshOut={},palette={},deformations={};
   for(const [s,e] of Object.entries(value.mesh||{})){
     if(!symbols.has(s)||!e||!vector(e.s,.1,10)||!vector(e.m,-500,500)||typeof e.o!=='boolean')throw new Error('Invalid mesh settings.');
-    meshOut[s]={s:e.s,m:e.m,o:e.o};
+    if(e.r&&!vector(e.r,-180,180))throw new Error('Invalid rotation.');meshOut[s]={s:e.s,m:e.m,o:e.o,...(e.r?{r:e.r}:{})};
   }
   const colours=new Set(['808080FF',...PARTS_DEMOS[value.model].p.flatMap(p=>p.demo.cols.map(c=>c.rgba))]);
   for(const [a,b] of Object.entries(value.palette||{})){
