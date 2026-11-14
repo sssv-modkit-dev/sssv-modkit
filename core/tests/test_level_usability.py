@@ -27,7 +27,7 @@ setTimeout(async()=>{
  const tap=()=>{const touch=new Touch({identifier:1,target:cv,clientX:x,clientY:y});cv.dispatchEvent(new TouchEvent('touchstart',{touches:[touch],changedTouches:[touch],bubbles:true,cancelable:true}));cv.dispatchEvent(new TouchEvent('touchend',{touches:[],changedTouches:[touch],bubbles:true,cancelable:true}));};
  const touchCount=count();tap();check(count()===touchCount,'first touch only previews');tap();check(count()===touchCount+1,'second touch places once');el('ed-undo').click();check(count()===touchCount,'touch placement undo');
  // Sky never silently falls back to the camera target.
- const added=count(),sky={button:0,clientX:-10000,clientY:-10000,bubbles:true};cv.dispatchEvent(new MouseEvent('mousedown',sky));cv.dispatchEvent(new MouseEvent('click',sky));check(count()===added,'sky does not place');
+ const added=count(),sky={button:0,clientX:-10000,clientY:-10000,bubbles:true};cv.dispatchEvent(new MouseEvent('mousedown',sky));cv.dispatchEvent(new MouseEvent('click',sky));check(count()===added,'sky does not place');check(el('ed-tool-select').getAttribute('aria-pressed')==='true'&&el('ed-count').textContent==='0 sel','sky clears placement and selection');
  }catch(e){failures.push(e.stack||e.message)}
  document.body.append(Object.assign(document.createElement('pre'),{id:'usability-result',textContent:JSON.stringify(failures)}));
 },2000);

@@ -10,8 +10,10 @@ assert.deepEqual(config.skip_recolor_words,[4100],'explicit part words override 
 assert.equal(context.configChanged(config),true);
 assert.equal(context.configChanged(context.stateConfig('test',{partColors:state.partColors})),true,'local demo part colours count as edits');
 assert.equal(context.configChanged(context.stateConfig('test',{})),false);
-const lines=context.referenceRoomLines([-10,0,-5],[10,30,5]);assert.equal(lines.length%6,0);assert.ok(lines.every(Number.isFinite));
+const lines=context.referenceRoomLines([-10,0,-5],[10,30,5],1);assert.equal(lines.length%6,0);assert.ok(lines.every(Number.isFinite));
 const xs=lines.filter((v,i)=>i%3===0),ys=lines.filter((v,i)=>i%3===1),zs=lines.filter((v,i)=>i%3===2);
 assert.ok(Math.max(...xs)-Math.min(...xs)<=42.001);assert.ok(Math.max(...zs)-Math.min(...zs)<=42.001);
 assert.ok(Math.min(...ys)<0&&Math.max(...ys)>30,'finite floor and corner walls frame the model');
 console.log('Workbench part-word export, local colours and finite 3D room grid pass.');
+
+const expanded=context.referenceRoomLines([-10,0,-5],[10,30,5]);assert.ok(Math.max(...expanded.filter((v,i)=>i%3===0))>Math.max(...xs));assert.ok(Math.max(...expanded.filter((v,i)=>i%3===1))>Math.max(...ys));

@@ -1,0 +1,26 @@
+// Opt-in edits are local, source-bound, bounded, and never include the ROM.
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {webcrypto,createHash}=require('node:crypto');
+const {makeModelEditStore}=require('../src/viewer/js/model-source-rom.js');
+function storage(){const values=new Map();return {get length(){return values.size},key:i=>[...values.keys()][i]??null,getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,String(value)),removeItem:key=>values.delete(key)};}
+const sourceA='a'.repeat(40),sourceB='b'.repeat(40),project={format:'model-editor-project-v1',demos:[],animals:[{animal:'synthetic',recolor:{'112233FF':'445566'}}]};
+const local=storage(),S=makeModelEditStore(local);assert.equal(S.enabled(),false);assert.equal(S.save(sourceA,project),false);S.setEnabled(true);assert.equal(S.save(sourceA,project),true);assert.deepEqual(S.load(sourceA),project);assert.equal(S.load(sourceB),null,'different source never gets these edits');assert.throws(()=>S.save('unknown',project),/source identity/);S.save('demo',{...project,animals:[]});assert.equal(S.load('demo').animals.length,0);local.setItem('unrelated','preserve');S.forget();assert.equal(S.enabled(),false);assert.equal(S.load(sourceA),null);assert.equal(S.load('demo'),null);assert.equal(local.getItem('unrelated'),'preserve');
+S.setEnabled(true);local.setItem('sssv-model-edits-v1:'+sourceA,'not JSON');assert.throws(()=>S.load(sourceA));local.setItem('sssv-model-edits-v1:'+sourceA,JSON.stringify({format:'sssv-model-local-edits-v1',source:sourceB,project}));assert.throws(()=>S.load(sourceA),/do not match/);assert.throws(()=>S.save(sourceA,{...project,large:'x'.repeat(1000001)}),/too large/);
+
+async function adapter(){
+ const elements=Object.fromEntries(['source-file','local-table','remember-source','forget-source','msg','build-play'].map(id=>[id,{disabled:false,checked:false,textContent:'',before(){}}]));
+ function element(){return {children:[],append(...children){this.children.push(...children)},set id(value){this._id=value;elements[value]=this},get id(){return this._id}};}
+ const store=storage(),cache=makeModelEditStore(store),listeners={};cache.setEnabled(true);
+ const rom=new Uint8Array(0x800000);rom.set([0x80,0x37,0x12,0x40]);rom.set(Buffer.from('NSVE'),0x3B);const hash=createHash('sha1').update(rom).digest('hex');cache.save(hash,project);
+ const raw={synthetic:{seg_bases:{4:'0x100'},parts:[{ended:true,seg:4,symbol:'part',rom:64}]}},applied=[];let current=null,edits={format:'model-editor-project-v1',demos:[],animals:[]},expanded=0,timer=null;
+ const host={embeddedTable:{},message:t=>elements.msg.textContent=t,useSource:s=>{current=s},getSource:()=>current,availableSource:()=>current,getBuildConfig:()=>edits,getProject:()=>edits,applyProject:value=>{if(value.animals.some(a=>a.animal==='invalid'))throw Error('invalid project');applied.push(value);edits=value},expandSourceAnimals:()=>expanded++};
+ const window={ModelEditorHost:host,localStorage:store,addEventListener:(name,fn)=>(listeners[name]||=[]).push(fn),SSSVBuilder:{deriveTable:async()=>raw}};
+ const context={window,document:{getElementById:id=>elements[id],querySelectorAll:()=>[],createElement:element,createTextNode:text=>({textContent:text})},crypto:webcrypto,ArrayBuffer,Uint8Array,DataView,Blob,console,setTimeout:fn=>(timer=fn,1),clearTimeout:()=>timer=null};vm.createContext(context);vm.runInContext(fs.readFileSync('src/viewer/js/parts-table.js','utf8'),context);vm.runInContext(fs.readFileSync('src/viewer/js/model-source-rom.js','utf8'),context);await new Promise(r=>setImmediate(r));
+ assert.equal(elements['remember-edits'].checked,true);await elements['source-file'].onchange({target:{files:[{name:'synthetic.z64',arrayBuffer:async()=>rom.buffer.slice(0)}]}});assert.equal(applied.length,1);assert.deepEqual(JSON.parse(JSON.stringify(applied[0])),project);assert.ok(expanded>0);assert.equal(elements['remember-source'].checked,false,'remembering edits never opts into ROM storage');
+ edits={...project,animals:[{animal:'synthetic',recolor:{'112233FF':'778899'}}]};for(const fn of listeners['model-edits-changed'])fn();assert.ok(timer,'edits debounce');timer();assert.equal(cache.load(hash).animals[0].recolor['112233FF'],'778899');
+ const other=rom.slice();other[0x100]=1;edits={format:'model-editor-project-v1',demos:[],animals:[]};await elements['source-file'].onchange({target:{files:[{name:'other.z64',arrayBuffer:async()=>other.buffer}]}});assert.equal(applied.length,1,'different ROM does not restore previous config');
+ const third=other.slice();third[0x101]=2;const thirdHash=createHash('sha1').update(third).digest('hex');store.setItem('sssv-model-edits-v1:'+thirdHash,'corrupt');await elements['source-file'].onchange({target:{files:[{name:'third.z64',arrayBuffer:async()=>third.buffer}]}});assert.ok(current,'malformed config does not prevent ROM loading');assert.equal(applied.length,1);
+ elements['forget-edits'].onclick();assert.equal(cache.enabled(),false);assert.equal(cache.load(hash),null);assert.equal(elements['remember-edits'].checked,false);
+ console.log('Remember edits: explicit consent, matching SHA restore, debounce, malformed cache refusal, cross-ROM isolation and separate ROM consent pass.');
+}
+adapter().catch(error=>{console.error(error);process.exit(1)});
