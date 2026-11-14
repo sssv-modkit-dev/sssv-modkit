@@ -1,6 +1,6 @@
 {
  "tag": "codex/editor-polish-core-20261113",
- "commit": "5ffc9c902ca4c89913da43ad1d641f28a080b891",
+ "commit": "6c6b9959fc22d5d1f4150aa06cbd06e0c51dbfee",
  "files": {
   ".gitignore": "3ad2750af909c18ed688f1571f91a873e942cb61dfc71e72ed8a64ef986e2562",
   ".gitlab-ci.yml": "cd5b67aff57cf27a4ceb555e7f2ca96c957d431775570dd5d4e4eb7b1b891b42",
@@ -24,12 +24,12 @@
   "packs/sample/slots/model-source.html": "71971564ba3975c01f636ed9414b7aec7bc2c92d41c538444816eea633d4d80e",
   "src/build_site.py": "4ca5fe25c7c388083ab909e962dd2afb4de5c727c987fe322370d8fe2a736704",
   "src/check.py": "4aa58803e098ac6010acfb921b33ea75790b32537e687d88f3e6228e0b0d4ddb",
-  "src/levels/editor.js": "978a64e1905d4977177e6b4fd4f562e6535a05079b6b856b484da270f577e06d",
+  "src/levels/editor.js": "25767153ac0a3961e354a8bc2ca577f88f9068c885f82594af4dbd2553bcf156",
   "src/levels/gallery.js": "3078943c07de355fd8772ad6749e482fffe498d3dec6d8786e7e836d799f79c7",
   "src/levels/levels.css": "e0171e8eee1d089f4a083824fac0ee7fb6816d7c8ef81cb0a99bbd016a4c126b",
   "src/levels/loader.js": "414834277da0e578e87a9c4a99f3d60c49b8b3272af1ba8c5e045b8678ca0248",
   "src/levels/palette.js": "e93dd7fed5376a3cc46eab0671847a034acb35c6e40fe89b54186c2b298d0e46",
-  "src/levels/runtime.js": "27103845a52601b345f9a9e9186caae6481028c4def3ddbafd52f4dee7af592d",
+  "src/levels/runtime.js": "c3ce63d29d83fa17c7f3c6aa3f7d29f83291c9207848dd2ea9d03e3eddc1e19c",
   "src/levels/scene.js": "52c694d29b37cccb7f5ff855b2e0cdbe566c965f8920bdb13b00c8c9d1a24d1d",
   "src/levels/selection.js": "4630749f012b8649fb9763b91d8ebbced5b8ee62c6d068b2d8da389259d01881",
   "src/viewer/css/app.css": "d52235741e7b402f7f4253f00abf575fdd6189a78ad4582a510b2f2f7d6d8c06",

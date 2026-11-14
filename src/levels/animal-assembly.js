@@ -23,7 +23,7 @@ function assembleAnimal(rom,animal,pose){
  // Captured game axes: forward -Y, up Z. Level objects face +X.
  p.push(-g[1],-g[0],g[2]);c.push(...[0,2,4].map(k=>parseInt(color.slice(k,k+2),16)));}}}
  if(!p.length)return null;let floor=Infinity;for(let i=2;i<p.length;i+=3)floor=Math.min(floor,p[i]);for(let i=2;i<p.length;i+=3)p[i]-=floor;
- return {p,c};
+ return {p,c,scale:3.2,label:'captured static pose; approximate size and materials'};
 }
 async function fromROM(rom,progress=()=>{}){
  progress('Reading animal geometry from your ROM...');const table=await root.SSSVBuilder.deriveTable(rom,{onProgress:p=>progress(p.detail)}),models={},species={},names={};
