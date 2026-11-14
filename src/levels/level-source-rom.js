@@ -5,7 +5,9 @@ document.getElementById('level-rom')?.addEventListener('change',async event=>{
   if(!file)return;input.disabled=true;
   try{
     status.textContent='Checking your local ROM…';
-    const data=SceneImport.fromBundle(await LevelRom.decode(await file.arrayBuffer(),message=>status.textContent=message));
+    const rom=LevelRom.normalize(await file.arrayBuffer()).buffer,bundle=await LevelRom.decode(rom,message=>status.textContent=message);
+    try{bundle.ANIM=await LevelAnimalAssembly.fromROM(rom,message=>status.textContent=message);}catch(error){console.warn('Captured animal previews unavailable:',error.message);}
+    const data=SceneImport.fromBundle(bundle);
     window.SSSVLevelRom=file;  // in memory only: Build & Play hands it to play.html (handoff.js)
     enterEditor(data,false);
   }catch(error){status.textContent=error.message;input.disabled=false;input.value='';}

@@ -24,6 +24,8 @@
    "../../src/levels/rom.js",
    "../../src/levels/scene-import.js",
    "../../src/levels/edits-export.js",
+   "../../src/web/builder.js",
+   "../../src/levels/animal-assembly.js",
    "../../src/levels/level-source-rom.js",
    "../../src/web/handoff.js"
   ]

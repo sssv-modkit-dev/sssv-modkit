@@ -40,6 +40,8 @@ def main():
         ['node', '--check', 'src/build_demo_assets.js'],
         ['node', 'tests/test_parts_table.js'],
         ['node', 'tests/test_model_rom_source.js'],
+        ['node', 'tests/test_model_remember.js'],
+        ['node', 'tests/test_animal_assembly.js'],
         ['node', 'tests/test_animal_textures.js'],
         [sys.executable, 'tests/test_eye_metadata.py'],
         [sys.executable, 'tests/test_mesh_rotation.py'],
