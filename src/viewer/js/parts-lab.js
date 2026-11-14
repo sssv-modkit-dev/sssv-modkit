@@ -23,7 +23,7 @@ function validateDemoPreset(value){
     if(Object.keys(out).length)partColours[symbol]=out;
   }
   for(const [s,entries] of Object.entries(value.deform||{})){
-    if(!symbols.has(s)||!Array.isArray(entries)||entries.length>4)throw new Error('Invalid deformation.');
+    if(!symbols.has(s)||!Array.isArray(entries)||entries.length>16)throw new Error('Invalid deformation.');
     deformations[s]=entries.map(e=>{
       if(!e||!Array.isArray(e.ops)||e.ops.length>4)throw new Error('Invalid deformation operations.');
       return {ops:e.ops.map(op=>{
@@ -139,9 +139,13 @@ function restoreModelHistory(snapshot){
 }
 if(window.ModelEditorHistory){
  const H=window.ModelEditorHistory;
- const buttons=state=>{for(const [id,key] of [['undo-edit','canUndo'],['redo-edit','canRedo']]){const b=$(id);if(b)b.disabled=!state[key];}};
+ const buttons=state=>{for(const [id,key] of [['undo-edit','canUndo'],['redo-edit','canRedo']]){const b=$(id);if(b)b.disabled=!state[key];}window.dispatchEvent(new Event('model-edits-changed'));};
  H.configure({capture:captureModelHistory,restore:restoreModelHistory,onChange:buttons});
  for(const [id,method,label] of [['undo-edit','undo','Undo'],['redo-edit','redo','Redo']]){let b=$(id);if(!b){b=document.createElement('button');b.id=id;b.textContent=label;$('actions').prepend(b);}b.type='button';b.title=label+(method==='undo'?' (Ctrl+Z)':' (Ctrl+Y)');b.onclick=()=>H[method]();}
  buttons(H);let lastSource=window.ModelEditorHost?.availableSource?.()?.bytes;
  addEventListener('model-source-ready',()=>{if(H.restoring)return;const source=window.ModelEditorHost?.availableSource?.()?.bytes;if(source!==lastSource){lastSource=source;H.reset();}});
 }
+
+// Optional pack persistence saves only the edit project, not source geometry.
+if(window.ModelEditorHost){window.ModelEditorHost.getProject=demoProject;window.ModelEditorHost.applyProject=applyModelProject;window.ModelEditorHost.expandSourceAnimals=()=>{if(demoMode)return;modelCategory='Animals';buildDemoPicker();};}
+addEventListener('model-source-ready',()=>{if(!demoMode){modelCategory='Animals';buildDemoPicker();}});

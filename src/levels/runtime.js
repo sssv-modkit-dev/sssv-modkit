@@ -28,7 +28,7 @@ const swP=gl.getAttribLocation(SW,'p'),swM=gl.getUniformLocation(SW,'m'),swT=gl.
 const aP=gl.getAttribLocation(P,'p'),aC=gl.getAttribLocation(P,'c'),uM=gl.getUniformLocation(P,'m'),uS=gl.getUniformLocation(P,'ps');
 function buf(a){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,a,gl.STATIC_DRAW);return b;}
 function hue(t){const h=((t*47)%360)/60,x=1-Math.abs(h%2-1);const r=[[1,x,0],[x,1,0],[0,1,x],[0,x,1],[x,0,1],[1,0,x]][Math.floor(h)%6];return r;}
-const AMOD={};for(const k in ANIM.models){const m=ANIM.models[k],n=m.p.length/3;let top=-1e9,hx=0,hy=0;for(let i=0;i<m.p.length;i+=3){hx=Math.max(hx,Math.abs(m.p[i]));hy=Math.max(hy,Math.abs(m.p[i+1]));top=Math.max(top,m.p[i+2]);}AMOD[k]={p:m.p,c:m.c,n,top,hx,hy};}
+const AMOD={};for(const k in ANIM.models){const m=ANIM.models[k],n=m.p.length/3;let top=-1e9,hx=0,hy=0;for(let i=0;i<m.p.length;i+=3){hx=Math.max(hx,Math.abs(m.p[i]));hy=Math.max(hy,Math.abs(m.p[i+1]));top=Math.max(top,m.p[i+2]);}AMOD[k]={p:m.p,c:m.c,n,top,hx,hy,scale:m.scale||.3,label:m.label||'approximate animal model'};}
 const MODELS={};for(const k in MODEL){const m=MODEL[k];MODELS[k]={p:dec(m.p,Int16Array),c:dec(m.c,Uint8Array),n:m.n,zmin:m.zmin};}
 let EYE=[0,0,0],BX=[1,0,0],BY=[0,1,0],BZ=[0,0,1],ASP=1;
 let bxs,bxo,bxl,bxlo,msh,bxs0,L,mesh,lines,grid,spw,cam={yaw:.6,pitch:.8,d:8000,t:[2048,3072,0]},sel=-1;
@@ -85,8 +85,8 @@ function buildAnimals(){
   for(const f of[[0,1,2,3,.6],[4,5,6,7,1],[0,1,5,4,.75],[1,2,6,5,.85],[2,3,7,6,.7],[3,0,4,7,.8]])for(const i of[0,1,2,0,2,3]){P.push(...V[f[i]]);C.push(...col.map(v=>v*f[4]));}};
  for(let k=0;k<a.length;k+=5){const sp=a[k],x=a[k+1],y=a[k+2],z=a[k+3],yw=a[k+4]*Math.PI/180,ca=Math.cos(yw),sa=Math.sin(yw);L.anl.push([x,y,z,sp,a[k+4]]);
   const mk=ANIM.species[sp],mo=mk&&AMOD[mk];
-  if(mo){for(let i=0;i<mo.n;i++){const AS=.3,px=mo.p[i*3]*AS,py=mo.p[i*3+1]*AS,pz=mo.p[i*3+2]*AS;P.push(x+px*ca-py*sa,y+px*sa+py*ca,z+pz);C.push(mo.c[i*3]/255,mo.c[i*3+1]/255,mo.c[i*3+2]/255);}
-   if(k==0){box(x,y,z+mo.top*.3+22,5,5,5,ca,sa,[1,.85,.2]);}continue;}
+  if(mo){for(let i=0;i<mo.n;i++){const AS=mo.scale,px=mo.p[i*3]*AS,py=mo.p[i*3+1]*AS,pz=mo.p[i*3+2]*AS;P.push(x+px*ca-py*sa,y+px*sa+py*ca,z+pz);C.push(mo.c[i*3]/255,mo.c[i*3+1]/255,mo.c[i*3+2]/255);}
+   if(k==0){box(x,y,z+mo.top*mo.scale+22,5,5,5,ca,sa,[1,.85,.2]);}continue;}
   const col=k==0?[1,.85,.2]:hue(sp*5+2),S=3.2;
   box(x,y,z+28*S,26*S,16*S,14*S,ca,sa,col);                       // body
   box(x+30*S*ca,y+30*S*sa,z+44*S,11*S,11*S,11*S,ca,sa,col.map(v=>Math.min(1,v*1.2+.1))); // head (faces yaw)
