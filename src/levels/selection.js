@@ -60,6 +60,8 @@ const LevelSelection = (() => {
   /* Fallback when the ray misses the plane: screen right is (-sin yaw, cos yaw), screen down is towards the camera (cos yaw, sin yaw). */
   function screenDelta(dx,dy,yaw,scale){const c=Math.cos(yaw),s=Math.sin(yaw);return [(-dx*s+dy*c)*scale,(dx*c+dy*s)*scale];}
   function removeAppended(records,stock,keys){for(const key of keys){const [kind,index]=key.split(':');if(!stock[kind]||!Number.isInteger(+index)||+index<stock[kind].length||+index>=records[kind].length)throw Error('Only appended spawns can be deleted');}for(const kind of ['props','animals']){const indices=keys.filter(k=>k.startsWith(kind+':')).map(k=>+k.split(':')[1]).sort((a,b)=>b-a);for(const index of new Set(indices))records[kind].splice(index,1);}}
-  return {define,removeAppended,animalNames,propNames,categories,name,category,project,inRectangle,translate,corners,screenRect,pickAt,hitsRect,nudge,invert,groundPoint,terrainPoint,cameraEye,cameraLook,cameraTravel,dragDelta,screenDelta};
+  /* Starfield backdrop offset in CSS px: a 2D tile shifted by camera yaw/pitch so stars hold their world direction (same 0.4 rad half-FOV as the renderer). */
+  function skyOffset(cam,height){const ppr=height/(2*Math.tan(.4));return [cam.yaw*ppr,-cam.pitch*ppr];}
+  return {skyOffset,define,removeAppended,animalNames,propNames,categories,name,category,project,inRectangle,translate,corners,screenRect,pickAt,hitsRect,nudge,invert,groundPoint,terrainPoint,cameraEye,cameraLook,cameraTravel,dragDelta,screenDelta};
 })();
 if(typeof module!=='undefined')module.exports=LevelSelection;

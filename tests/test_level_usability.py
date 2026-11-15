@@ -9,7 +9,7 @@ probe=r"""
 setTimeout(async()=>{
  const failures=[],check=(v,m)=>{if(!v)failures.push(m)},wait=ms=>new Promise(r=>setTimeout(r,ms)),el=id=>document.getElementById(id),cv=el('c');
  try{
- check(el('setup').hidden,'sample startup');check(el('camera-mode').value==='free','freecam default');check(!el('sea'),'no fake sea toggle');
+ check(el('setup').hidden,'sample startup');check(el('camera-mode').value==='free','freecam default');check(!el('sea'),'no fake sea toggle');check(getComputedStyle(el('sky')).backgroundColor==='rgb(5, 5, 9)','game-style dark backdrop');
  check(el('ed-save').closest('#project-panel'),'save controls own panel');
  check(getComputedStyle(el('objects-panel')).position==='fixed'&&el('objects-panel').getBoundingClientRect().left===0,'anchored source tree');
  const rail=[...el('level-right').children].map(p=>p.getBoundingClientRect());check(rail.every((r,i)=>!i||r.top>=rail[i-1].bottom),'rail panels do not overlap');
@@ -45,5 +45,5 @@ with tempfile.TemporaryDirectory(prefix='level-usability-') as tmp:
     try:
         result=subprocess.run([chrome,'--headless','--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader','--no-proxy-server',f'--user-data-dir={out/"profile"}','--window-size=1400,900','--virtual-time-budget=6000','--dump-dom',f'http://127.0.0.1:{server.server_port}/level-editor.html'],capture_output=True,text=True,encoding='utf-8',timeout=45)
         assert '<pre id="usability-result">[]</pre>' in result.stdout,result.stdout[-7000:]+result.stderr[-1500:]
-        print('Browser freecam, mouse pan tool, anchored source tree and nonoverlapping rails, terrain click/double-tap placement, sky rejection and undo/redo passed.')
+        print('Browser freecam, mouse pan tool, game-style starfield, anchored source tree and nonoverlapping rails, terrain click/double-tap placement, sky rejection and undo/redo passed.')
     finally:server.shutdown()

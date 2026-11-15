@@ -8,8 +8,11 @@ const {ANIM,MODEL,TBL,ATLAS,LEVELS,EDITOR_STOCK,EDITOR_SHA1}=data;
 
 
 const $=id=>document.getElementById(id);
-(()=>{const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');for(let i=0;i<260;i++){const r=Math.random()**3*1.4+.3;x.fillStyle='rgba(255,255,255,'+(.35+Math.random()*.65)+')';x.beginPath();x.arc(Math.random()*512,Math.random()*512,r,0,7);x.fill();}
- const k=$('sky');k.style.backgroundImage='url('+c.toDataURL()+'),'+getComputedStyle(k).backgroundImage;})();
+/* Backdrop modelled on the game's own: near-black space with sparse, small grey stars.
+   The tile scrolls with camera yaw/pitch so the stars stay put in the world while the view turns. */
+(()=>{const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');for(let i=0;i<180;i++){const b=Math.random()<.08?.85:.55+Math.random()*.15,r=Math.random()<.25?2:1;x.fillStyle='rgba(255,255,255,'+b+')';x.fillRect(Math.floor(Math.random()*512),Math.floor(Math.random()*512),r,r);}
+ $('sky').style.backgroundImage='url('+c.toDataURL()+')';})();
+function skyFollow(){const o=LevelSelection.skyOffset(cam,cv.clientHeight);$('sky').style.backgroundPosition=o[0].toFixed(1)+'px '+o[1].toFixed(1)+'px';}
 const cv=$('c'),gl=cv.getContext('webgl',{antialias:true,alpha:true,premultipliedAlpha:false});
 if(!gl){throw Error('WebGL is unavailable. Enable hardware acceleration or try another browser.');}
 function dec(s,T){const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new T(u.buffer);}
@@ -122,7 +125,7 @@ function frame(){
  if(controller.signal.aborted)return;
  const w=cv.clientWidth,h=cv.clientHeight;if(cv.width!=w||cv.height!=h){cv.width=w;cv.height=h;}
  gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);
- gl.useProgram(P);M=matrix();gl.uniformMatrix4fv(uM,false,M);
+ gl.useProgram(P);M=matrix();gl.uniformMatrix4fv(uM,false,M);skyFollow();
  if(!$('wf').checked&&$('gm').value=='3'){gl.useProgram(T);gl.uniformMatrix4fv(tM,false,M);gl.uniform3f(tHz,.42,.55,.75);gl.uniform1f(tFd,Math.max(9000,cam.d*3));gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,mesh.tx);
   for(const[a,b,k]of[[tP,mesh.p,3],[tC,mesh.c,3],[tU,mesh.uv,2],[tS,mesh.sl,1],[tW,mesh.wa,1]]){gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.enableVertexAttribArray(a);gl.vertexAttribPointer(a,k,gl.FLOAT,false,0,0);}
   gl.uniform1f(tUp,0);gl.drawArrays(gl.TRIANGLES,0,mesh.n);

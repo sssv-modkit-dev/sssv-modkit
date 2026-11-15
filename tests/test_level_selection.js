@@ -110,3 +110,8 @@ console.log('Terrain slope/nearest-hit placement and eye-preserving freecam chec
 
 const look={t:[0,0,0],d:1000,yaw:0,pitch:0};selection.cameraLook(look,100,100,true);
 assert(look.yaw<0&&look.pitch>0,'mouse right/down looks right/down in freecam');
+/* Starfield follows the renderer's camera: a fixed far direction and the backdrop move the same way on screen. */
+{const H=800,ppr=H/(2*Math.tan(.4)),star=(c,s)=>{const cp=Math.cos(c.pitch),z=[cp*Math.cos(c.yaw),cp*Math.sin(c.yaw),Math.sin(c.pitch)],x=[-z[1],z[0],0].map(v=>v/Math.hypot(z[0],z[1])),y=[z[1]*x[2]-z[2]*x[1],z[2]*x[0]-z[0]*x[2],z[0]*x[1]-z[1]*x[0]],d=-(s[0]*z[0]+s[1]*z[1]+s[2]*z[2]);return [(s[0]*x[0]+s[1]*x[1]+s[2]*x[2])/d*ppr,-(s[0]*y[0]+s[1]*y[1]+s[2]*y[2])/d*ppr];};
+ const a={yaw:.6,pitch:.3},b={yaw:.61,pitch:.31},cp=Math.cos(a.pitch),s=[-cp*Math.cos(a.yaw),-cp*Math.sin(a.yaw),-Math.sin(a.pitch)];
+ const sa=star(a,s),sb=star(b,s),oa=selection.skyOffset(a,H),ob=selection.skyOffset(b,H);
+ for(const i of [0,1]){const want=sb[i]-sa[i],got=ob[i]-oa[i];assert(Math.sign(want)===Math.sign(got)&&Math.abs(got-want)<Math.abs(want)*.1,'sky axis '+i+' follows camera: '+want+' vs '+got);}}
