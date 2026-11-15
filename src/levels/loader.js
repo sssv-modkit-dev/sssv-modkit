@@ -40,3 +40,5 @@ async function showChooser(note){
     enterEditor(data,true);
   }catch(error){showChooser('The bundled demo level could not be loaded ('+error.message+'). Open a file to begin.');}
 })();
+
+document.getElementById("level-start").onclick=()=>document.getElementById("gallery-open-link").click();

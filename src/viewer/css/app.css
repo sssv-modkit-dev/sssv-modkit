@@ -175,3 +175,9 @@ a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,selec
 #demo-picker{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
 #demo-picker button{min-height:40px;padding:4px 2px;font-size:10px;gap:2px}
 #demo-picker img,#demo-picker .ph{width:22px;height:22px}
+
+#variant-field{display:none!important}.inline-selector{display:inline-flex;align-items:center;gap:5px}.inline-selector span{min-width:85px;text-align:center}#palette-scope{display:flex;max-width:none;margin:8px 0}#palette-scope button[aria-pressed=true]{background:var(--ac);color:var(--bg)}#deform-controls h5{margin:12px 0 4px;color:var(--ac)}
+
+#model-import label{display:block;margin:9px 0}#model-import select{width:100%;max-width:100%}#model-import input[type=file]{width:100%;font-size:11px}#import-mapping label{padding:8px;border:1px solid var(--bd);border-radius:6px;overflow-wrap:anywhere}#import-mapping input{width:70px}#import-warning{white-space:pre-line}#model-import button{margin:4px 0}
+
+#part-gizmo .rotation-ring{fill:none!important}

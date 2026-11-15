@@ -81,3 +81,5 @@ body.phone-portrait #ed-overlay{height:55vh}
 body.phone-portrait #project-panel{position:relative!important;inset:auto!important;margin:0 8px;width:calc(100% - 16px)!important;max-width:none!important;max-height:none!important;height:auto!important;order:5}
 body.phone-portrait .floating-panel{resize:none;min-width:0;left:auto!important;top:auto!important;right:auto!important;bottom:auto!important;height:auto!important}
 body.phone-portrait .panel-handle{cursor:pointer;touch-action:auto}
+
+#level-start.primary-start{display:block;width:100%;padding:12px 16px;margin:10px 0;font-size:15px;font-weight:800;background:#ffbd78;color:#141821;border:2px solid #ffe1b5;border-radius:8px}
