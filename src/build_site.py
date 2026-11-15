@@ -147,6 +147,12 @@ def build(pack_dir, out, no_vendor=False):
         shutil.copyfile(HERE / 'web' / name, out / name)
     (out / 'model-editor.html').write_text(model_editor(pack), encoding='utf-8')
     level_editor(pack, out)
+    story = out / 'story'
+    story.mkdir(exist_ok=True)
+    for name in ('dialogue.html', 'terrain.html'):
+        shutil.copyfile(HERE / 'web' / name, out / name)
+    for name in ('story.js', 'story.css'):
+        shutil.copyfile(HERE / 'web' / name, story / name)
     if pack['hook']:
         spec = importlib.util.spec_from_file_location('pack_build_hook', pack['hook'])
         module = importlib.util.module_from_spec(spec)
