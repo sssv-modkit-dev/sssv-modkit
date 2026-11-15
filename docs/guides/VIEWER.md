@@ -1,7 +1,7 @@
-# Using the viewer
+# Advanced: using the generated viewer
 
 The viewer is a local HTML page for inspecting animal parts and trying edits.
-First [generate the animal table](GETTING-STARTED.md#2-generate-the-animal-table), then build the page:
+First [generate the animal table](CLI-BUILDS.md#2-generate-the-animal-table), then build the page:
 
 ```sh
 python src/build_viewer.py src/animal_table.json
@@ -41,4 +41,4 @@ Edit `src/viewer/`, then rebuild the HTML. The generated bundle is not a source
 file. See [Development](../DEVELOPMENT.md) for checks and [Architecture](../ARCHITECTURE.md)
 for source responsibilities.
 
-[Getting started](GETTING-STARTED.md) · [Config guide](CONFIGS.md) · [Documentation index](../README.md)
+[Getting started](CLI-BUILDS.md) · [Config guide](CONFIGS.md) · [Documentation index](../README.md)

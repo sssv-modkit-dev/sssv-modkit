@@ -1,4 +1,4 @@
-# Glossary (one word = one meaning; use these in code, configs, docs and chat)
+# Advanced: glossary
 
 | Term | Meaning |
 |---|---|
@@ -18,4 +18,4 @@
 | **ju / mu** | Joint units vs mesh units (1 mu = 8 ju). Put the suffix on variable names: `bone_len_ju`. |
 | **game_xyz / view_xyz** | Game space (z up) vs viewer space (y up). Convert in exactly one function. |
 | **ground truth** | Numbers read from the running game (RAM). Beats screenshots. |
-| **private / public** | Private = lab/, dumps, tables, states. Public = tools, configs, schemas, docs, .ips. |
+| **private / public** | ROMs, dumps, derived tables and save states are user inputs. Tools, configs, schemas, documentation and reviewed patches can be distributed. |

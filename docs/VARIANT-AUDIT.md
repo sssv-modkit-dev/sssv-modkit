@@ -1,4 +1,4 @@
-# Model variant part-list audit (2026-11-15)
+# Advanced: model variant part-list audit (2026-11-15)
 
 Read-only US 1.0 indexing with `web_build.derive_table`; compare unique part-draw
 DL membership per section and per indexed draw function. This compares lists, not

@@ -5,7 +5,7 @@ function enterEditor(doc,demo){
   const data=Scene.toRuntime(doc);
   editorSession=startLevelEditor(data);
   $g('setup').hidden=true;window.dispatchEvent(new Event('level-session-ready'));
-  $g('level-start').textContent=demo?'Demo loaded · Open ROM / scene':window.SSSVLevelRom?'ROM loaded · Change ROM / scene':'Scene loaded · Change ROM / scene';
+  $g('level-start').textContent=demo?'Sample loaded · Open ROM / scene':window.SSSVLevelRom?'ROM loaded · Change ROM / scene':'Scene loaded · Change ROM / scene';
   const list=$g('gallery-list'),select=$g('lv');
   const close=()=>{$g('gallery').hidden=true;$g('gallery-open').focus();};
   const pick=index=>{select.value=index;select.onchange();LevelGallery.mark(list,index);close();};
@@ -39,7 +39,7 @@ async function showChooser(note){
     const data=await response.json(),errors=Scene.validate(data);
     if(errors.length)throw Error(errors.join('; '));
     enterEditor(data,true);
-  }catch(error){showChooser('The bundled demo level could not be loaded ('+error.message+'). Open a file to begin.');}
+  }catch(error){showChooser('The bundled sample level could not be loaded ('+error.message+'). Open a file to begin.');}
 })();
 
 document.getElementById("level-start").onclick=()=>document.getElementById("gallery-open-link").click();

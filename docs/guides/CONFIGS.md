@@ -1,4 +1,4 @@
-# Editing configs
+# Advanced: editing configs
 
 A config describes edits to one animal. Copy an included file from `configs/`
 and change one thing at a time. Use the [viewer](VIEWER.md) and your generated
@@ -63,4 +63,4 @@ A combined pack has an optional name and an `animals` array of ordinary configs:
 Use `--save-pack FILE` to combine the supplied inputs into a pack, or `--name NAME`
 to override its output name. See the builder's `--help` for CLI options.
 
-[Getting started](GETTING-STARTED.md) · [Viewer guide](VIEWER.md) · [Documentation index](../README.md)
+[Getting started](CLI-BUILDS.md) · [Viewer guide](VIEWER.md) · [Documentation index](../README.md)

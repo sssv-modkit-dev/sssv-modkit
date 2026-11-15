@@ -15,9 +15,7 @@ for editing it. Ghidra is used to inspect the compiled game; an MCP connection
 lets the coding tools work with that analysis. Findings are checked against ROM
 data and emulator behaviour. An AI explanation alone is not proof.
 
-The research lives in a separate private repository. This public repository holds
-the modding tools, example edits, and instructions, without the ROM or extracted
-game files.
+The project provides modding tools, example edits and instructions. No ROM or extracted game files are included.
 
 The animal-table generator works from your ROM alone
 (`python src/animal_table.py --from-rom`).

@@ -7,7 +7,7 @@ holders; it is not part of the project's CC0 dedication.
 | Image | What it shows | Limits |
 | --- | --- | --- |
 | `parts-lab.jpg` | Updated Model Editor, assembled dog, compact animal categories, selected-part gizmo, numeric transforms and 3D reference grid, 2026-11-14 | Browser preview with a captured static pose; approximate materials, not an in-game capture |
-| `level-viewer-prototype.jpg` | Private level viewer with textured terrain and Save/Open view controls, 2026-11-04 | View settings only; level editing is not implemented in this UI |
+| `level-viewer-prototype.jpg` | Earlier level viewer with textured terrain and Save/Open view controls, 2026-11-04 | View settings only; level editing is not implemented in this UI |
 | `parts-lab-before-after.png` | Public-build Model Editor, 2026-11-05: bundled bear, dog and fox assembled with their game-captured poses (top) and with share-link presets applied (bottom: new palettes, bear arms scaled 1.5x and bent, dog legs scaled, fox tail scaled) | Browser preview of edits, not an in-game capture |
 | `bear-deform-comparison.png` | Archived comparison image, removed from the landing page after owner review | The side-by-side comparison was identified as incorrect; do not use it as before/after evidence |
 | `minimap-prototype.png` | Level 1 gameplay with the v2 minimap prototype | Other levels, hardware, and combination with the widescreen patch are unverified |

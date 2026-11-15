@@ -9,9 +9,7 @@ For transparency: early prototypes (2026-11-04) read files from a public communi
 source (animals.c and related files), to find where each animal's display lists are
 drawn, and animals.h, for the list of animal ID numbers and names. Since 2026-11-05 the animal table is built
 from your ROM alone (`src/animal_table.py --from-rom`). The current tools need no
-decompilation files, and none ship with this project. Some identifiers keep that
-address-based style (for example `D_04000420_C7E50`: segment address plus ROM offset)
-because they are just addresses.
+decompilation files, and none ship with this project. Some internal identifiers retain their original address-based names.
 
 We're very grateful to that decompilation project and its contributors. Their public work
 made those first prototypes possible.
@@ -35,12 +33,10 @@ for editing it. Ghidra is used to inspect the compiled game; an MCP connection
 lets the coding tools work with that analysis. Findings are checked against ROM
 data and emulator behaviour. An AI explanation alone is not proof.
 
-The research lives in a separate private repository. This public repository holds
-the modding tools, example edits, and instructions, without the ROM or extracted
-game files.
+The project provides modding tools, example edits and instructions. No ROM or extracted game files are included.
 
 The animal-table generator works from your ROM alone
-(`python src/animal_table.py --from-rom`). See [Getting started](guides/GETTING-STARTED.md).
+(`python src/animal_table.py --from-rom`). See [command-line builds](guides/CLI-BUILDS.md) under Advanced.
 
 ## Was this made using AI?
 
@@ -67,8 +63,8 @@ Local build tools run on a computer with Python. The browser site also offers
 Build & Play using Pyodide, alongside [Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/model-editor.html),
 the [Level Editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) and
 [browser play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html).
-The viewer needs WebGL. You can try the online demos in your phone's browser,
-but mobile controls and compatibility still need testing.
+The viewer needs WebGL. You can try the sample content in your phone's browser,
+with touch controls; performance and compatibility depend on the device.
 
 Playing a patched ROM depends on your N64 emulator and device. There is no
 standalone phone app or native PC version. Original hardware and every emulator

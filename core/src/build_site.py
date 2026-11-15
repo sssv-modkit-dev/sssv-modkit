@@ -166,10 +166,19 @@ def build(pack_dir, out, no_vendor=False):
         ('index', 'Home'), ('model-editor', 'Model'), ('level-editor', 'Level'),
         ('play', 'Play'), ('dialogue', 'Dialogue'), ('textures', 'Textures & Tilesets'))
         if (out / (name + '.html')).is_file()]
+    has_guides = (out / 'guides.html').is_file()
+    help_pages = {'index': 'guides.html', 'start': 'guides/getting-started.html',
+                  'model-editor': 'guides/model-editor.html', 'textures': 'guides/textures-tilesets.html',
+                  'level-editor': 'guides/level-editor.html', 'dialogue': 'guides/dialogue.html',
+                  'play': 'guides/play.html'}
     for name, _ in available + ([('start', 'Guided build')] if (out / 'start.html').is_file() else []):
         page = out / (name + '.html')
         html = page.read_text(encoding='utf-8')
         links = ''.join('<a href="%s.html"%s>%s</a>' % (dest, ' aria-current="page"' if dest == name else '', label) for dest, label in available)
+        if has_guides:
+            links += '<a href="guides.html">Guides</a>'
+            if name != 'index':
+                links += '<a href="%s">Help for this tool</a>' % help_pages[name]
         nav = '<nav class="global-nav" aria-label="Editors">' + links + '</nav>'
         if re.search(r'<nav\b', html):
             html = re.sub(r'<nav\b[^>]*>.*?</nav>', lambda m: nav, html, count=1, flags=re.S)

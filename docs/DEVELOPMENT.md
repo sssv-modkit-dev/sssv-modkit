@@ -112,7 +112,7 @@ maps responsibilities; the [documentation index](README.md) links user guides.
 | Deform math | Python `plan_deform`, live and standalone JS, DEFORM-TRYOUT.md | Saved and fresh parity; browser/game checks for integration |
 | Viewer interaction | `src/viewer/`, `src/build_viewer.py` | Syntax, rebuild, browser inspection |
 | Animal/variant index | `src/animal_table.py`, `src/animal_rom.py`, GLOSSARY.md | `python tests/test_animal_rom.py` and local index inspection |
-| Custom mesh or rig | ARCHITECTURE.md, donor draw events and private research | Verified budgets, transforms and runtime evidence before ROM writes |
+| Custom mesh or rig | ARCHITECTURE.md, verified donor draw events | Verified budgets, transforms and runtime evidence before ROM writes |
 | Emulator scenes and states | Separate harness README and recipes | Synthetic harness tests, followed by real scene/state verification |
 | Documentation | User guides and linked CLI entry points | Link/anchor checks, example syntax, whitespace and publication scan |
 
@@ -120,7 +120,7 @@ Keep handoffs short: objective, relevant files, observed evidence, unresolved
 question, and next validation. Separate chats that edit code should use isolated
 worktrees or distinct repositories. A plain Git worktree starts from committed files; app-managed worktrees may
 also carry local changes. Verify that the guidance and inputs needed for the task
-are present, and pass private research paths explicitly.
+are present before starting.
 
 ### Uncommitted core review snapshots
 

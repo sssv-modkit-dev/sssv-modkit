@@ -54,6 +54,7 @@ def main():
         [sys.executable, 'tests/test_demo_bundle.py'],
         [sys.executable, 'tests/test_public_build.py'],
         [sys.executable, 'tests/test_pack_site.py'],
+        [sys.executable, 'tools/check_guide_links.py'],
         [sys.executable, 'tests/test_level_startup.py'],
         ['node', '--check', 'src/levels/level-source-rom.js'],
         [sys.executable, 'tests/test_vendor_manifest.py'],

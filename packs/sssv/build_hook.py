@@ -6,6 +6,9 @@ SRC = Path(__file__).resolve().parents[2] / 'src'
 
 
 def run(out, no_vendor):
+    sys.path.insert(0, str(SRC.parent / 'tools'))
+    import build_guides
+    build_guides.build(out)
     page = out / 'model-editor.html'
     html = page.read_text(encoding='utf-8').replace('type="image/svg+xml" href="favicon-model-editor.svg"', 'type="image/png" href="demo/heads/bear.png"')
     html = re.sub(r'(<div class="brand"><img src=")[^"]+', r'\1demo/heads/bear.png', html)

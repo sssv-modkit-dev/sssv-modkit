@@ -1,4 +1,4 @@
-# Viewer controls and browser validation
+# Advanced: viewer controls and browser validation
 
 The camera follows the familiar [OrbitControls mouse convention](https://threejs.org/docs/pages/OrbitControls),
 implemented in vanilla JavaScript for the portable WebGL viewer. No external
@@ -90,8 +90,7 @@ No warning or error entries were returned by the browser console checks.
 A separate private check loaded the owner's SHA1-matching US 1.0 ROM and a
 locally generated index containing 26 animals / 233 parts. Bear section
 selection, camera framing, the full gallery, and local ROM restoration worked.
-Game-image review candidates are kept in ignored `captures/viewer-review/`;
-the generated game-data viewer and table remain ignored local outputs.
+The generated game-data viewer and table are user-specific outputs and are not distributed.
 
 Physical touch hardware, other browsers, assembled poses, and in-game appearance
 were not validated. Touch gesture coverage here is through the live-handler
