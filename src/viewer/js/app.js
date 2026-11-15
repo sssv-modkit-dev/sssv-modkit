@@ -162,9 +162,15 @@ const gridProgram=gl.createProgram();
 gl.attachShader(gridProgram,sh(gl.VERTEX_SHADER,'attribute vec3 p;uniform mat4 M;void main(){gl_Position=M*vec4(p,1.);}'));
 gl.attachShader(gridProgram,sh(gl.FRAGMENT_SHADER,'precision mediump float;void main(){gl_FragColor=vec4(.48,.53,.65,.22);}'));
 gl.bindAttribLocation(gridProgram,0,'p');gl.linkProgram(gridProgram);const gridBuffer=gl.createBuffer(),gridMatrix=gl.getUniformLocation(gridProgram,'M');
-function referenceRoomLines(lo,hi,extent=2){const span=Math.max(1,...hi.map((v,k)=>v-lo[k])),cx=(lo[0]+hi[0])/2,cz=(lo[2]+hi[2])/2,halfX=Math.max((hi[0]-lo[0])*.7,span*.3)*extent,halfZ=Math.max((hi[2]-lo[2])*.7,span*.3)*extent,y=lo[1]-span*.04,top=hi[1]+span*.5*extent,x0=cx-halfX,x1=cx+halfX,z0=cz-halfZ,z1=cz+halfZ,lines=[];for(let i=0;i<=10;i++){const x=x0+(x1-x0)*i/10,z=z0+(z1-z0)*i/10,h=y+(top-y)*i/10;lines.push(x,y,z0,x,y,z1,x0,y,z,x1,y,z,x,y,z0,x,top,z0,x0,y,z,x0,top,z,x0,h,z0,x1,h,z0,x0,h,z0,x0,h,z1)}return lines}
-function drawReferenceGrid(PV){if(!sceneBounds||gallery)return;const lines=referenceRoomLines(...sceneBounds);
- gl.useProgram(gridProgram);gl.bindBuffer(gl.ARRAY_BUFFER,gridBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lines),gl.DYNAMIC_DRAW);gl.disableVertexAttribArray(1);gl.disableVertexAttribArray(2);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);gl.uniformMatrix4fv(gridMatrix,false,PV);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);gl.drawArrays(gl.LINES,0,lines.length/3);gl.depthMask(true);gl.disable(gl.BLEND);
+/* Reference room: a closed gridded box around the model, sized like a skybox (several model spans) so the orbit camera sits inside it. */
+function referenceRoomLines(lo,hi,extent=4){const span=Math.max(1,...hi.map((v,k)=>v-lo[k])),cx=(lo[0]+hi[0])/2,cz=(lo[2]+hi[2])/2,half=span*.75*extent,y0=lo[1]-span*.04,y1=y0+2*half,x0=cx-half,x1=cx+half,z0=cz-half,z1=cz+half,lines=[],n=12;
+ for(let i=0;i<=n;i++){const t=i/n,x=x0+(x1-x0)*t,z=z0+(z1-z0)*t,y=y0+(y1-y0)*t;
+  for(const yy of [y0,y1])lines.push(x,yy,z0,x,yy,z1,x0,yy,z,x1,yy,z);
+  for(const zz of [z0,z1])lines.push(x,y0,zz,x,y1,zz,x0,y,zz,x1,y,zz);
+  for(const xx of [x0,x1])lines.push(xx,y0,z,xx,y1,z,xx,y,z0,xx,y,z1);}
+ return lines}
+function drawReferenceGrid(V){if(!sceneBounds||gallery)return;const lines=referenceRoomLines(...sceneBounds);let far=0;for(let i=0;i<lines.length;i+=3)far=Math.max(far,Math.hypot(lines[i]-ctr[0],lines[i+1]-ctr[1],lines[i+2]-ctr[2]));const PV=mul(pr(cv.clientWidth/Math.max(1,cv.clientHeight),Math.max(sceneRadius/10000,1e-3),dist+far*1.05),V);gl.disable(gl.DEPTH_TEST);
+ gl.useProgram(gridProgram);gl.bindBuffer(gl.ARRAY_BUFFER,gridBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lines),gl.DYNAMIC_DRAW);gl.disableVertexAttribArray(1);gl.disableVertexAttribArray(2);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);gl.uniformMatrix4fv(gridMatrix,false,PV);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);gl.drawArrays(gl.LINES,0,lines.length/3);gl.depthMask(true);gl.disable(gl.BLEND);gl.enable(gl.DEPTH_TEST);
  gl.useProgram(pg);gl.bindBuffer(gl.ARRAY_BUFFER,buf);for(let i=0;i<3;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,36,i*12)}
 }
 const mul=(a,b)=>{const r=Array(16).fill(0);for(let i=0;i<4;i++)for(let j=0;j<4;j++)for(let k=0;k<4;k++)r[j*4+i]+=a[k*4+i]*b[j*4+k];return r};
@@ -173,6 +179,11 @@ const ry=a=>{const c=Math.cos(a),s=Math.sin(a);return[c,0,-s,0,0,1,0,0,s,0,c,0,0
 const rz=a=>{const c=Math.cos(a),s=Math.sin(a);return[c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1]};
 const cameraRotation=()=>mul(rz(roll),mul(rx(pit),ry(yaw)));
 const tr=(x,y,z)=>[1,0,0,0,0,1,0,0,0,0,1,0,x,y,z,1];
+/* Starfield backdrop (optional): near-black space with sparse grey stars, like the game's sky; the tile shifts with yaw/pitch so stars hold their direction. */
+function starOffset(yaw,pit,height){const ppr=height/(2*Math.tan(.4));return [-yaw*ppr,-pit*ppr]}
+let showStars=false,starTile=null;
+function starFollow(){const v=$('view');if(!showStars)return;const o=starOffset(yaw,pit,cv.clientHeight);v.style.backgroundPosition=o[0].toFixed(1)+'px '+o[1].toFixed(1)+'px'}
+function setStars(on){showStars=on;const v=$('view');if(on){if(!starTile){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');for(let i=0;i<180;i++){const b=Math.random()<.08?.85:.55+Math.random()*.15,r=Math.random()<.25?2:1;x.fillStyle='rgba(255,255,255,'+b+')';x.fillRect(Math.floor(Math.random()*512),Math.floor(Math.random()*512),r,r)}starTile='url('+c.toDataURL()+')'}v.style.background='#050509';v.style.backgroundImage=starTile;v.style.backgroundRepeat='repeat';starFollow()}else{v.style.background=backgroundOverride||''}}
 const pr=(a,n,f)=>{const t=1/Math.tan(.4);return[t/a,0,0,0,0,t,0,0,0,0,(f+n)/(n-f),-1,0,0,2*f*n/(n-f),0]};
 const projection=()=>pr(cv.clientWidth/Math.max(1,cv.clientHeight),Math.max(sceneRadius/10000,dist-sceneRadius*2),dist+sceneRadius*2);
 function frameCamera(){if(sceneBounds){const f=cameraFit(...sceneBounds,cameraRotation(),cv.clientWidth/Math.max(1,cv.clientHeight));ctr=f.center;dist=f.distance;sceneRadius=f.radius}need()}
@@ -191,7 +202,7 @@ function draw(size){dirty=false;const w=Array.isArray(size)?size[0]:(cv.clientWi
 if(cv.width!=w||cv.height!=h){cv.width=w;cv.height=h}gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 const R=cameraRotation(),V=mul(tr(0,0,-dist),mul(R,tr(-ctr[0],-ctr[1],-ctr[2])));
 updateAxes(R);
-const PV=mul(projection(),V);gl.uniformMatrix4fv(loc.M,false,PV);gl.uniformMatrix4fv(loc.N,false,R);gl.drawArrays(gl.TRIANGLES,0,nv);if(showGround&&sceneBounds&&!gallery&&!sheet)drawGround(PV);if(showGrid)drawReferenceGrid(PV);if(showLabels||gallery)updateFloatingLabels();updateGizmo()}
+if(showGrid)drawReferenceGrid(V);starFollow();const PV=mul(projection(),V);gl.uniformMatrix4fv(loc.M,false,PV);gl.uniformMatrix4fv(loc.N,false,R);gl.drawArrays(gl.TRIANGLES,0,nv);if(showGround&&sceneBounds&&!gallery&&!sheet)drawGround(PV);if(showLabels||gallery)updateFloatingLabels();updateGizmo()}
 const need=()=>{if(!dirty){dirty=true;requestAnimationFrame(draw)}};
 const NAMED_COLOURS={Black:'000000',White:'FFFFFF',Red:'FF0000',Green:'008000',Blue:'0000FF',Yellow:'FFFF00',Orange:'FFA500',Purple:'800080',Pink:'FFC0CB',Brown:'8B4513',Grey:'808080',Cyan:'00FFFF',Magenta:'FF00FF',Beige:'F5F5DC',Gold:'FFD700',Olive:'808000',Teal:'008080',Navy:'000080'};
 function colourName(hex){const rgb=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));let best='Colour',dist=Infinity;for(const [name,val] of Object.entries(NAMED_COLOURS)){const c=[0,2,4].map(i=>parseInt(val.slice(i,i+2),16));const d=c.reduce((sum,x,i)=>sum+(x-rgb[i])**2,0);if(d<dist){dist=d;best=name}}return best}
@@ -552,7 +563,8 @@ $('ground-toggle').onchange=e=>{showGround=e.target.checked;need()};
 $('grid-toggle').onchange=e=>{showGrid=e.target.checked;need()};
 $('move-button').onchange=e=>{moveButton=e.target.value};
 $('labels-toggle').onchange=e=>{showLabels=e.target.checked;updateFloatingLabels()};
-$('background-color').oninput=e=>{backgroundOverride=e.target.value;$('view').style.background=backgroundOverride};
+$('background-color').oninput=e=>{backgroundOverride=e.target.value;if(showStars){$('star-toggle').checked=false;setStars(false)}$('view').style.background=backgroundOverride};
+$('star-toggle').onchange=e=>{setStars(e.target.checked);need()};
 function updateFloatingLabels(){
  const host=$('floating-labels');host.replaceChildren();if((!showLabels&&!gallery)||!dv)return;
  const R=cameraRotation(),V=mul(tr(0,0,-dist),mul(R,tr(-ctr[0],-ctr[1],-ctr[2]))),M=mul(projection(),V),W=host.clientWidth,H=host.clientHeight,placed=[];
