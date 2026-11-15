@@ -1,30 +1,43 @@
 'use strict';
 const $ = id => document.getElementById(id);
 let dirty = false, busy = false, ready = false, project = null, localData = null;
+let originalData = null, currentData = null, terrainEdit = () => undefined, contentChanged = () => false;
 function download(bytes, name, type = 'application/octet-stream') {
   const url = URL.createObjectURL(new Blob([bytes], {type})), a = document.createElement('a');
   a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function exportROM(terrain) {
+function exportROM(asIPS = false) {
   status('Building in your browser...');
-  const rom = project.build(localData, terrain);
-  download(rom, 'story-patched.z64');
-  $('ips').disabled = false; $('ips').onclick = () => download(StoryROM.ips(project.rom, rom), 'story-patched.ips');
-  dirty = false; status('ROM downloaded. Download IPS is also ready.');
+  const rom = project.build(localData, terrainEdit());
+  download(asIPS ? StoryROM.ips(project.rom, rom) : rom, asIPS ? 'story-patched.ips' : 'story-patched.z64');
+  status(asIPS ? 'IPS downloaded for the current edits.' : 'ROM downloaded for the current edits.');
 }
 const status = text => { $('status').textContent = text; };
-function changed() { $('ips').disabled = true; dirty = true; status('Unsaved changes.'); }
+function changed() { dirty = contentChanged(); enabled(); status(dirty ? 'Unsaved changes.' : 'No changes from the loaded original.'); }
 function enabled() {
   for (const id of ['save','build']) $(id).disabled = busy || !ready;
+  $('ips').hidden = ready && !project;
+  let valid = true;
+  if (project && currentData) { try { StoryROM.validate(originalData, currentData); } catch { valid = false; } }
+  $('ips').disabled = busy || !ready || !project || !dirty || !valid;
+  if (project) $('build').disabled ||= !valid;
+}
+async function bridgeAPI(path, data) {
+  let response;
+  try { response = await fetch(path, {...(data === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}), ...(path === '/api/dialogue' ? {signal:AbortSignal.timeout(5000)} : {})}); }
+  catch { throw Error('The optional Python bridge is not available on this page.'); }
+  if (!response.headers.get('content-type')?.includes('application/json')) throw Error('The optional Python bridge is not available on this page.');
+  let result;
+  try { result = await response.json(); } catch { throw Error('The Python bridge returned an unreadable response. Check that it is running, then check again.'); }
+  if (!response.ok) throw Error(result.error || 'The Python bridge could not complete that request.');
+  return result;
 }
 async function api(path, data) {
   if (project) {
     if (path === '/api/dialogue') return localData;
     if (path === '/api/save') { localData.banks = data.banks; localData.levels = data.levels; return {message:'Edits ready in browser memory.'}; }
   }
-  const response = await fetch(path, data === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-  if (!response.ok) { const error = await response.json(); throw Error(error.error || response.statusText); }
-  return response.json();
+  return bridgeAPI(path, data);
 }
 async function action(fn) {
   if (busy) return;
@@ -37,6 +50,9 @@ window.addEventListener('beforeunload', event => { if (dirty || busy) { event.pr
 
 async function dialogue() {
   const data = await api('/api/dialogue');
+  currentData = data; originalData = structuredClone(data);
+  terrainEdit = () => undefined;
+  contentChanged = () => StoryROM.hasChanges(originalData, data);
   let bank, line;
   const bytes = strings => 2 + Object.values(strings).reduce((n, s) => n + 4 + 2 * s.length, 0);
   function budget() {
@@ -98,7 +114,7 @@ async function dialogue() {
     budget(); preview(text); changed();
     $('encoding').textContent = /^[\x20-\x7e\n]*$/.test(text) ? '' : 'Unsupported character: use plain ASCII and line breaks.';
   };
-  async function save() { if(project) { download(JSON.stringify({banks:data.banks,levels:data.levels},null,2), 'story-edits.json', 'application/json'); dirty = false; status('Edits downloaded.'); return; } const result = await api('/api/save', {banks:data.banks, levels:data.levels}); dirty = false; status(result.message); }
+  async function save() { if(!project) await api('/api/save', {banks:data.banks, levels:data.levels}); download(JSON.stringify({banks:data.banks,levels:data.levels},null,2), 'story-edits.json', 'application/json'); status('Edits downloaded.'); }
   // Freeze editing while saving/building so a late response cannot mark newer edits saved.
   async function locked(fn) {
     const controls = [...document.querySelectorAll('input,select,textarea')];
@@ -111,7 +127,7 @@ async function dialogue() {
     await save(); status('Building story ROM. This may take a few minutes...');
     const result = await api('/api/build', {kind:'dialogue'}); status(result.message); $('log').textContent = result.log;
   }));
-  showBank(); ready = true; enabled(); status(project ? 'ROM loaded. Edit dialogue or timing, then download.' : 'Ready. Changes save to local working JSON files.');
+  showBank(); dirty = false; ready = true; enabled(); status(project ? 'ROM loaded. Edit dialogue or timing, then download.' : 'Ready. Changes save to local working JSON files.');
 }
 
 async function terrain() {
@@ -119,6 +135,10 @@ async function terrain() {
   const sheet = $('sheet'), ctx = sheet.getContext('2d', {willReadFrequently:true});
   const tile = $('tile'), tc = tile.getContext('2d'), rc = $('repeat').getContext('2d');
   let level = '1', index = 0, loaded = false, drawing = false, last, picked = null, history = [];
+  let originalPixels;
+  currentData = data; originalData = structuredClone(data);
+  terrainEdit = () => ({level,rgba:ctx.getImageData(0,0,272,136).data});
+  contentChanged = () => !!originalPixels && StoryROM.pixelsChanged(originalPixels, terrainEdit().rgba);
   const origin = () => [(index%8)*34, Math.floor(index/8)*34];
   function render() {
     const [x,y] = origin(); tc.clearRect(0,0,32,32); tc.drawImage(sheet,x,y,32,32,0,0,32,32);
@@ -128,7 +148,7 @@ async function terrain() {
   }
   function snapshot() { history.push(ctx.getImageData(0,0,272,136)); if(history.length>30) history.shift(); }
   async function load() {
-    if (dirty && !confirm('Discard unsaved tile changes before changing level?')) { $('terrain-level').value = level; return; }
+    if (dirty && !confirm('Discard unsaved tile changes before changing level?')) { $('terrain-level').value = level; status('Level change cancelled. Your tile changes are still here.'); return; }
     const next = $('terrain-level').value;
     loaded = false; ready = false; enabled(); $('terrain-level').disabled = true;
     status('Loading tile sheet...');
@@ -138,7 +158,7 @@ async function terrain() {
       if (!response.ok) throw Error((await response.json()).error);
       const bitmap = await createImageBitmap(await response.blob());
       ctx.clearRect(0,0,272,136); ctx.drawImage(bitmap,0,0); bitmap.close(); }
-      level = next; dirty = false; history = []; picked = null; loaded = true; ready = true;
+      level = next; originalPixels = ctx.getImageData(0,0,272,136).data.slice(); dirty = false; history = []; picked = null; loaded = true; ready = true;
       $('recolour').disabled = true; render(); status(`Level ${level} ready. Select a tile, then paint.`);
     } finally { $('terrain-level').disabled = false; enabled(); }
   }
@@ -174,10 +194,10 @@ async function terrain() {
     ctx.putImageData(pixels,x,y); render(); changed();
   };
   $('undo').onclick = () => { if(busy || !history.length) return; ctx.putImageData(history.pop(),0,0); render(); changed(); };
-  async function save() { if(project) { download(await new Promise(resolve => sheet.toBlob(resolve, 'image/png')), 'terrain-sheet.png','image/png'); dirty = false; status('Edits downloaded.'); return; } const result = await api('/api/sheet', {level, png:sheet.toDataURL('image/png').split(',')[1]}); dirty = false; status(result.message); }
+  async function save() { if(project) { download(await new Promise(resolve => sheet.toBlob(resolve, 'image/png')), 'terrain-sheet.png','image/png'); status('Edits downloaded.'); return; } const result = await api('/api/sheet', {level, png:sheet.toDataURL('image/png').split(',')[1]}); status(result.message); }
   $('save').onclick = () => action(save);
   $('build').onclick = () => action(async () => {
-    if(project) { exportROM({level,rgba:ctx.getImageData(0,0,272,136).data}); return; }
+    if(project) { exportROM(); return; }
     await save(); status('Building selected terrain + saved story ROM. This may take a few minutes...');
     const result = await api('/api/build', {kind:'terrain', level}); status(result.message); $('log').textContent = result.log;
   });
@@ -193,14 +213,22 @@ $('rom').onchange = () => action(async () => {
   for(const id of ['bank','lines','terrain-level']) if($(id)) $(id).replaceChildren();
   $('ips').disabled = true;
   $('save').textContent = document.body.dataset.page === 'dialogue' ? 'Download edits JSON' : 'Download sheet PNG';
-  $('build').textContent = 'Download patched ROM';
+  $('build').textContent = 'Save & build ROM';
+  $('bridge-setup').hidden = true;
   await start();
 });
-$('bridge').onclick = () => action(async () => {
-  if(dirty && !confirm('Discard browser edits and use the bridge?')) return;
+$('ips').onclick = () => action(() => exportROM(true));
+const useBridge = () => action(async () => {
+  // Probe before replacing a working in-browser project.
+  $('bridge-setup').hidden = false;
+  try { await bridgeAPI('/api/dialogue'); }
+  catch { status('The optional Python bridge is not available on this page. Follow the setup below, or keep editing your ROM in this browser.'); return; }
+  if(dirty && !confirm('Discard current edits and use the bridge?')) return;
   project = null; localData = null; ready = false; dirty = false;
-  $('ips').disabled = true; $('save').textContent = document.body.dataset.page === 'dialogue' ? 'Save JSON' : 'Save sheet PNG';
+  $('ips').disabled = true; $('save').textContent = document.body.dataset.page === 'dialogue' ? 'Download edits JSON' : 'Save sheet PNG';
   $('build').textContent = 'Save & build ROM';
   for(const id of ['bank','lines','terrain-level']) if($(id)) $(id).replaceChildren();
   await start();
+  $('bridge-setup').hidden = true;
 });
+$('bridge').onclick = $('bridge-check').onclick = useBridge;

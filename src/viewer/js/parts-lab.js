@@ -77,7 +77,7 @@ const DEFAULT_DEMO=Object.keys(PARTS_DEMOS).find(n=>!BUNDLED_ANIMALS.has(n));
 $('demo-start').onclick=()=>startDemos();
 $('demo-assemble').onclick=()=>{if(poseOk()){variant='';$('variant').value='';}assembled=poseOk();all=!assembled;sheet=false;ui();rebuild(true);info()};
 $('demo-explode').onclick=()=>{assembled=false;all=false;sheet=true;roll=0;pit=0;yaw=HOME_VIEW[0];SH={};for(const [i,P] of visibleParts().entries()){const c=[0,1,2].map(k=>(P.bb[k]+P.bb[k+3])/2),length=Math.hypot(...c),size=Math.max(40,...P.bb.slice(3).map((v,k)=>v-P.bb[k]));SH[P.sym]=length?c.map(v=>v/length*size*1.4):[Math.cos(i*2.4)*size,Math.sin(i*2.4)*size,0]}ui();rebuild(true);info()};
-$('demo-colour').onclick=()=>{for(const c of new Set(parsed.flatMap(editableColours)))map[c]=[0,1,2].map(()=>Math.floor(60+Math.random()*180).toString(16).padStart(2,'0')).join('').toUpperCase()+'FF';ui();rebuild(false)};
+$('demo-colour').onclick=()=>ModelEditorHistory.transaction(()=>{partColors={};wordEdits={};for(const c of new Set(parsed.flatMap(editableColours)))map[c]=[0,1,2].map(()=>Math.floor(60+Math.random()*180).toString(16).padStart(2,'0')).join('').toUpperCase()+c.slice(6);ui();rebuild(false)});
 $('demo-share').onclick=async()=>{
  const status=demoMode?$('demo-status'):$('msg');
  try{const hash='#project='+encodeURIComponent(JSON.stringify(demoProject()));if(hash.length>16000)throw new Error('Project is too large for a share link; save the edits file instead.');

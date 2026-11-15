@@ -5,6 +5,7 @@ function enterEditor(doc,demo){
   const data=Scene.toRuntime(doc);
   editorSession=startLevelEditor(data);
   $g('setup').hidden=true;
+  $g('level-start').textContent=demo?'Demo loaded · Open ROM / scene':window.SSSVLevelRom?'ROM loaded · Change ROM / scene':'Scene loaded · Change ROM / scene';
   const list=$g('gallery-list'),select=$g('lv');
   const close=()=>{$g('gallery').hidden=true;$g('gallery-open').focus();};
   const pick=index=>{select.value=index;select.onchange();LevelGallery.mark(list,index);close();};
