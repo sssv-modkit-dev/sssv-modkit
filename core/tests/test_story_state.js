@@ -1,0 +1,18 @@
+'use strict';
+const assert=require('node:assert/strict'),S=require('../src/web/story/rom');
+const original={banks:{0:{strings:{0:'Invented message'}}},levels:{1:[{i:0,op:'wait',frames:30}]}};
+const current=structuredClone(original);
+assert.equal(S.hasChanges(original,current),false);
+current.banks[0].strings[0]='Invented edit';assert.equal(S.hasChanges(original,current),true);
+current.banks[0].strings[0]=original.banks[0].strings[0];assert.equal(S.hasChanges(original,current),false);
+current.levels[1][0].frames=31;assert.equal(S.hasChanges(original,current),true);
+current.levels[1][0].frames=30;assert.equal(S.hasChanges(original,current),false);
+assert.equal(S.hasChanges({a:1,b:2},{b:2,a:1}),false);
+const pixels=new Uint8ClampedArray(272*136*4),paint=pixels.slice();
+paint[0]=255;assert.equal(S.pixelsChanged(pixels,paint),true);
+paint.set(pixels);assert.equal(S.pixelsChanged(pixels,paint),false);
+paint[0]=1;assert.equal(S.pixelsChanged(pixels,paint),false,'same 5-bit ROM colour');
+paint[32*4]=255;assert.equal(S.pixelsChanged(pixels,paint),false,'sheet gaps do not count');
+paint[4*(3*34*272+7*34+31*272+31)+2]=255;
+assert.equal(S.pixelsChanged(pixels,paint),true,'last pixel of tile 31');
+console.log('Dirty state: exact text/timing revert, pixel undo, colour precision and sheet boundaries passed');

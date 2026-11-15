@@ -19,7 +19,7 @@ function edList(){
  o.value=edSelected||'';edFields();
 }
 function edFields(){edTree();const c=edCurrent(),exists=!!c.hex;const del=$('ed-delete');del.disabled=!edSelection.size||Array.from(edSelection).some(key=>{const [kind,index]=key.split(':');return +index<EDITOR_STOCK[L.id][kind].length;});del.title=del.disabled?"Original spawns can't be deleted yet: level scripts refer to them by index.":'Delete appended spawns';for(const id of ['apply','focus','duplicate'])$('ed-'+id).disabled=!exists;
- $('ed-count').textContent=edSelection.size+' sel';$('ed-count').title=edSelection.size+' selected';if(!exists){$('ed-type-name').textContent='No objects in this category.';return;}
+ $('ed-count').textContent=edSelection.size+' selected';$('ed-count').title=edSelection.size+' selected';if(!exists){$('ed-type-name').textContent='No objects in this category.';return;}
  const v=EditorRecords.values(c.hex,c.kind);const typeInput=$('ed-type');if(typeInput.dataset.kind!==c.kind){typeInput.replaceChildren();for(let type=0;type<(c.kind==='props'?247:68);type++){const option=document.createElement('option');option.value=type;option.textContent=LevelSelection.name(c.kind,type)+' · '+type;typeInput.append(option);}typeInput.dataset.kind=c.kind;}['type','x','y','z','yaw','target'].forEach((id,i)=>$('ed-'+id).value=v[i]);edTypePicker(c.kind,v[0]);for(const k of ['x','y','z','yaw'])$('ed-'+k+'-slider').value=$('ed-'+k).value;$('ed-type-name').textContent=LevelSelection.name(c.kind,v[0]);$('ed-target-row').hidden=c.kind!=='props'||v[0]!==56;$('ed-duplicate').disabled=edEntries().filter(e=>edSelection.has(e.key)).some(e=>e.kind!=='props'||e.values[0]===55);
 }
 function edRefresh(){for(const lv of LEVELS)for(const kind of ['props','animals']){const a=edRecords[lv.id][kind].flatMap(hex=>EditorRecords.values(hex,kind).slice(0,5));if(kind==='props'){const bytes=new Uint8Array(new Int32Array(a).buffer);lv.sp=btoa(Array.from(bytes,b=>String.fromCharCode(b)).join(''));}else lv.an=a;}const camera=structuredClone(cam),i=LEVELS.findIndex(l=>l.id===L.id);edBaseLoad(i);cam=camera;edList();}
@@ -91,7 +91,7 @@ const palCategories=[['all','All props'],...LevelSelection.categories.filter(c=>
 for(const [v,t] of palCategories){const o=document.createElement('option');o.value=v;o.textContent=t;$('pal-category').append(o);}
 function palName(kind,type){return LevelSelection.name(kind,type);}
 function palStatus(){return palChoice?`Add: ${palName(palChoice.kind,palChoice.type)} chosen. ${edTouchUI()?'Double-tap':'Click'} the terrain to place it, or use Place at target.`:'Add: choose an object in the palette first.';}
-function palArt(kind,type,art){const name=palName(kind,type),head=kind==='animals'&&LevelGallery.HEADS[name],fallback=()=>{art.textContent=LevelPalette.initials(name);art.style.background=`hsl(${LevelPalette.hue(type)} 35% 30%)`;};
+function palArt(kind,type,art){const name=palName(kind,type),head=kind==='animals'&&LevelGallery.HEADS[name],fallback=()=>{art.textContent=kind==='animals'?'':LevelPalette.initials(name);art.setAttribute('aria-hidden','true');art.style.background=`hsl(${LevelPalette.hue(type)} 35% 30%)`;};
  const iconBase=document.querySelector('meta[name="scene-icons"]')?.content||'';if(!head||!iconBase){fallback();return;}const img=document.createElement('img');img.src=iconBase+head+'.png';img.alt='';img.width=img.height=40;img.onerror=()=>{img.remove();fallback();};art.append(img);}
 function palRender(){
  const grid=$('pal-grid');grid.replaceChildren();$('pal-category').hidden=palKind!=='props';

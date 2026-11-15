@@ -181,3 +181,6 @@ a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,selec
 #model-import label{display:block;margin:9px 0}#model-import select{width:100%;max-width:100%}#model-import input[type=file]{width:100%;font-size:11px}#import-mapping label{padding:8px;border:1px solid var(--bd);border-radius:6px;overflow-wrap:anywhere}#import-mapping input{width:70px}#import-warning{white-space:pre-line}#model-import button{margin:4px 0}
 
 #part-gizmo .rotation-ring{fill:none!important}
+
+/* Keep named tiles and deformation rows readable within the existing panels. */
+#demo-picker button{white-space:normal;overflow-wrap:anywhere;min-width:0}#deform-controls .axis-edit{grid-template-columns:minmax(54px,max-content) minmax(0,1fr) 60px;gap:4px}#deform-controls .axis-number{width:60px;max-width:100%}#deform-controls .axis-tag{text-align:left;white-space:normal}#parts .row.on{color:var(--fg)}#parts .row .raw-part-id,#parts .row .custom-part-name{color:inherit}#parts .row{font-weight:550}.desktop-note{font-size:12px;line-height:1.4;margin:0 0 8px}#floating-labels span{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:center}

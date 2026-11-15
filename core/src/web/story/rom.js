@@ -36,7 +36,7 @@ const evenRound=v=>{const f=Math.floor(v),r=v-f;return r===0.5?f+(f%2):Math.roun
 function encodeTile(px){let cur=Array.from(px,v=>[v>>>11,(v>>>6)&31,(v>>>1)&31,v&1]);const out=new Uint8Array(ENT);let o=0;for(let w=32;w;w>>=1){const rb=Math.max(8,w*2);for(let y=0;y<w;y++)for(let x=0;x<w;x++){const c=cur[y*w+x],v=(evenRound(c[0])<<11)|(evenRound(c[1])<<6)|(evenRound(c[2])<<1)|(c[3]>=0.5?1:0),xx=rb/2>=4&&y%2?x^2:x;put16(out,o+y*rb+xx*2,v);}o+=rb*w;if(w>1){const next=[];for(let y=0;y<w;y+=2)for(let x=0;x<w;x+=2)next.push([0,1,2,3].map(k=>(cur[y*w+x][k]+cur[y*w+x+1][k]+cur[(y+1)*w+x][k]+cur[(y+1)*w+x+1][k])/4));cur=next;}}return out;}
 function sheet(rom,lv){const rgba=new Uint8ClampedArray(272*136*4);for(let p=3;p<rgba.length;p+=4)rgba[p]=255;let i=0;for(const b of terrainBanks(rom,lv))for(let k=0;k<b.n;k++,i++){const px=decodeTile(b.data.subarray(k*ENT,(k+1)*ENT));for(let y=0;y<32;y++)for(let x=0;x<32;x++){const v=px[y*32+x],p=4*((Math.floor(i/8)*34+y)*272+(i%8)*34+x);rgba[p]=Math.floor((v>>>11)*255/31);rgba[p+1]=Math.floor(((v>>>6)&31)*255/31);rgba[p+2]=Math.floor(((v>>>1)&31)*255/31);}}return rgba;}
 class Project{
- constructor(bytes){this.rom=new Uint8Array(bytes);if(this.rom.length<0x800000||u32(this.rom,0)!==0x80371240)throw Error('Load a big-endian US 1.0 .z64 ROM (at least 8 MB).');this.data={banks:{},levels:{},capacities:{},help:'Plain ASCII and line breaks. Keep @Gnn codes. #S brief, ## objective, @N title; @CY/@CB/@CR/@CW/@CG colours.'};
+ constructor(bytes){this.rom=new Uint8Array(bytes);if(this.rom.length<0x800000||u32(this.rom,0)!==0x80371240)throw Error('Load a big-endian US 1.0 .z64 ROM (at least 8 MB).');this.data={banks:{},levels:{},capacities:{},help:'Plain ASCII and line breaks. Keep @Gnn game-number codes. #S brief, ## objective, @N title. Colours: @CY yellow, @CB blue, @CR red, @CW white, @CG green.'};
  for(let b=0;b<36;b++){const d=unpack(this.rom,u32(this.rom,BTAB+8*b)),v=readBlock(d);if(!v.strings.length)continue;this.data.banks[b]={title:v.strings.find(t=>t.startsWith('@N'))?.slice(2)||'',strings:Object.fromEntries(v.strings.map((t,i)=>[i,t]))};this.data.capacities[b]=v.e-v.s;}
  for(let lv=1;lv<=36;lv++){const rs=timing(chunks(this.rom,lv),lv<=31?Object.values(this.data.banks[lv-1]?.strings||{}):[]);if(rs.length)this.data.levels[lv]=rs;}
  this.original=JSON.parse(JSON.stringify(this.data));
@@ -48,5 +48,16 @@ class Project{
  sheet(lv){return sheet(this.rom,Number(lv));}
 }
 function ips(a,b){if(b.length>0x1000000)throw Error('IPS supports ROMs up to 16 MB');const parts=[Uint8Array.from([80,65,84,67,72])];let i=0;const diff=k=>k>=a.length||a[k]!==b[k];while(i<b.length){if(!diff(i)){i++;continue;}const start=i;let j=i;while(j<b.length){if(diff(j)){j++;continue;}let k=j;while(k<b.length&&k-j<6&&!diff(k))k++;if(k<b.length&&k-j<6&&diff(k))j=k;else break;}for(let q=start;q<j;){let o=q;if(o===0x454f46)o--;const e=Math.min(j,o+65535);q=e;const h=new Uint8Array(5);h[0]=o>>>16;h[1]=o>>>8;h[2]=o;put16(h,3,e-o);parts.push(h,b.slice(o,e));}i=j;}parts.push(Uint8Array.of(69,79,70));return concat(parts);}
-const api={Project,readBlock,encodeBlock,decodeTile,encodeTile,fixCRC,ips,chunks,timing,validate};if(typeof module!=='undefined')module.exports=api;else root.StoryROM=api;
+function stable(value){if(Array.isArray(value))return '['+value.map(stable).join(',')+']';if(value&&typeof value==='object')return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+stable(value[k])).join(',')+'}';return JSON.stringify(value);}
+function hasChanges(original,current){return stable(original)!==stable(current);}
+function pixelsChanged(original,current){
+ if(original.length!==current.length)return true;
+ // Compare the editable tile pixels at the ROM's 5-bit channel precision. Sheet gaps and alpha are not painted into the ROM.
+ for(let i=0;i<32;i++)for(let y=0;y<32;y++)for(let x=0;x<32;x++){
+  const p=4*((Math.floor(i/8)*34+y)*272+(i%8)*34+x);
+  for(let k=0;k<3;k++)if(Math.floor((original[p+k]*31+127)/255)!==Math.floor((current[p+k]*31+127)/255))return true;
+ }
+ return false;
+}
+const api={Project,readBlock,encodeBlock,decodeTile,encodeTile,fixCRC,ips,chunks,timing,validate,hasChanges,pixelsChanged};if(typeof module!=='undefined')module.exports=api;else root.StoryROM=api;
 })(globalThis);

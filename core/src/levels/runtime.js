@@ -158,7 +158,7 @@ window.onmousemove=e=>{
  if(i<0){const c=gpick(e.clientX,e.clientY);if(!c||+$('gm').value==0&&false){t.style.display='none';return;}
   const ty=c[2],b=Array.from(L.bt.slice(ty*12,ty*12+12)).map(v=>v.toString(16).padStart(2,'0')).join(' ');
   t.style.display='block';t.style.left=e.clientX+12+'px';t.style.top=e.clientY+12+'px';
-  t.textContent=`cell ${c[0]},${c[1]} tile type ${ty} ${walk(ty)?'walkable':'BLOCKED'} B: ${b} (+0 ${L.bt[ty*12]}, +1*8 = ${L.bt[ty*12+1]*8})`;return;}const s=L.spw[i];
+  t.textContent=`cell ${c[0]},${c[1]} tile type ${ty} ${walk(ty)?'walkable':'BLOCKED'}${$('tile-details').checked?' B: '+b+' (+0 '+L.bt[ty*12]+', +1*8 = '+L.bt[ty*12+1]*8+')':''}`;return;}const s=L.spw[i];
  t.style.display='block';t.style.left=e.clientX+12+'px';t.style.top=e.clientY+12+'px';const te=TBL[s[3]]||[];t.textContent=`${LevelSelection.name('props',s[3])} · #${i}${s[3]===55?' (player start)':''} type 0x${s[3].toString(16)} (${s[3]}) kind ${te[0]} bank ${te[1]} box ${te[2]}x${te[3]}x${te[4]} yaw ${s[4]} xyz ${s[0]}, ${s[1]}, ${s[2]}`;};
 let tch=null;const tinfo=t=>t.length>1?{x:(t[0].clientX+t[1].clientX)/2,y:(t[0].clientY+t[1].clientY)/2,d:Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY)}:{x:t[0].clientX,y:t[0].clientY};
 cv.addEventListener('touchstart',e=>{e.preventDefault();tch=tinfo(e.touches);tch.n=e.touches.length;},{passive:false});
