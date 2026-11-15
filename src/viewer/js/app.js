@@ -448,15 +448,20 @@ cv.onpointerdown=e=>{
   pointers.set(e.pointerId,[e.clientX,e.clientY]);
   if(pointers.size>1){const [a,b]=[...pointers.values()];gesture={x:(a[0]+b[0])/2,y:(a[1]+b[1])/2,d:Math.hypot(a[0]-b[0],a[1]-b[1])};dr=null;return}
   const modified=e.shiftKey||e.ctrlKey||e.metaKey;
-  const movePart=e.pointerType!=='touch'&&!modified&&sheet&&(e.altKey||e.button===(moveButton==='left'?0:moveButton==='right'?2:-1));
+  const touchMode=globalThis.EditorTouch?.mode||'orbit';
+  const movePart=sheet&&(e.pointerType==='touch'?touchMode==='part':!modified&&(e.altKey||e.button===(moveButton==='left'?0:moveButton==='right'?2:-1)));
   const sym=movePart?pickPart(e.clientX,e.clientY):null;
   dr={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false,
-    add:!e.ctrlKey&&!e.metaKey,mode:e.pointerType==='touch'?'orbit':sym?'part':e.button===1?'zoom':e.button===2||modified?'pan':'orbit',sym,
+    add:!e.ctrlKey&&!e.metaKey,mode:sym?'part':e.pointerType==='touch'?touchMode:e.button===1?'zoom':e.button===2||modified?'pan':'orbit',sym,
     inspect:e.button===0&&!e.altKey};
 };
 function endPointer(e){
   pointers.delete(e.pointerId);
-  if(dr&&dr.id===e.pointerId&&e.type==='pointerup'&&!dr.moved&&dr.inspect)inspectPartAt(e.clientX,e.clientY,dr.add);
+  if(dr&&dr.id===e.pointerId&&e.type==='pointerup'&&!dr.moved&&dr.inspect){
+    if(dr.mode==='rename')namePartAt(e.clientX,e.clientY);
+    else if(dr.mode==='isolate')selectMeshAt(e.clientX,e.clientY);
+    else inspectPartAt(e.clientX,e.clientY,dr.add);
+  }
   dr=null;gesture=null;cv.style.cursor='grab';
   if(cv.hasPointerCapture(e.pointerId))cv.releasePointerCapture(e.pointerId);
 }
@@ -480,7 +485,7 @@ cv.onpointermove=e=>{
     const offsets=partOffsets[name]||(partOffsets[name]={}),o=offsets[dr.sym]||(offsets[dr.sym]=[0,0,0]);
     const delta=cameraPlaneDelta(cameraRotation(),dist,cv.clientHeight,dx,dy);
     for(let k=0;k<3;k++)o[k]+=delta[k];rebuild(false);
-  }else if(dr.mode==='select'){}else if(dr.mode==='pan')panCamera(dx,dy);
+  }else if(['select','rename','isolate'].includes(dr.mode)){}else if(dr.mode==='pan')panCamera(dx,dy);
   else if(dr.mode==='zoom')zoomCamera(dy*.01);
   else{const speed=2*Math.PI/Math.max(1,cv.clientHeight);yaw+=dx*speed;pit=Math.max(-Math.PI/2,Math.min(Math.PI/2,pit+dy*speed));need()}
   dr.x=e.clientX;dr.y=e.clientY;
@@ -603,3 +608,18 @@ inspectorHeader.onpointerup=inspectorHeader.onpointercancel=()=>inspectorDrag=nu
 $('part-name').addEventListener('keydown',e=>{if(e.key==='Escape')$('part-name-close').click()});
 
 {const about=$('about-controls'),net=document.querySelector('.net-note');if(about&&net)about.appendChild(net);}
+
+// Explicit touch modes mirror modifier and double-click gestures.
+window.EditorTouch={mode:'orbit',fit:frameCamera,
+ modes:[['orbit','Orbit / tap select'],['pan','Pan'],['zoom','Zoom'],['part','Move sheet part'],['select','Select parts'],['rename','Tap to rename'],['isolate','Tap to isolate']],
+ buttons:[['left','Orbit left'],['right','Orbit right'],['up','Orbit up'],['down','Orbit down'],['panleft','Pan left'],['panright','Pan right'],['panup','Pan up'],['pandown','Pan down'],['in','Zoom +'],['out','Zoom -'],['reset','Reset view'],['back','Back to parts'],['forward','Travel forward'],['backward','Travel back'],['rise','Travel up'],['fall','Travel down']],
+ action(action){
+  if(action==='left')yaw-=.2;if(action==='right')yaw+=.2;
+  if(action==='up')pit=Math.max(-Math.PI/2,pit-.2);if(action==='down')pit=Math.min(Math.PI/2,pit+.2);
+  const pans={panleft:[-40,0],panright:[40,0],panup:[0,-40],pandown:[0,40]};if(pans[action])panCamera(...pans[action]);
+  if(action==='in'||action==='out')zoomCamera(action==='in'?-.2:.2);
+  if(['forward','backward','rise','fall'].includes(action)){const R=cameraRotation(),v=action==='forward'||action==='backward'?[R[2],R[6],R[10]]:[R[1],R[5],R[9]],s=action==='forward'||action==='fall'?-1:1;ctr=ctr.map((c,k)=>c+v[k]*dist*.12*s);}
+  if(action==='reset')cameraView('reset');if(action==='back')$('back-to-sheet').click();need();
+ }
+};
+window.dispatchEvent(new Event('editor-touch-ready'));

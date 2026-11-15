@@ -78,6 +78,7 @@ async function dialogue() {
   }
   function showLine() {
     line = $('lines').value;
+    for(const b of $('lines-list').children)b.setAttribute('aria-selected',String(b.dataset.line===line));
     const text = data.banks[bank].strings[line];
     $('text').disabled = text === undefined; $('text').value = text ?? '';
     $('line-title').textContent = line === '' ? 'No matching text' : `Text ${line}`;
@@ -88,21 +89,31 @@ async function dialogue() {
     if (!$('holds').children.length) $('holds').textContent = 'No decoded message timing for this line.';
   }
   function listLines(preferred = line) {
-    $('lines').replaceChildren();
+    $('lines').replaceChildren(); $('lines-list').replaceChildren();
     for (const [id, text] of Object.entries(data.banks[bank].strings)) {
       if (!text.toLowerCase().includes($('search').value.toLowerCase())) continue;
-      option($('lines'), id, `${id} / ${text.replace(/\n/g,' ' ).slice(0,110)}`);
+      option($('lines'), id, `${id} / ${text.replace(/\n/g,' ')}`);
+      const b=document.createElement('button');b.type='button';b.dataset.line=id;b.setAttribute('role','option');b.textContent=`${id} / ${text}`;
+      b.onclick=()=>{$('lines').value=id;showLine();};$('lines-list').append(b);
     }
     if ([...$('lines').options].some(o => o.value === preferred)) $('lines').value = preferred;
     else $('lines').selectedIndex = 0;
     showLine();
   }
+  function listWaits() {
+    $('waits').replaceChildren();
+    const query=$('wait-search').value.trim().toLowerCase(),records=(Number(bank)<31?data.levels[String(Number(bank)+1)]||[]:[]).filter(r=>r.op==='wait'&&`${r.i} ${r.frames}`.includes(query));
+    for(let n=0;n<records.length;n+=10){
+      const group=document.createElement('details'),title=document.createElement('summary'),batch=records.slice(n,n+10);
+      title.textContent=`Records ${batch[0].i}–${batch.at(-1).i} (${batch.length})`;group.open=!!query;group.append(title);
+      for(const r of batch)timingInput(group,r,'frames',`Record ${r.i} / frames (30/s)`);$('waits').append(group);
+    }
+    if(!records.length)$('waits').textContent='No matching wait records.';
+  }
+  $('wait-search').oninput=listWaits;
   function showBank() {
     bank = $('bank').value; $('search').value = '';
-    listLines(); budget(); $('waits').replaceChildren();
-    if (Number(bank) < 31) for (const r of data.levels[String(Number(bank)+1)] || []) {
-      if (r.op === 'wait') timingInput($('waits'), r, 'frames', `Record ${r.i} / frames (30/s)`);
-    }
+    listLines(); budget(); $('wait-search').value='';listWaits();
   }
   for (const [id,b] of Object.entries(data.banks)) option($('bank'), id, `${Number(id)<31?'Level '+(Number(id)+1)+' / ':''}Bank ${id} / ${b.title || 'Untitled'}`);
   $('help').textContent = data.help;
@@ -110,7 +121,8 @@ async function dialogue() {
   $('text').oninput = () => {
     const text = $('text').value; data.banks[bank].strings[line] = text;
     const selected = $('lines').selectedOptions[0];
-    if (selected) selected.textContent = `${line} / ${text.replace(/\n/g,' ').slice(0,110)}`;
+    if (selected) selected.textContent = `${line} / ${text.replace(/\n/g,' ')}`;
+    const row=[...$('lines-list').children].find(b=>b.dataset.line===line);if(row)row.textContent=`${line} / ${text}`;
     budget(); preview(text); changed();
     $('encoding').textContent = /^[\x20-\x7e\n]*$/.test(text) ? '' : 'Unsupported character: use plain ASCII and line breaks.';
   };
@@ -136,6 +148,20 @@ async function terrain() {
   const tile = $('tile'), tc = tile.getContext('2d'), rc = $('repeat').getContext('2d');
   let level = '1', index = 0, loaded = false, drawing = false, last, picked = null, history = [];
   let originalPixels;
+  const scroller=tile.parentElement,zoom=$('tile-zoom');let touchMode='paint',pixelSize=matchMedia('(max-width:767px)').matches?44:10;
+  function setZoom(size){
+    pixelSize=Math.max(1,Math.min(64,size));tile.style.setProperty('--tile-size',pixelSize*32+'px');
+    const value=[...zoom.options].find(o=>+o.value===pixelSize);zoom.value=value?value.value:'';
+  }
+  function mode(value){touchMode=value;$('eyedropper').setAttribute('aria-pressed',String(value==='pick'));$('tile-navigate').setAttribute('aria-pressed',String(value==='navigate'));if(window.EditorTouch)window.EditorTouch.mode=value;const select=$('mobile-touch-mode');if(select)select.value=value;}
+  $('eyedropper').onclick=()=>mode(touchMode==='pick'?'paint':'pick');
+  $('tile-navigate').onclick=()=>mode(touchMode==='navigate'?'paint':'navigate');
+  zoom.onchange=()=>setZoom(+zoom.value||Math.max(1,(scroller.clientWidth-2)/32));setZoom(pixelSize);
+  window.EditorTouch={get mode(){return touchMode;},set mode(value){touchMode=value;$('eyedropper').setAttribute('aria-pressed',String(value==='pick'));$('tile-navigate').setAttribute('aria-pressed',String(value==='navigate'));},
+    modes:[['paint','Paint pixels'],['pick','Pick colour'],['navigate','Pan / pinch zoom']],
+    buttons:[['in','Zoom +'],['out','Zoom -'],['fit','Fit tile'],['pixels','44 px pixels'],['left','Pan left'],['right','Pan right'],['up','Pan up'],['down','Pan down']],
+    action(action){if(action==='in')setZoom(pixelSize*1.5);if(action==='out')setZoom(pixelSize/1.5);if(action==='fit')setZoom((scroller.clientWidth-2)/32);if(action==='pixels')setZoom(44);const d={left:[-96,0],right:[96,0],up:[0,-96],down:[0,96]}[action];if(d)scroller.scrollBy(...d);}
+  };window.dispatchEvent(new Event('editor-touch-ready'));
   currentData = data; originalData = structuredClone(data);
   terrainEdit = () => ({level,rgba:ctx.getImageData(0,0,272,136).data});
   contentChanged = () => !!originalPixels && StoryROM.pixelsChanged(originalPixels, terrainEdit().rgba);
@@ -178,14 +204,31 @@ async function terrain() {
     for(let n=0;n<=steps;n++) ctx.fillRect(ox+Math.round(a[0]+(b[0]-a[0])*n/steps),oy+Math.round(a[1]+(b[1]-a[1])*n/steps),1,1);
     render(); changed();
   }
-  tile.onpointerdown = event => { if(!loaded || busy || event.button !== 0) return; snapshot(); drawing = true; last = point(event); tile.setPointerCapture(event.pointerId); paint(last,last); };
-  tile.onpointermove = event => { if(drawing) { const next = point(event); paint(last,next); last = next; } };
-  tile.onpointerup = tile.onpointercancel = () => { drawing = false; };
-  tile.oncontextmenu = event => {
-    event.preventDefault(); if(!loaded || busy) return;
+  function pickColour(event){
+    if(!loaded || busy)return;
     const [x,y] = point(event), [ox,oy] = origin(); picked = [...ctx.getImageData(ox+x,oy+y,1,1).data].slice(0,3);
     $('colour').value = '#'+picked.map(n=>n.toString(16).padStart(2,'0')).join(''); $('recolour').disabled = false;
     status('Colour picked. Choose a replacement colour, then click Replace.');
+  }
+  const fingers=new Map();let nav=null;
+  const gesture=()=>{const a=[...fingers.values()],b=a[1]||a[0];return {x:(a[0][0]+b[0])/2,y:(a[0][1]+b[1])/2,d:a.length>1?Math.hypot(a[0][0]-b[0],a[0][1]-b[1]):0};};
+  tile.onpointerdown = event => {
+    if(!loaded || busy || event.button!==0)return;event.preventDefault();tile.setPointerCapture(event.pointerId);
+    if(touchMode==='pick'){pickColour(event);return;}
+    if(touchMode==='navigate'){fingers.set(event.pointerId,[event.clientX,event.clientY]);nav=gesture();return;}
+    snapshot(); drawing=true;last=point(event);paint(last,last);
+  };
+  tile.onpointermove = event => {
+    if(fingers.has(event.pointerId)){
+      fingers.set(event.pointerId,[event.clientX,event.clientY]);const next=gesture();
+      if(nav.d&&next.d){const ratio=next.d/nav.d,x=scroller.scrollLeft+nav.x-scroller.getBoundingClientRect().left,y=scroller.scrollTop+nav.y-scroller.getBoundingClientRect().top;setZoom(pixelSize*ratio);scroller.scrollLeft+=x*(ratio-1);scroller.scrollTop+=y*(ratio-1);}
+      scroller.scrollLeft-=next.x-nav.x;scroller.scrollTop-=next.y-nav.y;nav=next;return;
+    }
+    if(drawing){const next=point(event);paint(last,next);last=next;}
+  };
+  tile.onpointerup = tile.onpointercancel = event => { drawing=false;fingers.delete(event.pointerId);nav=fingers.size?gesture():null; };
+  tile.oncontextmenu = event => {
+    event.preventDefault();pickColour(event);
   };
   $('recolour').onclick = () => {
     if(!picked || busy) return; snapshot();
@@ -210,6 +253,7 @@ $('rom').onchange = () => action(async () => {
   const file = $('rom').files[0]; if (!file) return;
   const next = new StoryROM.Project(new Uint8Array(await file.arrayBuffer()));
   project = next; localData = next.data; dirty = false; ready = false;
+  let filename=$('rom-name');if(!filename){filename=document.createElement('output');filename.id='rom-name';$('rom').parentElement.after(filename);}filename.textContent=file.name;filename.title=file.name;
   for(const id of ['bank','lines','terrain-level']) if($(id)) $(id).replaceChildren();
   $('ips').disabled = true;
   $('save').textContent = document.body.dataset.page === 'dialogue' ? 'Download edits JSON' : 'Download sheet PNG';

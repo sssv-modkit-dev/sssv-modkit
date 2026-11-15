@@ -93,7 +93,7 @@ def model_editor(pack):
         js += '\n' + script.read_text(encoding='utf-8')
     # Same-origin only: scripts come from this one inline block (pinned by hash); styles stay inline.
     script_hash = base64.b64encode(hashlib.sha256(js.encode('utf-8')).digest()).decode('ascii')
-    csp = ("default-src 'none'; script-src 'self' 'wasm-unsafe-eval' 'sha256-" + script_hash + "'; style-src 'unsafe-inline'; img-src 'self' data: blob:; "
+    csp = ("default-src 'none'; script-src 'self' 'wasm-unsafe-eval' 'sha256-" + script_hash + "'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
            "worker-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'")
     html = (base / 'index.template.html').read_text(encoding='utf-8')
     html = html.replace('<title>SSSV Model Editor</title>', '<title>Model Editor (%s)</title><meta http-equiv="Content-Security-Policy" content="%s">' % (pack['title'], csp), 1)
@@ -145,7 +145,7 @@ def build(pack_dir, out, no_vendor=False):
         copy(src, out / dest, exclude)
     for src, dest in pack['scenes']:
         copy(src, out / dest, ())
-    for name in FAVICONS:
+    for name in FAVICONS + ('editor-mobile.css', 'editor-mobile.js'):
         shutil.copyfile(HERE / 'web' / name, out / name)
     (out / 'model-editor.html').write_text(model_editor(pack), encoding='utf-8')
     level_editor(pack, out)
