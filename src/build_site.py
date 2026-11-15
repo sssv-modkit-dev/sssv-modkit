@@ -163,8 +163,8 @@ def build(pack_dir, out, no_vendor=False):
         module.run(out, no_vendor)
     # One navigation and local ROM session on every available page, including pack Home/Play.
     available = [(name, label) for name, label in (
-        ('index', 'Home'), ('model-editor', 'Model'), ('level-editor', 'Level'),
-        ('play', 'Play'), ('dialogue', 'Dialogue'), ('textures', 'Textures & Tilesets'))
+        ('index', 'Home'), ('model-editor', 'Model'), ('textures', 'Textures & Tilesets'),
+        ('level-editor', 'Level'), ('dialogue', 'Dialogue'), ('play', 'Play'))
         if (out / (name + '.html')).is_file()]
     has_guides = (out / 'guides.html').is_file()
     help_pages = {'index': 'guides.html', 'start': 'guides/getting-started.html',
@@ -174,11 +174,14 @@ def build(pack_dir, out, no_vendor=False):
     for name, _ in available + ([('start', 'Guided build')] if (out / 'start.html').is_file() else []):
         page = out / (name + '.html')
         html = page.read_text(encoding='utf-8')
-        links = ''.join('<a href="%s.html"%s>%s</a>' % (dest, ' aria-current="page"' if dest == name else '', label) for dest, label in available)
+        link = lambda dest, label: '<a href="%s.html"%s>%s</a>' % (dest, ' aria-current="page"' if dest == name else '', label)
+        # Guided-path order; Play (the finish) is always the last link.
+        links = ''.join(link(dest, label) for dest, label in available if dest != 'play')
         if has_guides:
             links += '<a href="guides.html">Guides</a>'
             if name != 'index':
                 links += '<a href="%s">Help for this tool</a>' % help_pages[name]
+        links += ''.join(link(dest, label) for dest, label in available if dest == 'play')
         nav = '<nav class="global-nav" aria-label="Editors">' + links + '</nav>'
         if re.search(r'<nav\b', html):
             html = re.sub(r'<nav\b[^>]*>.*?</nav>', lambda m: nav, html, count=1, flags=re.S)

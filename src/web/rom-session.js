@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
  const nav=document.querySelector('.global-nav'),box=document.createElement('div');box.id='rom-session';
  const state=document.createElement('output');state.id='session-state';state.setAttribute('role','status');
  const button=document.createElement('button');button.id='forget-rom';button.textContent='Forget ROM';button.disabled=true;button.onclick=()=>{if(confirm('Forget the shared ROM and saved edits stored in this browser?'))forget().catch(e=>show(e.message));};
- const note=document.createElement('small');note.textContent='ROM and edits are remembered locally across editors until you choose Forget ROM. Nothing is uploaded.';box.append(state,button,note);
+ box.title='ROM and edits are remembered locally across editors until you choose Forget ROM. Nothing is uploaded.';box.append(state,button);
  if(nav)nav.append(box);else document.body.prepend(box);
  const input=document.querySelector('#source-file,#level-rom,#rom,#b-rom');
  // The pack's older optional cache is superseded by this one shared source.
