@@ -36,6 +36,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--from', dest='source', required=True, type=Path, help='path to the sssv-editor repository')
     ap.add_argument('--tag', required=True)
+    ap.add_argument('--working-tree', action='store_true', help='review-only sync of tracked files plus untracked source/docs/tests; records dirty provenance')
     args = ap.parse_args(argv)
     edits = local_edits()
     if edits:
@@ -44,6 +45,24 @@ def main(argv=None):
     git = lambda *a: subprocess.run(['git', '-c', 'safe.directory=' + args.source.resolve().as_posix(), '-C', str(args.source), *a], capture_output=True, check=True).stdout
     commit = git('rev-parse', args.tag + '^{commit}').decode().strip()
     archive = git('-c', 'core.autocrlf=false', 'archive', '--format=tar', args.tag)
+    if args.working_tree:
+        # Keep the release archive's file set; overlay source changes and new implementation files.
+        with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+            names = {m.name for m in tar.getmembers() if m.isfile()}
+        extras = git('ls-files', '--others', '--exclude-standard', '-z').decode().split('\0')
+        names.update(n for n in extras if n.startswith(('src/', 'tests/', 'docs/')))
+        stream = io.BytesIO()
+        with tarfile.open(fileobj=stream, mode='w') as tar:
+            for name in sorted(names):
+                path = args.source / name
+                if path.is_file():
+                    data = path.read_bytes()
+                    if b'\0' not in data:
+                        data = data.replace(b'\r\n', b'\n')
+                    info = tar.gettarinfo(str(path), arcname=name)
+                    info.size = len(data)
+                    tar.addfile(info, io.BytesIO(data))
+        archive = stream.getvalue()
     # Replace only managed files, never recursively delete the vendored tree.
     # Retired files are preserved outside core/ for recovery.
     with tempfile.TemporaryDirectory(prefix='editor-core-') as tmp:
@@ -62,7 +81,7 @@ def main(argv=None):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(staged / name, target)
     files = {name: digest(CORE / name) for name in sorted(incoming)}
-    LOCK.write_text(json.dumps({'tag': args.tag, 'commit': commit, 'files': files}, indent=1) + '\n', encoding='utf-8')
+    LOCK.write_text(json.dumps({'tag': args.tag, 'commit': commit, **({'working_tree': True, 'provenance': 'Uncommitted review snapshot; commit identifies base only.'} if args.working_tree else {}), 'files': files}, indent=1) + '\n', encoding='utf-8', newline='\n')
     print('core/ <- %s (%s), %d files' % (args.tag, commit[:10], len(files)))
     return 0
 

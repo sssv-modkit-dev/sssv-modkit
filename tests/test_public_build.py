@@ -77,7 +77,7 @@ for (const [search, hash] of [['', ''], ['?rom=1&x=%23%26', '#stage=2'], ['', '#
             assert "'sha256-" + digest + "'" in csp, (page, 'inline script not covered by CSP')
     for icon in ('favicon.svg', 'favicon-model-editor.svg', 'favicon-level-editor.svg', 'favicon-build-play.svg'):
         assert (temp / icon).read_text(encoding='utf-8').startswith('<svg'), icon
-    for page, icon in (('model-editor.html', 'favicon-model-editor.svg'), ('level-editor.html', 'favicon-level-editor.svg'), ('play.html', 'favicon-build-play.svg')):
+    for page, icon in (('model-editor.html', 'demo/heads/bear.png'), ('level-editor.html', 'favicon-level-editor.svg'), ('play.html', 'favicon-build-play.svg')):
         assert 'href="' + icon + '"' in (temp / page).read_text(encoding='utf-8'), page
     for script in ('play.js', 'builder-core.js', 'builder-worker.js'):
         assert not re.search(r'https?://', (temp / script).read_text(encoding='utf-8').replace('https://emulatorjs.org', '')), script

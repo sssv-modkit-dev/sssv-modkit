@@ -6,6 +6,10 @@ SRC = Path(__file__).resolve().parents[2] / 'src'
 
 
 def run(out, no_vendor):
+    page = out / 'model-editor.html'
+    html = page.read_text(encoding='utf-8').replace('type="image/svg+xml" href="favicon-model-editor.svg"', 'type="image/png" href="demo/heads/bear.png"')
+    html = re.sub(r'(<div class="brand"><img src=")[^"]+', r'\1demo/heads/bear.png', html)
+    page.write_text(html, encoding='utf-8')
     # Pyodide builder: the worker loads these repo sources from py/ (list kept in builder-core.js).
     core = (SRC / 'web/builder-core.js').read_text(encoding='utf-8')
     modules = re.findall(r"'(\w+\.py)'", re.search(r'PY_MODULES = \[(.*?)\]', core, re.S).group(1))

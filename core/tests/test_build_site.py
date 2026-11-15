@@ -20,7 +20,7 @@ with tempfile.TemporaryDirectory() as tmp:
     out = tmp / 'sample'
     result = build(ROOT / 'packs/sample', out)
     assert result.returncode == 0, result.stderr
-    for name in ('index.html', 'level-editor.html', 'model-editor.html'):
+    for name in ('index.html', 'level-editor.html', 'model-editor.html', 'dialogue.html', 'terrain.html'):
         assert (out / name).is_file(), name
     assert not (out / 'play.html').exists()
     for path, text in pages(out).items():

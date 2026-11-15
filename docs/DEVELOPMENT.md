@@ -121,3 +121,10 @@ question, and next validation. Separate chats that edit code should use isolated
 worktrees or distinct repositories. A plain Git worktree starts from committed files; app-managed worktrees may
 also carry local changes. Verify that the guidance and inputs needed for the task
 are present, and pass private research paths explicitly.
+
+### Uncommitted core review snapshots
+
+When the reviewer must commit later, use `python tools/sync_core.py --from <core-checkout> --tag <base-ref> --working-tree`.
+The command retains the existing lock overwrite check, overlays working files onto the base archive, includes new files under src/tests/docs,
+and records `working_tree: true` in `core.lock`. The commit is the base, not a claim that these changes are committed.
+Do not publish this as a tagged release. After review and core commit, sync the committed core ref without `--working-tree`.

@@ -63,6 +63,8 @@ html=(base/'index.template.html').read_text(encoding='utf-8')
 css=(base/'css'/'app.css').read_text(encoding='utf-8')
 pose_js=(here/'web'/'animal-poses.js').read_text(encoding='utf-8')+'\nObject.assign(BUNDLED_POSES,'+json.dumps({p.stem:json.loads(p.read_text(encoding='utf-8')) for p in sorted((here/'web/demo/poses').glob('*.json'))},separators=(',',':')).replace('<',r'\u003c')+');\n'
 js=(base/'js'/'demo-models.js').read_text(encoding='utf-8')+'\n'+pose_js+(base/'js'/'history.js').read_text(encoding='utf-8')+'\n'+(base/'js'/'app.js').read_text(encoding='utf-8').replace('/*TABLE*/null',json.dumps(T,separators=(',',':')).replace('<',r'\u003c'))+'\n'+(base/'js'/'parts-lab.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'parts-table.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'animal-textures.js').read_text(encoding='utf-8')+chr(10)+(pack_js/'model-source-rom.js').read_text(encoding='utf-8')
+for stage in ('parse', 'segment', 'decimate', 'texture', 'output', 'ui'):
+    js += '\n' + (base/'js/import'/(stage+'.js')).read_text(encoding='utf-8-sig')
 icon_path=next((here/'viewer'/'assets'/name for name in ('icon.png','icon.ico') if (here/'viewer'/'assets'/name).is_file()),None)
 if icon_path and not args.public:
     mime='image/png' if icon_path.suffix=='.png' else 'image/x-icon'

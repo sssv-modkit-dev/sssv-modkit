@@ -87,6 +87,8 @@ def model_editor(pack):
           + (base / 'js/history.js').read_text(encoding='utf-8') + '\n'
           + (base / 'js/app.js').read_text(encoding='utf-8').replace('/*TABLE*/null', '{}') + '\n'
           + (base / 'js/parts-lab.js').read_text(encoding='utf-8'))
+    for name in ('parse', 'segment', 'decimate', 'texture', 'output', 'ui'):
+        js += '\n' + (base / 'js/import' / (name + '.js')).read_text(encoding='utf-8-sig')
     for script in pack['scripts']['model-editor']:
         js += '\n' + script.read_text(encoding='utf-8')
     # Same-origin only: scripts come from this one inline block (pinned by hash); styles stay inline.
@@ -147,6 +149,12 @@ def build(pack_dir, out, no_vendor=False):
         shutil.copyfile(HERE / 'web' / name, out / name)
     (out / 'model-editor.html').write_text(model_editor(pack), encoding='utf-8')
     level_editor(pack, out)
+    story = out / 'story'
+    story.mkdir(exist_ok=True)
+    for name in ('dialogue.html', 'terrain.html'):
+        shutil.copyfile(HERE / 'web' / name, out / name)
+    for name in ('story.js', 'story.css'):
+        shutil.copyfile(HERE / 'web' / name, story / name)
     if pack['hook']:
         spec = importlib.util.spec_from_file_location('pack_build_hook', pack['hook'])
         module = importlib.util.module_from_spec(spec)
