@@ -184,3 +184,15 @@ a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,selec
 
 /* Keep named tiles and deformation rows readable within the existing panels. */
 #demo-picker button{white-space:normal;overflow-wrap:anywhere;min-width:0}#deform-controls .axis-edit{grid-template-columns:minmax(54px,max-content) minmax(0,1fr) 60px;gap:4px}#deform-controls .axis-number{width:60px;max-width:100%}#deform-controls .axis-tag{text-align:left;white-space:normal}#parts .row.on{color:var(--fg)}#parts .row .raw-part-id,#parts .row .custom-part-name{color:inherit}#parts .row{font-weight:550}.desktop-note{font-size:12px;line-height:1.4;margin:0 0 8px}#floating-labels span{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:center}
+/* T053: compact rails and tabbed workbench. */
+.workbench-hidden{display:none!important}#workbench-tabs{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0}#workbench-tabs button{flex:1;white-space:normal;min-height:40px;margin:0;padding:6px;font-size:12px}#workbench-tabs [aria-selected=true]{color:var(--bg);background:var(--ac)}#source-panel>summary{font-size:12px;padding:5px 8px}#source-panel input[type=file]{max-width:100%;font-size:11px}
+@media(min-width:768px){
+ body{--left-width:224px;--right-width:280px}
+ #side,#edit-side{padding:8px}#side .brand strong{font-size:16px}#side .theme-dock{padding:3px;margin-bottom:6px}
+ #side #view-settings,#side #model-state-bar,#side #camera-tools{position:static;inset:auto;transform:none;width:100%;max-width:100%;max-height:none;box-shadow:none;margin:6px 0;flex-wrap:wrap}
+ #side #model-state-bar{justify-content:flex-start}#side #model-state-bar label{flex-wrap:wrap}#side #model-state-bar select{max-width:175px}#side #camera-tools{padding:4px;justify-content:flex-start}#side #camera-tools button{padding:4px 6px;min-height:30px;font-size:11px}
+ #source-panel{padding:4px;margin:4px 0}#demo-panel h3{margin:6px 0}#demo-picker{grid-template-columns:repeat(3,minmax(0,1fr))}#demo-panel #demo-start{font-size:11px;padding:4px}
+ #side .global-nav{font-size:12px;gap:0 4px;padding:4px}#side .global-nav>a{min-height:32px;padding:2px}#side #rom-session{font-size:11px;gap:3px}#side #rom-session small{display:none}#side #forget-rom{min-height:30px;padding:3px 5px}
+ body.left-collapsed.right-collapsed{grid-template-columns:36px 6px minmax(0,1fr) 6px 36px}
+ #mesh .mesh-hint{white-space:normal}
+}

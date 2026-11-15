@@ -1,7 +1,7 @@
 /* scene-v1: the editors' neutral document. Scene.toRuntime turns it into the shape startLevelEditor reads. */
 const Scene=(()=>{
   // scene-v1 level key -> runtime level key. Terrain keys live under level.terrain, object lists under level.objects.
-  const LEVEL={id:'id',atlas:'tex',group:'zone',sub:'sub',bounds:'bb',vertexCount:'n',spawnCount:'nsp'};
+  const LEVEL={name:'name',id:'id',atlas:'tex',group:'zone',sub:'sub',bounds:'bb',vertexCount:'n',spawnCount:'nsp'};
   const TERRAIN={positions:'pos',colours:'col',uvs:'uv',slots:'sl',water:'wat',heights:'grid',tiles:'tile',tileTypes:'bt'};
   const OBJECTS={props:'sp',creatures:'an'};
   const RECORDS={props:'props',creatures:'animals'};

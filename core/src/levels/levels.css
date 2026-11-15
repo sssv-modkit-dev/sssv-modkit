@@ -86,3 +86,20 @@ body.phone-portrait .panel-handle{cursor:pointer;touch-action:auto}
 
 /* Full object names are the primary tile label. */
 .pal-label{display:block;max-width:100%;max-height:none;white-space:normal;overflow:visible;overflow-wrap:anywhere;line-height:1.25;font-size:11px}.desktop-note{font-size:12px;line-height:1.4;margin:0 0 8px}
+/* T053: bounded anchored rails, leaving an uninterrupted centre viewport. */
+@media(min-width:768px){
+ #objects-panel{position:fixed;inset:0 auto 0 0;width:224px;height:100vh;max-height:none;resize:none;border-radius:0;z-index:5;padding:12px;box-sizing:border-box;background:#121b29;overflow:auto}
+ #objects-panel>summary{font-size:16px;padding:10px 3px;cursor:pointer;border-bottom:1px solid #536075;overflow-wrap:anywhere}
+ #objects-panel:not([open]){height:100vh}#object-tree{padding-top:8px}
+ #level-right{position:fixed;inset:0 0 0 auto;width:300px;overflow:auto;z-index:5;background:#121b29;border-left:1px solid #536075;padding:8px;box-sizing:border-box}
+ #level-right #ui,#level-right #editor,#level-right #add-panel,#level-right #project-panel{position:static;width:100%;max-width:none;max-height:none;margin:0 0 10px;resize:none;box-sizing:border-box}
+ #level-right #ui{padding:6px;border:0;box-shadow:none}#level-right #ui nav{gap:2px 6px}#level-right #ui .global-nav>a{padding:0 3px}
+ #object-tools{left:236px;right:312px;bottom:12px;top:auto;width:max-content;max-width:calc(100% - 548px)}
+ #level-right #hd{font-size:14px}#level-start.primary-start{padding:6px;font-size:12px;margin:4px 0}
+ #level-right summary{padding:8px 4px}#level-right #palette{position:static;width:100%;max-height:400px}#level-right #pal-grid{max-height:270px}
+ #level-right .global-nav{font-size:12px;padding:2px}#level-right #rom-session{flex-basis:100%;font-size:11px}#level-right #rom-session small{display:none}
+ #ed-info{max-width:220px}
+}
+@media(max-width:767px){#level-right{display:contents}}
+
+@media(min-width:768px){#level-right .net-note{position:static!important;inset:auto!important;max-width:100%!important;margin:10px 0}}

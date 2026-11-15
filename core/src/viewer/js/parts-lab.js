@@ -147,5 +147,5 @@ if(window.ModelEditorHistory){
 }
 
 // Optional pack persistence saves only the edit project, not source geometry.
-if(window.ModelEditorHost){window.ModelEditorHost.getProject=demoProject;window.ModelEditorHost.applyProject=applyModelProject;window.ModelEditorHost.expandSourceAnimals=()=>{if(demoMode)return;modelCategory='Animals';buildDemoPicker();};}
+if(window.ModelEditorHost){window.ModelEditorHost.captureSession=captureModelHistory;window.ModelEditorHost.restoreSession=restoreModelHistory;window.ModelEditorHost.buildConfig=allGameConfigs;window.ModelEditorHost.getProject=demoProject;window.ModelEditorHost.applyProject=applyModelProject;window.ModelEditorHost.expandSourceAnimals=()=>{if(demoMode)return;modelCategory='Animals';buildDemoPicker();};}
 addEventListener('model-source-ready',()=>{if(!demoMode){modelCategory='Animals';buildDemoPicker();}});

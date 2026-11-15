@@ -1,5 +1,9 @@
 document.addEventListener('click',e=>{const button=e.target.closest('#level-network-ok');if(button)button.closest('details').hidden=true;});
 function startLevelEditor(data){
+// Replacing the demo or reopening a scene must retire its touch/keyboard handlers and render loop.
+startLevelEditor.controller?.abort();
+const controller=startLevelEditor.controller=new AbortController();
+function listen(target,type,handler,options={}){target.addEventListener(type,handler,{...(typeof options==='boolean'?{capture:options}:options),signal:controller.signal});}
 const {ANIM,MODEL,TBL,ATLAS,LEVELS,EDITOR_STOCK,EDITOR_SHA1}=data;
 
 
@@ -119,6 +123,7 @@ function draw(o,mode,ps){gl.bindBuffer(gl.ARRAY_BUFFER,o.p);gl.enableVertexAttri
  gl.bindBuffer(gl.ARRAY_BUFFER,o.c);gl.enableVertexAttribArray(aC);gl.vertexAttribPointer(aC,3,gl.FLOAT,false,0,0);gl.uniform1f(uS,ps||1);gl.drawArrays(mode,0,o.n);}
 let M;
 function frame(){
+ if(controller.signal.aborted)return;
  const w=cv.clientWidth,h=cv.clientHeight;if(cv.width!=w||cv.height!=h){cv.width=w;cv.height=h;}
  gl.viewport(0,0,w,h);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);
  gl.useProgram(P);M=matrix();gl.uniformMatrix4fv(uM,false,M);
@@ -161,27 +166,28 @@ window.onmousemove=e=>{
   t.textContent=`cell ${c[0]},${c[1]} tile type ${ty} ${walk(ty)?'walkable':'BLOCKED'}${$('tile-details').checked?' B: '+b+' (+0 '+L.bt[ty*12]+', +1*8 = '+L.bt[ty*12+1]*8+')':''}`;return;}const s=L.spw[i];
  t.style.display='block';t.style.left=e.clientX+12+'px';t.style.top=e.clientY+12+'px';const te=TBL[s[3]]||[];t.textContent=`${LevelSelection.name('props',s[3])} · #${i}${s[3]===55?' (player start)':''} type 0x${s[3].toString(16)} (${s[3]}) kind ${te[0]} bank ${te[1]} box ${te[2]}x${te[3]}x${te[4]} yaw ${s[4]} xyz ${s[0]}, ${s[1]}, ${s[2]}`;};
 let tch=null;const tinfo=t=>t.length>1?{x:(t[0].clientX+t[1].clientX)/2,y:(t[0].clientY+t[1].clientY)/2,d:Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY)}:{x:t[0].clientX,y:t[0].clientY};
-cv.addEventListener('touchstart',e=>{e.preventDefault();tch=tinfo(e.touches);tch.n=e.touches.length;},{passive:false});
-cv.addEventListener('touchmove',e=>{e.preventDefault();if(!tch)return;const n=tinfo(e.touches);if(e.touches.length!=tch.n){tch=n;tch.n=e.touches.length;return;}
+listen(cv,'touchstart',e=>{e.preventDefault();tch=tinfo(e.touches);tch.n=e.touches.length;},{passive:false});
+listen(cv,'touchmove',e=>{e.preventDefault();if(!tch)return;const n=tinfo(e.touches);if(e.touches.length!=tch.n){tch=n;tch.n=e.touches.length;return;}
  const dx=n.x-tch.x,dy=n.y-tch.y;
- if(tch.n==1&&typeof edPanMode!=='undefined'&&edPanMode){const s=cam.d/cv.clientHeight*1.2,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);cam.t[0]+=(dx*sy-dy*cy*Math.sin(cam.pitch))*s;cam.t[1]+=(-dx*cy-dy*sy*Math.sin(cam.pitch))*s;}
+ if(tch.n==1&&(window.EditorTouch?.mode==='pan'||window.EditorTouch?.mode!=='look'&&typeof edPanMode!=='undefined'&&edPanMode)){const s=cam.d/cv.clientHeight*1.2,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);cam.t[0]+=(dx*sy-dy*cy*Math.sin(cam.pitch))*s;cam.t[1]+=(-dx*cy-dy*sy*Math.sin(cam.pitch))*s;}
  else if(tch.n==1)LevelSelection.cameraLook(cam,dx,dy,cameraMode==='free');
  else{if(tch.d&&n.d){if(cameraMode==='free')LevelSelection.cameraTravel(cam,(n.d-tch.d)*.006,0,0,Math.max(200,cam.d*.35));else cam.d=Math.max(10,cam.d*tch.d/n.d);}if(typeof edPanMode!=='undefined'&&!edPanMode){tch=Object.assign(n,{n:e.touches.length});return;}const s=cam.d/cv.clientHeight*1.2,cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);cam.t[0]+=(dx*sy-dy*cy*Math.sin(cam.pitch))*s;cam.t[1]+=(-dx*cy-dy*sy*Math.sin(cam.pitch))*s;}
  n.n=tch.n;tch=n;},{passive:false});
-cv.addEventListener('touchend',e=>{tch=e.touches.length?Object.assign(tinfo(e.touches),{n:e.touches.length}):null;});
+listen(cv,'touchend',e=>{tch=e.touches.length?Object.assign(tinfo(e.touches),{n:e.touches.length}):null;});
 let fly=false,cameraMode='free';const keys={};
 $('camera-mode').onchange=()=>{cameraMode=$('camera-mode').value;setFly(false);};
 /* Freecam keeps the eye fixed while looking; keyboard travel works without holding a mouse button. */
 function setFly(on){fly=on;}
 $('mn').onclick=()=>{const u=$('ui');u.classList.toggle('min');$('mn').innerHTML=u.classList.contains('min')?'+':'&ndash;';};
-window.addEventListener('keydown',e=>{const t=e.target.tagName;if(t=='INPUT'||t=='SELECT'||t=='TEXTAREA'||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();keys[k]=true;if(k.length==1&&'wasdqe '.includes(k))e.preventDefault();});
-window.addEventListener('blur',()=>{for(const k of Object.keys(keys))delete keys[k];drag=null;fly=false;});
-window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+listen(window,'keydown',e=>{const t=e.target.tagName;if(t=='INPUT'||t=='SELECT'||t=='TEXTAREA'||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();keys[k]=true;if(k.length==1&&'wasdqe '.includes(k))e.preventDefault();});
+listen(window,'blur',()=>{for(const k of Object.keys(keys))delete keys[k];drag=null;fly=false;});
+listen(window,'keyup',e=>{keys[e.key.toLowerCase()]=false;});
 let lastT=performance.now();
 function flyStep(){const now=performance.now(),dt=Math.min(.05,(now-lastT)/1000);lastT=now;if(!fly&&cameraMode!=='free')return;
  const sp=(keys.shift?3.4:1)*Math.max(700,cam.d*.35)*dt;
  LevelSelection.cameraTravel(cam,(keys.w?1:0)-(keys.s?1:0),(keys.d?1:0)-(keys.a?1:0),(keys.e||keys[' ']?1:0)-(keys.q?1:0),sp);}
 cv.onwheel=e=>{e.preventDefault();if(cameraMode==='free')LevelSelection.cameraTravel(cam,-e.deltaY*.001,0,0,Math.max(200,cam.d*.35));else cam.d=Math.max(10,Math.min(100000,cam.d*Math.exp(e.deltaY*.001)));};
+$('lv').replaceChildren();
 LEVELS.forEach((l,i)=>{const o=document.createElement('option');o.value=i;o.textContent='Level '+l.id;$('lv').appendChild(o);});
 $('gm').onchange=recolor;$('ms').onchange=()=>{buildMeshes();};
 $('lv').onchange=()=>load(+$('lv').value);
@@ -238,5 +244,5 @@ if(gl){load(+(HP.get('lv')||0));$('lv').value=+(HP.get('lv')||0);
  requestAnimationFrame(frame);}
 
 /*EDITOR*/
-return {sourceSha1:EDITOR_SHA1,get level(){return L;},get records(){return edRecords;},get camera(){return cam;},get parts(){return edParts;},get selection(){return Array.from(edSelection);},diff:edDiff,select(value){edSelected=value;edSelection=new Set([value]);$('ed-category').value='all';edList();},load,current:edCurrent,view:currentView};
+return {sourceSha1:EDITOR_SHA1,get level(){return L;},get records(){return edRecords;},get camera(){return cam;},get parts(){return edParts;},get selection(){return Array.from(edSelection);},project:edProject,restoreProject(p){if(p.source_sha1!==EDITOR_SHA1)throw Error('These edits need their original source ROM.');edRecords=EditorRecords.validate(p.edits);edParts=p.parts||null;edRefresh();edPartsStatus();},diff:edDiff,select(value){edSelected=value;edSelection=new Set([value]);$('ed-category').value='all';edList();},load,current:edCurrent,view:currentView};
 }

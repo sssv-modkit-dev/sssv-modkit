@@ -7,7 +7,7 @@ A pack is a folder with pack.json (see docs/FORMAT.md). It supplies the page cop
 files to copy, scenes, optional bundled models and an optional Python build hook. Exit code 2 means the
 pack is incomplete; the message names the missing slot or file.
 """
-import argparse, base64, hashlib, importlib.util, json, shutil, sys
+import argparse, base64, hashlib, importlib.util, json, re, shutil, sys
 from pathlib import Path
 from urllib.parse import quote
 from html import escape
@@ -93,7 +93,7 @@ def model_editor(pack):
         js += '\n' + script.read_text(encoding='utf-8')
     # Same-origin only: scripts come from this one inline block (pinned by hash); styles stay inline.
     script_hash = base64.b64encode(hashlib.sha256(js.encode('utf-8')).digest()).decode('ascii')
-    csp = ("default-src 'none'; script-src 'self' 'wasm-unsafe-eval' 'sha256-" + script_hash + "'; style-src 'unsafe-inline'; img-src 'self' data: blob:; "
+    csp = ("default-src 'none'; script-src 'self' 'wasm-unsafe-eval' 'sha256-" + script_hash + "'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
            "worker-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'")
     html = (base / 'index.template.html').read_text(encoding='utf-8')
     html = html.replace('<title>SSSV Model Editor</title>', '<title>Model Editor (%s)</title><meta http-equiv="Content-Security-Policy" content="%s">' % (pack['title'], csp), 1)
@@ -145,13 +145,13 @@ def build(pack_dir, out, no_vendor=False):
         copy(src, out / dest, exclude)
     for src, dest in pack['scenes']:
         copy(src, out / dest, ())
-    for name in FAVICONS:
+    for name in FAVICONS + ('editor-mobile.css', 'editor-mobile.js', 'rom-session.js', 'global-nav.css', 'list-filters.js', 'runtime-progress-worker.js', 'session-edits.js', 'textures-redirect.js', 'level-workspace.js', 'model-workspace.js'):
         shutil.copyfile(HERE / 'web' / name, out / name)
     (out / 'model-editor.html').write_text(model_editor(pack), encoding='utf-8')
     level_editor(pack, out)
     story = out / 'story'
     story.mkdir(exist_ok=True)
-    for name in ('dialogue.html', 'terrain.html'):
+    for name in ('dialogue.html', 'textures.html', 'terrain.html'):
         shutil.copyfile(HERE / 'web' / name, out / name)
     for name in ('story.js', 'story.css'):
         shutil.copyfile(HERE / 'web' / name, story / name)
@@ -161,6 +161,25 @@ def build(pack_dir, out, no_vendor=False):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         module.run(out, no_vendor)
+    # One navigation and local ROM session on every available page, including pack Home/Play.
+    available = [(name, label) for name, label in (
+        ('index', 'Home'), ('model-editor', 'Model'), ('level-editor', 'Level'),
+        ('play', 'Play'), ('dialogue', 'Dialogue'), ('textures', 'Textures & Tilesets'))
+        if (out / (name + '.html')).is_file()]
+    for name, _ in available + ([('start', 'Guided build')] if (out / 'start.html').is_file() else []):
+        page = out / (name + '.html')
+        html = page.read_text(encoding='utf-8')
+        links = ''.join('<a href="%s.html"%s>%s</a>' % (dest, ' aria-current="page"' if dest == name else '', label) for dest, label in available)
+        nav = '<nav class="global-nav" aria-label="Editors">' + links + '</nav>'
+        if re.search(r'<nav\b', html):
+            html = re.sub(r'<nav\b[^>]*>.*?</nav>', lambda m: nav, html, count=1, flags=re.S)
+            # Old secondary editor links now belong to the shared navigation.
+            first = html.index('</nav>') + len('</nav>')
+            html = html[:first] + re.sub(r'<nav\b[^>]*>.*?</nav>', '', html[first:], flags=re.S)
+        else:
+            html = re.sub(r'(<main[^>]*>)', lambda m: m[0] + nav, html, count=1)
+        html = html.replace('</head>', '<link rel="stylesheet" href="global-nav.css"><script src="rom-session.js" defer></script><script src="list-filters.js" defer></script><script src="session-edits.js" defer></script></head>', 1)
+        page.write_text(html, encoding='utf-8')
     return pack
 
 
