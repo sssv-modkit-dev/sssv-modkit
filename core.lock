@@ -1,6 +1,6 @@
 {
  "tag": "github/editor",
- "commit": "5846070d79b16b0d5c6742e33939441dd4fe9a0d",
+ "commit": "f662c5a065a39b9cf9b3f416273bce65c3da8773",
  "files": {
   ".gitignore": "3ad2750af909c18ed688f1571f91a873e942cb61dfc71e72ed8a64ef986e2562",
   ".gitlab-ci.yml": "cd5b67aff57cf27a4ceb555e7f2ca96c957d431775570dd5d4e4eb7b1b891b42",
@@ -34,8 +34,8 @@
   "src/levels/scene.js": "574e7761441f36516a90882751b5595f077e7295061f7ed323d8cf4a77dc1990",
   "src/levels/selection.js": "33a110d15d2fa22560937bf5bdd249deefc2a4375cae27a80156fd747f484de1",
   "src/viewer/css/app.css": "b2477e267000d5dd8f4d6d462989a138702c60abd7ba6a80b5fe21a6928b5481",
-  "src/viewer/index.template.html": "efa020e9e1166c3f17edef855f2b3835df781d0d9c1be29ffa1b4b460dff2ec1",
-  "src/viewer/js/app.js": "3f7537072df332e443684daa5240cfecf2ccd9b0e8ead7b0b18139c7ea21bd47",
+  "src/viewer/index.template.html": "a38f46887564318b6e5441bee5ed286a6a0f38e514e8e845ccbbde7a0649610f",
+  "src/viewer/js/app.js": "db0c8a68bb5e5760260774ad1a24797eceee28fdfa20d541fdb7ad6a1ec0e42c",
   "src/viewer/js/deform.js": "40b30c99de0ec8b3e1df51390746d62a70afd7072bb3fc2fe46e04abda5e4b6e",
   "src/viewer/js/demo-models.js": "329385574ae129ff8cb9bbc2ca6b2978ec7d870a18a7bbb9e49863a65550b6f3",
   "src/viewer/js/history.js": "7bfcd3984d54bfcdea496d6b4b8069e5c24bf9ef2d771316737a6a3e7b218c1b",
@@ -87,7 +87,7 @@
   "tests/test_model_history.js": "2dc0c82d06d25c6497400ea2eccc1fe491efca303c6adc6347600fb5a41d453d",
   "tests/test_model_import.js": "bc6f3081becfa54a46b240ae73c2519e096e61483b49436c45f1fc0c75a91ae8",
   "tests/test_model_source.js": "154e1b200cedaa1e0e17de7478ef2e22c9fdca35e6862953bb1fb7906142c1f1",
-  "tests/test_model_workbench.js": "556bbf62e95b133b0e27b6e61d184d94828e9b2598baafde409c92f94b88cb2b",
+  "tests/test_model_workbench.js": "abcc9e6dde756a08253a9fb5852243b7c32b2070f260ae7ad4391580bad8c9e8",
   "tests/test_parts_lab.js": "1b7daa4547a1a5cff1a0d84cbeb1ea89a4b649d76a020a21053d7c18afc9464d",
   "tests/test_sample_pack.js": "3c890846128d394ef30ba6a56165798ac567fc0967d755d11f937bca592cfd62",
   "tests/test_scene.js": "75a4453b4334b3097bd818339701cb5e488531eb2fa01b36dabfb91f46ef56fb",
