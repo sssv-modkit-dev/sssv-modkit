@@ -149,7 +149,8 @@ function gpick(mx,my){const nx=mx/cv.clientWidth*2-1,ny=1-my/cv.clientHeight*2,f
   if(pz<=L.grid8[gx*97+gy]*8){return tcell(px,py);}}
  return null;}
 let drag=null;
-cv.onmousedown=e=>{if(e.button===2)setFly(true);if(e.button===2||e.button===1||e.shiftKey)drag={x:e.clientX,y:e.clientY,pan:e.button===1||e.button===0&&e.shiftKey};};
+/* Left-drag pans when the editor's Pan tool is active (mouse), as does Shift+left or the middle button. */
+cv.onmousedown=e=>{const panTool=e.button===0&&typeof edPanMode!=='undefined'&&edPanMode;if(e.button===2)setFly(true);if(e.button===2||e.button===1||e.shiftKey||panTool)drag={x:e.clientX,y:e.clientY,pan:e.button===1||e.button===0&&(e.shiftKey||panTool)};};
 window.onmouseup=()=>{drag=null;fly=false;};cv.oncontextmenu=e=>e.preventDefault();
 window.onmousemove=e=>{
  if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.x=e.clientX;drag.y=e.clientY;

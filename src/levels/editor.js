@@ -57,7 +57,7 @@ let edDragMode=false,edDown=[0,0],edPlacedAt=-1e9;
 const edTools={select:'Select',move:'Move',add:'Add',pan:'Camera pan'};
 let edAddMode=false,edPanMode=false;
 let edGhostPoint=null,edGhostBuffers=null,edGhostKey='',edTouchPlace=null;
-function edTool(mode){edGhostPoint=null;edTouchPlace=null;edPanMode=mode==='pan';edBox=null;edMove=null;edBoxMode=false;edDragMode=mode==='move';edAddMode=mode==='add';for(const id of ['select','move','add','pan'])$('ed-tool-'+id).setAttribute('aria-pressed',String(id===mode));$('ed-tool-name').textContent=edTools[mode];if(edAddMode){$('add-panel').open=true;palRender();}cv.style.cursor=edAddMode?'crosshair':edDragMode?'move':'';}
+function edTool(mode){edGhostPoint=null;edTouchPlace=null;edPanMode=mode==='pan';edBox=null;edMove=null;edBoxMode=false;edDragMode=mode==='move';edAddMode=mode==='add';for(const id of ['select','move','add','pan'])$('ed-tool-'+id).setAttribute('aria-pressed',String(id===mode));$('ed-tool-name').textContent=edTools[mode];if(edAddMode){$('add-panel').open=true;palRender();}cv.style.cursor=edAddMode?'crosshair':edDragMode?'move':edPanMode?'grab':'';}
 for(const id of ['select','move','add','pan'])$('ed-tool-'+id).onclick=()=>edTool(id);
 edList();
 
