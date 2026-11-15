@@ -1,12 +1,27 @@
 'use strict';
 const $ = id => document.getElementById(id);
-let dirty = false, busy = false, ready = false;
+let dirty = false, busy = false, ready = false, project = null, localData = null;
+function download(bytes, name, type = 'application/octet-stream') {
+  const url = URL.createObjectURL(new Blob([bytes], {type})), a = document.createElement('a');
+  a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function exportROM(terrain) {
+  status('Building in your browser...');
+  const rom = project.build(localData, terrain);
+  download(rom, 'story-patched.z64');
+  $('ips').disabled = false; $('ips').onclick = () => download(StoryROM.ips(project.rom, rom), 'story-patched.ips');
+  dirty = false; status('ROM downloaded. Download IPS is also ready.');
+}
 const status = text => { $('status').textContent = text; };
-function changed() { dirty = true; status('Unsaved changes.'); }
+function changed() { $('ips').disabled = true; dirty = true; status('Unsaved changes.'); }
 function enabled() {
   for (const id of ['save','build']) $(id).disabled = busy || !ready;
 }
 async function api(path, data) {
+  if (project) {
+    if (path === '/api/dialogue') return localData;
+    if (path === '/api/save') { localData.banks = data.banks; localData.levels = data.levels; return {message:'Edits ready in browser memory.'}; }
+  }
   const response = await fetch(path, data === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
   if (!response.ok) { const error = await response.json(); throw Error(error.error || response.statusText); }
   return response.json();
@@ -26,7 +41,7 @@ async function dialogue() {
   const bytes = strings => 2 + Object.values(strings).reduce((n, s) => n + 4 + 2 * s.length, 0);
   function budget() {
     const used = bytes(data.banks[bank].strings), max = data.capacities[bank];
-    $('budget').textContent = `${used} / ${max} bytes · ${max-used} remaining in bank ${bank}`;
+    $('budget').textContent = `${used} / ${max} bytes / ${max-used} remaining in bank ${bank}`;
     $('budget').classList.toggle('bad', used > max);
     $('budget-bar').max = max; $('budget-bar').value = used;
   }
@@ -53,14 +68,14 @@ async function dialogue() {
     preview(text ?? ''); $('encoding').textContent = '';
     $('holds').replaceChildren();
     const records = Number(bank) < 31 ? data.levels[String(Number(bank)+1)] || [] : [];
-    for (const r of records.filter(r => r.op === 'message' && String(r.text) === line)) timingInput($('holds'), r, 'hold_seconds', `Record ${r.i} · hold seconds`);
+    for (const r of records.filter(r => r.op === 'message' && String(r.text) === line)) timingInput($('holds'), r, 'hold_seconds', `Record ${r.i} / hold seconds`);
     if (!$('holds').children.length) $('holds').textContent = 'No decoded message timing for this line.';
   }
   function listLines(preferred = line) {
     $('lines').replaceChildren();
     for (const [id, text] of Object.entries(data.banks[bank].strings)) {
       if (!text.toLowerCase().includes($('search').value.toLowerCase())) continue;
-      option($('lines'), id, `${id} · ${text.replace(/\n/g,' ' ).slice(0,110)}`);
+      option($('lines'), id, `${id} / ${text.replace(/\n/g,' ' ).slice(0,110)}`);
     }
     if ([...$('lines').options].some(o => o.value === preferred)) $('lines').value = preferred;
     else $('lines').selectedIndex = 0;
@@ -70,20 +85,20 @@ async function dialogue() {
     bank = $('bank').value; $('search').value = '';
     listLines(); budget(); $('waits').replaceChildren();
     if (Number(bank) < 31) for (const r of data.levels[String(Number(bank)+1)] || []) {
-      if (r.op === 'wait') timingInput($('waits'), r, 'frames', `Record ${r.i} · frames (30/s)`);
+      if (r.op === 'wait') timingInput($('waits'), r, 'frames', `Record ${r.i} / frames (30/s)`);
     }
   }
-  for (const [id,b] of Object.entries(data.banks)) option($('bank'), id, `${Number(id)<31?'Level '+(Number(id)+1)+' / ':''}Bank ${id} · ${b.title || 'Untitled'}`);
+  for (const [id,b] of Object.entries(data.banks)) option($('bank'), id, `${Number(id)<31?'Level '+(Number(id)+1)+' / ':''}Bank ${id} / ${b.title || 'Untitled'}`);
   $('help').textContent = data.help;
   $('bank').disabled = false; $('bank').onchange = showBank; $('lines').onchange = showLine; $('search').oninput = () => listLines();
   $('text').oninput = () => {
     const text = $('text').value; data.banks[bank].strings[line] = text;
     const selected = $('lines').selectedOptions[0];
-    if (selected) selected.textContent = `${line} · ${text.replace(/\n/g,' ').slice(0,110)}`;
+    if (selected) selected.textContent = `${line} / ${text.replace(/\n/g,' ').slice(0,110)}`;
     budget(); preview(text); changed();
     $('encoding').textContent = /^[\x20-\x7e\n]*$/.test(text) ? '' : 'Unsupported character: use plain ASCII and line breaks.';
   };
-  async function save() { const result = await api('/api/save', {banks:data.banks, levels:data.levels}); dirty = false; status(result.message); }
+  async function save() { if(project) { download(JSON.stringify({banks:data.banks,levels:data.levels},null,2), 'story-edits.json', 'application/json'); dirty = false; status('Edits downloaded.'); return; } const result = await api('/api/save', {banks:data.banks, levels:data.levels}); dirty = false; status(result.message); }
   // Freeze editing while saving/building so a late response cannot mark newer edits saved.
   async function locked(fn) {
     const controls = [...document.querySelectorAll('input,select,textarea')];
@@ -92,10 +107,11 @@ async function dialogue() {
   }
   $('save').onclick = () => action(() => locked(save));
   $('build').onclick = () => action(() => locked(async () => {
+    if(project) { exportROM(); return; }
     await save(); status('Building story ROM. This may take a few minutes...');
     const result = await api('/api/build', {kind:'dialogue'}); status(result.message); $('log').textContent = result.log;
   }));
-  showBank(); ready = true; enabled(); status('Ready. Changes save to local working JSON files.');
+  showBank(); ready = true; enabled(); status(project ? 'ROM loaded. Edit dialogue or timing, then download.' : 'Ready. Changes save to local working JSON files.');
 }
 
 async function terrain() {
@@ -117,15 +133,16 @@ async function terrain() {
     loaded = false; ready = false; enabled(); $('terrain-level').disabled = true;
     status('Loading tile sheet...');
     try {
+      if(project) { ctx.putImageData(new ImageData(project.sheet(next),272,136),0,0); } else {
       const response = await fetch('/api/sheet?level='+next);
       if (!response.ok) throw Error((await response.json()).error);
       const bitmap = await createImageBitmap(await response.blob());
-      ctx.clearRect(0,0,272,136); ctx.drawImage(bitmap,0,0); bitmap.close();
+      ctx.clearRect(0,0,272,136); ctx.drawImage(bitmap,0,0); bitmap.close(); }
       level = next; dirty = false; history = []; picked = null; loaded = true; ready = true;
       $('recolour').disabled = true; render(); status(`Level ${level} ready. Select a tile, then paint.`);
     } finally { $('terrain-level').disabled = false; enabled(); }
   }
-  for(let lv=1;lv<=31;lv++) option($('terrain-level'), lv, `Level ${lv} · ${data.banks[String(lv-1)]?.title || ''}`);
+  for(let lv=1;lv<=31;lv++) option($('terrain-level'), lv, `Level ${lv} / ${data.banks[String(lv-1)]?.title || ''}`);
   $('terrain-level').onchange = () => action(load);
   sheet.onclick = event => {
     if(!loaded || busy) return;
@@ -157,12 +174,33 @@ async function terrain() {
     ctx.putImageData(pixels,x,y); render(); changed();
   };
   $('undo').onclick = () => { if(busy || !history.length) return; ctx.putImageData(history.pop(),0,0); render(); changed(); };
-  async function save() { const result = await api('/api/sheet', {level, png:sheet.toDataURL('image/png').split(',')[1]}); dirty = false; status(result.message); }
+  async function save() { if(project) { download(await new Promise(resolve => sheet.toBlob(resolve, 'image/png')), 'terrain-sheet.png','image/png'); dirty = false; status('Edits downloaded.'); return; } const result = await api('/api/sheet', {level, png:sheet.toDataURL('image/png').split(',')[1]}); dirty = false; status(result.message); }
   $('save').onclick = () => action(save);
   $('build').onclick = () => action(async () => {
+    if(project) { exportROM({level,rgba:ctx.getImageData(0,0,272,136).data}); return; }
     await save(); status('Building selected terrain + saved story ROM. This may take a few minutes...');
     const result = await api('/api/build', {kind:'terrain', level}); status(result.message); $('log').textContent = result.log;
   });
   await load();
 }
-(document.body.dataset.page === 'dialogue' ? dialogue() : terrain()).catch(error => status(`Local bridge unavailable: ${error.message}\nRun python tools/story_editor.py, then open its printed URL.`));
+
+const start = () => document.body.dataset.page === 'dialogue' ? dialogue() : terrain();
+$('rom').onchange = () => action(async () => {
+  if (dirty && !confirm('Discard current edits and load another ROM?')) return;
+  const file = $('rom').files[0]; if (!file) return;
+  const next = new StoryROM.Project(new Uint8Array(await file.arrayBuffer()));
+  project = next; localData = next.data; dirty = false; ready = false;
+  for(const id of ['bank','lines','terrain-level']) if($(id)) $(id).replaceChildren();
+  $('ips').disabled = true;
+  $('save').textContent = document.body.dataset.page === 'dialogue' ? 'Download edits JSON' : 'Download sheet PNG';
+  $('build').textContent = 'Download patched ROM';
+  await start();
+});
+$('bridge').onclick = () => action(async () => {
+  if(dirty && !confirm('Discard browser edits and use the bridge?')) return;
+  project = null; localData = null; ready = false; dirty = false;
+  $('ips').disabled = true; $('save').textContent = document.body.dataset.page === 'dialogue' ? 'Save JSON' : 'Save sheet PNG';
+  $('build').textContent = 'Save & build ROM';
+  for(const id of ['bank','lines','terrain-level']) if($(id)) $(id).replaceChildren();
+  await start();
+});
