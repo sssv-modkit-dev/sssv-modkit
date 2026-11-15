@@ -98,6 +98,22 @@
    "exclude": [
     "level-4.json"
    ]
+  },
+  {
+   "src": "../../src/web/start.html",
+   "dest": "start.html"
+  },
+  {
+   "src": "../../src/web/start.js",
+   "dest": "start.js"
+  },
+  {
+   "src": "../../src/web/start.css",
+   "dest": "start.css"
+  },
+  {
+   "src": "../../src/web/patches.json",
+   "dest": "patches.json"
   }
  ],
  "build_hook": "build_hook.py",

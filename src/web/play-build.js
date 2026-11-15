@@ -171,6 +171,18 @@
     if (event.origin !== location.origin || location.origin === 'null') return;
     receive(event.data);
   });
+  window.addEventListener('DOMContentLoaded', async () => {
+    if (new URLSearchParams(location.search).get('build') !== 'guided') return;
+    try {
+      const source = await window.ROMSession?.get(), built = await window.ROMSession?.read('guided-build');
+      if (!source || !built || built.hash !== source.hash || !isBlobLike(built.rom)) {
+        status('No guided build is available for this ROM. Return to Guided build and build again.'); return;
+      }
+      state.rom = built.rom; state.romName = built.name;
+      lockInput('b-rom', built.name); update();
+      status('Guided build loaded. Press Play to start it.');
+    } catch (error) { status('Could not load the guided build: ' + error.message); }
+  });
   window.SSSVPlayBuild = { receive, explain, build };
   update();
 })();

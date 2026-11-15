@@ -13,14 +13,16 @@
 
 ![Model Editor showing original demo geometry and Save edits controls](docs/images/features/parts-lab.jpg)
 
-*The public Model Editor demo uses original sample geometry. Game-specific editing requires your own supported game files. Captured static poses support 23 species, including 18 more animals when you load your ROM; see the [assembled animal list and partial captures](docs/guides/MODEL-EDITOR.md).* See [image notes](docs/images/features/README.md).
+*The public Model Editor uses original sample geometry. Game-specific editing requires your own supported game files. Captured static poses support 23 species, including 18 more animals when you load your ROM; see the [assembled animal list and partial captures](docs/guides/MODEL-EDITOR.md).* See [image notes](docs/images/features/README.md).
+
+[**Start a guided build**](https://sssv-modkit-dev.github.io/sssv-modkit/start.html): load your ROM, choose Patch only or Mod in depth, review your changes, then build and play. See the [guided build guide](docs/guides/GUIDED-BUILD.md).
 
 ## Choose your path
 
 | I want to… | Start here | What I need to know |
 | --- | --- | --- |
 | Explore demo models | [Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/model-editor.html) | Bundled demos work without a ROM. |
-| Edit a stage | [Level Editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) · [Guide](docs/guides/LEVEL-EDITOR.md) | Select your own supported ROM. Edit terrain in the Terrain editor; verify edited builds in game. |
+| Edit a stage | [Level Editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) · [Guide](docs/guides/LEVEL-EDITOR.md) | Select your own supported ROM. Edit terrain in the Textures & Tilesets; verify edited builds in game. |
 | Play in the browser | [Browser Play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html) | Experimental; compatibility and performance need more testing. Select your own uncompressed ROM or patched build. |
 | Build an animal patch | [Getting started](docs/guides/GETTING-STARTED.md) | Requires your own unmodified US 1.0 ROM and Python. |
 
@@ -39,7 +41,7 @@ The builder writes an IPS patch and, by default, a patched ROM under `build/`. I
 ## Features and current limits
 
 - **Model Editor:** recolour and reshape existing animal parts, edit vertices, preview changes, and import or export configs. Geometry edits preserve vertex and triangle counts; shading and in-game appearance still need checking.
-- **Level Editor:** inspect and edit supported stage objects, save projects, and build ROMs or IPS patches. Edit terrain textures in the Terrain editor. Arbitrary edits are not guaranteed to work in game.
+- **Level Editor:** inspect and edit supported stage objects, save projects, and build ROMs or IPS patches. Edit terrain textures in the Textures & Tilesets. Arbitrary edits are not guaranteed to work in game.
 - **Patch builders:** create animal and level edits locally with source checks and IPS round-trip validation. Animal configs require the US 1.0 ROM; see the [Level Editor guide](docs/guides/LEVEL-EDITOR.md) for level-build constraints.
 - **Browser Play and Build & Play:** experimental. Compatibility, controls, and performance need further testing.
 - **Not implemented:** importing entirely new character rigs and a finished combined mod campaign.

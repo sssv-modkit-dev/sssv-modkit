@@ -6,6 +6,8 @@ This is the documentation index for the project. Use it to move from the high-le
 
 If you want to try the browser tools, build a local patch, or understand what the project currently supports:
 
+- [Guided build](guides/GUIDED-BUILD.md) - the browser path from a ROM to a combined build.
+- [Textures & Tilesets](guides/TEXTURES-TILESETS.md) - paint ground tiles and preview seams.
 - [Getting started](guides/GETTING-STARTED.md) — supply a ROM, generate the animal table, and build your first patch.
 - [Config guide](guides/CONFIGS.md) — how animal edit configs work and how to combine them.
 - [Model Editor guide](guides/MODEL-EDITOR.md) — use the browser model editor and understand its limits.

@@ -1,0 +1,11 @@
+[
+ {"id":"objectives-hud","name":"Objectives HUD","description":"Show Goals: n of m with an objectives checklist.","category":"qol","status":"coming-soon"},
+ {"id":"skip-intro","name":"Skip intro and cutscenes","description":"Skip the intro and cutscenes to get into play sooner.","category":"qol","status":"coming-soon"},
+ {"id":"faster-pause","name":"Faster pause/unpause","description":"Reduce the wait when pausing and returning to play.","category":"qol","status":"coming-soon"},
+ {"id":"jukebox","name":"Jukebox","description":"Change music in game.","category":"qol","status":"coming-soon"},
+ {"id":"widescreen","name":"Widescreen","description":"Use a wider view of the game.","category":"qol","status":"coming-soon"},
+ {"id":"minimap","name":"Minimap","description":"Show a small map while playing.","category":"qol","status":"coming-soon"},
+ {"id":"health-energy","name":"Health as head pips + energy battery","description":"Show health as head pips and energy as a battery.","category":"qol","status":"coming-soon"},
+ {"id":"fat-bear-trophy","name":"Fat Bear Mountain trophy fix","description":"Fix the trophy on Fat Bear Mountain.","category":"bugfix","status":"coming-soon"},
+ {"id":"two-player","name":"Two-player mode (experimental)","description":"Play with a second player in an experimental mode.","category":"qol","status":"coming-soon"}
+]
