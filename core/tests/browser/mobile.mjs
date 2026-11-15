@@ -121,7 +121,8 @@ try{
    await screenshot(s,`panels-${page}-${width}`);
    await js(s,'scrollTo(0,0)');
    // Crossing the breakpoint restores desktop anchors, then the same phone layout.
-   await c.send('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false},s);await sleep(80);
+   await c.send('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false},s);
+   await until(c,s,"!document.getElementById('mobile-dock')",3000).catch(()=>{});
    await check("!document.getElementById('mobile-dock')",'desktop restoration');
    await c.send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true},s);await sleep(80);
    await until(c,s,"document.body.classList.contains('editor-phone')",3000).catch(async error=>{throw Error(error.message+' '+JSON.stringify(await js(s,"({width:innerWidth,media:matchMedia('(max-width:767px)').matches,errors:document.body.className})"))+' '+JSON.stringify(c.errors));});
@@ -135,7 +136,7 @@ try{
   results.push({page,width,romLoaded:!!rom,passed:true});console.log(`Mobile checks: ${page} ${width} passed`);
   const {targetInfo}=await c.send('Target.getTargetInfo',{},s);await c.send('Target.closeTarget',{targetId:targetInfo.targetId});
  }
- assert.deepEqual(c.errors,[],'no browser exceptions or resource errors');
+ assert.deepEqual(c.errors,[],'no browser exceptions or resource errors: '+JSON.stringify(c.errors).slice(0,600));
  if(evidence)fs.writeFileSync(path.join(evidence,'mobile-checks.json'),JSON.stringify({results,errors:c.errors},null,2));
  console.log('Mobile layout, touch actions, breakpoint restoration and desktop checks passed.');
 }finally{c.close();server.kill();}
