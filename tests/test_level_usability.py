@@ -11,7 +11,8 @@ setTimeout(async()=>{
  try{
  check(el('setup').hidden,'sample startup');check(el('camera-mode').value==='free','freecam default');
  check(el('ed-save').closest('#project-panel'),'save controls own panel');
- for(const id of ['ui','editor','objects-panel','add-panel','project-panel'])check(getComputedStyle(el(id)).resize==='both',id+' resizable');
+ check(getComputedStyle(el('objects-panel')).position==='fixed'&&el('objects-panel').getBoundingClientRect().left===0,'anchored source tree');
+ const rail=[...el('level-right').children].map(p=>p.getBoundingClientRect());check(rail.every((r,i)=>!i||r.top>=rail[i-1].bottom),'rail panels do not overlap');
  const session=editorSession,eye=()=>LevelSelection.cameraEye(session.camera),beforeEye=eye();
  cv.dispatchEvent(new MouseEvent('mousedown',{button:2,clientX:600,clientY:400,bubbles:true}));window.dispatchEvent(new MouseEvent('mousemove',{clientX:660,clientY:420,bubbles:true}));window.dispatchEvent(new MouseEvent('mouseup',{button:2,bubbles:true}));
  check(Math.hypot(...eye().map((v,i)=>v-beforeEye[i]))<.001,'look holds eye fixed');
@@ -43,5 +44,5 @@ with tempfile.TemporaryDirectory(prefix='level-usability-') as tmp:
     try:
         result=subprocess.run([chrome,'--headless','--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader','--no-proxy-server',f'--user-data-dir={out/"profile"}','--window-size=1400,900','--virtual-time-budget=6000','--dump-dom',f'http://127.0.0.1:{server.server_port}/level-editor.html'],capture_output=True,text=True,encoding='utf-8',timeout=45)
         assert '<pre id="usability-result">[]</pre>' in result.stdout,result.stdout[-7000:]+result.stderr[-1500:]
-        print('Browser freecam, independent resizable save panel, terrain click/double-tap placement, sky rejection and undo/redo passed.')
+        print('Browser freecam, anchored source tree and nonoverlapping rails, terrain click/double-tap placement, sky rejection and undo/redo passed.')
     finally:server.shutdown()

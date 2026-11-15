@@ -15,7 +15,7 @@ All files are JSON. Binary arrays are base64 strings of little-endian typed arra
 | `atlases` | `{id: "data:image/png;base64,..."}`: 256x128 texture atlas of 32x32 tiles |
 | `levels[]` | One entry per level (below) |
 
-Each level has `id`, `atlas`, `group`, `sub`, `bounds` (`[xmin,ymin,zmin,xmax,ymax,zmax]`), `vertexCount`, `spawnCount` and:
+Each level may have a `name` for the source-tree root and gallery; unnamed levels use their numeric ID. Each level has `id`, `atlas`, `group`, `sub`, `bounds` (`[xmin,ymin,zmin,xmax,ymax,zmax]`), `vertexCount`, `spawnCount` and:
 
 - `terrain`: `positions` (Int32 xyz), `colours` (Uint8 rgb), `uvs` (Int16), `slots` (Uint8 atlas tile; 255 = colour only), `water` (Uint8; below 255 = translucent water), `heights` and `tiles` (65x97 grids, Int8 and Uint8), `tileTypes` (12 bytes per tile type; byte 0 = walkable).
 - `objects`: `props` (Int32 `[type, x, y, z, yaw]` per prop) and `creatures` (the same five numbers per creature, as a plain list).

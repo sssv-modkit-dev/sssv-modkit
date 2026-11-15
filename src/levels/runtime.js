@@ -244,5 +244,5 @@ if(gl){load(+(HP.get('lv')||0));$('lv').value=+(HP.get('lv')||0);
  requestAnimationFrame(frame);}
 
 /*EDITOR*/
-return {sourceSha1:EDITOR_SHA1,get level(){return L;},get records(){return edRecords;},get camera(){return cam;},get parts(){return edParts;},get selection(){return Array.from(edSelection);},diff:edDiff,select(value){edSelected=value;edSelection=new Set([value]);$('ed-category').value='all';edList();},load,current:edCurrent,view:currentView};
+return {sourceSha1:EDITOR_SHA1,get level(){return L;},get records(){return edRecords;},get camera(){return cam;},get parts(){return edParts;},get selection(){return Array.from(edSelection);},project:edProject,restoreProject(p){if(p.source_sha1!==EDITOR_SHA1)throw Error('These edits need their original source ROM.');edRecords=EditorRecords.validate(p.edits);edParts=p.parts||null;edRefresh();edPartsStatus();},diff:edDiff,select(value){edSelected=value;edSelection=new Set([value]);$('ed-category').value='all';edList();},load,current:edCurrent,view:currentView};
 }

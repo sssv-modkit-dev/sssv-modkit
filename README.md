@@ -17,7 +17,7 @@ python -m http.server --directory build/site 8000
 
 Then open http://localhost:8000/. Nothing is uploaded; files you open are read inside your browser.
 
-In ROM-enabled packs, opening a ROM shares it across the editors using local browser storage. Each page shows its identity; **Forget ROM** removes the shared source and Dialogue/Terrain edits. Dialogue and painted terrain sheets combine in one browser build. Model and Level controls apply live; Undo reverses an edit or a complete slider gesture. Download your edit files to keep a separate backup.
+In ROM-enabled packs, opening a ROM shares it across the editors using local browser storage. Each page shows its identity; **Forget ROM** removes the shared source and saved edits. Dialogue and painted terrain sheets combine in one browser build. Model and Level edits are also remembered with their source ROM. Controls apply live; Undo reverses an edit or a complete slider gesture. Download your edit files to keep a separate backup.
 
 | Page | What you can do |
 |---|---|
@@ -32,7 +32,7 @@ With the separate private research checkout and its Python dependencies (Pillow 
 python tools/story_editor.py
 ```
 
-Open `http://127.0.0.1:8010/dialogue.html` or `/terrain.html`. Use `--research <folder>` and
+Open `http://127.0.0.1:8010/dialogue.html` or `/textures.html`. Use `--research <folder>` and
 `--rom <base.z64>` to override the sibling research checkout and its stock base. The dialogue page
 groups lines by level/bank, shows the actual language-block byte budget and edits each message
 occurrence's hold time. Text-code colours use an approximate letter-font preview.

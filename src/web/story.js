@@ -28,7 +28,7 @@ async function exportROM(asIPS = false) {
   status(asIPS ? 'IPS downloaded for the current edits.' : 'ROM downloaded for the current edits.');
 }
 const status = text => { $('status').textContent = text; };
-function changed() { dirty = contentChanged(); enabled(); status(dirty ? (project?'Edits applied live; shared with Dialogue / Terrain in this browser.':'Unsaved changes.') : 'No changes from the loaded original.');persistSession(); }
+function changed() { dirty = contentChanged(); enabled(); status(dirty ? (project?'Edits applied live; shared with Dialogue / Textures & Tilesets in this browser.':'Unsaved changes.') : 'No changes from the loaded original.');persistSession(); }
 function enabled() {
   for (const id of ['save','build']) $(id).disabled = busy || !ready;
   $('ips').hidden = ready && !project;

@@ -9,3 +9,6 @@
 .global-nav [hidden],[data-filtered=true]{display:none!important}
 .list-filter[hidden],#source-panel label[hidden],#forget-source[hidden]{display:none!important}
 #ed-category{display:block;max-width:100%}
+#guided-return{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px;background:#27384b;color:#fff;font:14px/1.5 system-ui}#guided-return a{color:#ffcf99;min-height:44px;display:inline-flex;align-items:center}#guided-return small{color:#d2dded}
+
+#session-restoring{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:#141821dd;color:#eaf0fa;font:16px/1.5 system-ui;padding:24px}

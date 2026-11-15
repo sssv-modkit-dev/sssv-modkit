@@ -41,7 +41,7 @@ const LevelGallery = (() => {
       }
       const card = el('button', {className: 'card', type: 'button', title: 'Open level ' + level.id},
         el('span', {className: 'card-thumb'}, thumbnail(level)),
-        el('strong', {textContent: 'Level ' + level.id}),
+        el('strong', {textContent: level.name || 'Level ' + level.id}),
         el('small', {textContent: `${level.n / 3} tris · ${records.props.length} props · ${records.animals.length} animals`}),
         el('small', {className: 'card-animals', textContent: names.length ? names.join(', ') : 'no animals'}), heads);
       card.dataset.index = index; card.onclick = () => onPick(index); list.append(card);

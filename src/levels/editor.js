@@ -22,7 +22,7 @@ function edFields(){edTree();const c=edCurrent(),exists=!!c.hex;const del=$('ed-
  $('ed-count').textContent=edSelection.size+' selected';$('ed-count').title=edSelection.size+' selected';if(!exists){$('ed-type-name').textContent='No objects in this category.';return;}
  const v=EditorRecords.values(c.hex,c.kind);const typeInput=$('ed-type');if(typeInput.dataset.kind!==c.kind){typeInput.replaceChildren();for(let type=0;type<(c.kind==='props'?247:68);type++){const option=document.createElement('option');option.value=type;option.textContent=LevelSelection.name(c.kind,type)+' · '+type;typeInput.append(option);}typeInput.dataset.kind=c.kind;}['type','x','y','z','yaw','target'].forEach((id,i)=>$('ed-'+id).value=v[i]);edTypePicker(c.kind,v[0]);for(const k of ['x','y','z','yaw'])$('ed-'+k+'-slider').value=$('ed-'+k).value;$('ed-type-name').textContent=LevelSelection.name(c.kind,v[0]);$('ed-target-row').hidden=c.kind!=='props'||v[0]!==56;$('ed-duplicate').disabled=edEntries().filter(e=>edSelection.has(e.key)).some(e=>e.kind!=='props'||e.values[0]===55);
 }
-function edRefresh(){for(const lv of LEVELS)for(const kind of ['props','animals']){const a=edRecords[lv.id][kind].flatMap(hex=>EditorRecords.values(hex,kind).slice(0,5));if(kind==='props'){const bytes=new Uint8Array(new Int32Array(a).buffer);lv.sp=btoa(Array.from(bytes,b=>String.fromCharCode(b)).join(''));}else lv.an=a;}const camera=structuredClone(cam),i=LEVELS.findIndex(l=>l.id===L.id);edBaseLoad(i);cam=camera;edList();}
+function edRefresh(){for(const lv of LEVELS)for(const kind of ['props','animals']){const a=edRecords[lv.id][kind].flatMap(hex=>EditorRecords.values(hex,kind).slice(0,5));if(kind==='props'){const bytes=new Uint8Array(new Int32Array(a).buffer);lv.sp=btoa(Array.from(bytes,b=>String.fromCharCode(b)).join(''));}else lv.an=a;}const camera=structuredClone(cam),i=LEVELS.findIndex(l=>l.id===L.id);edBaseLoad(i);cam=camera;edList();window.dispatchEvent(new Event('level-edits-changed'));}
 const edBaseLoad=load;load=function(i){edBaseLoad(i);edSelection=new Set(['props:0']);edSelected='props:0';$('ed-category').value='all';edList();};
 for(let i=0;i<=36;i++){const n=document.createElement('option');n.value=i;n.textContent=i===0?'0 · hub (runtime hook)':i+' · level';$('ed-target').append(n);}
 $('ed-object').onchange=()=>{edSelected=$('ed-object').value;edSelection=new Set([edSelected]);edFields();};
@@ -127,7 +127,7 @@ palRender();
 $('ed-parts-download').onclick=()=>{if(!edParts){edStatus('Attach an animal config first.');return;}const a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(edParts.config,null,2)],{type:'application/json'}));a.href=u;a.download=edParts.name.split(/[\\/]/).pop()||'animal-config.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);edStatus('Animal config downloaded. Open it with Model Editor Open edits.');};
 
 for(const id of ['ed-type','ed-target']){$(id).onchange=()=>{edApplyFields();edFieldGesture=false;};}
-function edTree(){const tree=$('object-tree');tree.replaceChildren();const groups=new Map();for(const e of edEntries().filter(e=>$('ed-category').value==='all'||e.category===$('ed-category').value)){const id=e.kind+':'+e.values[0];if(!groups.has(id))groups.set(id,[]);groups.get(id).push(e);}for(const entries of groups.values()){const group=document.createElement('details');group.open=true;const title=document.createElement('summary');title.textContent=entries[0].name+' ('+entries.length+')';group.append(title);for(const e of entries){const b=document.createElement('button');b.textContent=e.name+' #'+e.index;b.setAttribute('aria-pressed',String(edSelection.has(e.key)));b.onclick=event=>{if(!event.ctrlKey&&!event.shiftKey)edSelection.clear();edSelection.add(e.key);edSelected=e.key;edFields();};group.append(b);}tree.append(group);}}
+function edTree(){$('objects-panel').querySelector(':scope>summary').textContent=L.name||L.title||('Level '+L.id);const tree=$('object-tree');tree.replaceChildren();const groups=new Map();for(const e of edEntries().filter(e=>$('ed-category').value==='all'||e.category===$('ed-category').value)){const id=e.kind+':'+e.values[0];if(!groups.has(id))groups.set(id,[]);groups.get(id).push(e);}for(const entries of groups.values()){const group=document.createElement('details');group.open=true;const title=document.createElement('summary');title.textContent=entries[0].name+' ('+entries.length+')';group.append(title);for(const e of entries){const b=document.createElement('button');b.textContent=e.name+' #'+e.index;b.setAttribute('aria-pressed',String(edSelection.has(e.key)));b.onclick=event=>{if(!event.ctrlKey&&!event.shiftKey)edSelection.clear();edSelection.add(e.key);edSelected=e.key;edFields();};group.append(b);}tree.append(group);}}
 function edTypePicker(kind,type){const grid=$('type-picker');if(grid.dataset.kind===kind){for(const b of grid.children)b.setAttribute('aria-pressed',String(+b.dataset.type===type));return;}grid.dataset.kind=kind;grid.replaceChildren();for(let i=0;i<(kind==='props'?247:68);i++){const b=document.createElement('button'),art=document.createElement('span');art.className='pal-art';palArt(kind,i,art);b.append(art,document.createTextNode(LevelSelection.name(kind,i)));b.dataset.type=i;b.setAttribute('aria-pressed',String(i===type));b.onclick=()=>{$('ed-type').value=i;edApplyFields();edFieldGesture=false;edTypePicker(kind,i);};grid.append(b);}}
 $('ed-delete').onclick=()=>{if($('ed-delete').disabled)return;edSnapshot();LevelSelection.removeAppended(edRecords[L.id],EDITOR_STOCK[L.id],Array.from(edSelection));edSelection.clear();edSelected=null;edRefresh();edStatus('Appended spawns deleted.');};
 for(const k of ['x','y','z','yaw']){const n=$('ed-'+k),r=$('ed-'+k+'-slider');r.oninput=()=>{n.value=r.value;edApplyFields();};n.oninput=()=>{r.value=n.value;edApplyFields();};for(const input of [n,r]){listen(input,'change',()=>edFieldGesture=false);listen(input,'blur',()=>edFieldGesture=false);}}
@@ -153,19 +153,13 @@ function edDrawGhost(){
  if(!edGhostBuffers)return;gl.useProgram(P);gl.uniformMatrix4fv(uM,false,M);gl.enable(gl.BLEND);gl.blendColor(0,0,0,.5);gl.blendFunc(gl.CONSTANT_ALPHA,gl.ONE_MINUS_CONSTANT_ALPHA);gl.depthMask(false);gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(-1,-1);draw(edGhostBuffers,gl.TRIANGLES);gl.disable(gl.POLYGON_OFFSET_FILL);gl.depthMask(true);gl.disable(gl.BLEND);
 }
 
-/* Drag a panel by its title; resize using its lower-right corner. Portrait keeps panels in readable document flow. */
-function edPanels(){
- const panels=['ui','add-panel','objects-panel','editor','project-panel'];
- for(const id of panels){const panel=$(id),handle=id==='ui'?$('hd'):panel.querySelector(':scope > summary');panel.classList.add('floating-panel');handle.classList.add('panel-handle');handle.title='Drag to move this panel';let active=null,moved=false;
-  handle.onpointerdown=e=>{if(e.button!==0||e.target.closest('button,select,input,a')||document.body.classList.contains('editor-phone'))return;const r=panel.getBoundingClientRect();active={x:e.clientX,y:e.clientY,left:r.left,top:r.top};moved=false;handle.setPointerCapture(e.pointerId);};
-  handle.onpointermove=e=>{if(!active)return;const dx=e.clientX-active.x,dy=e.clientY-active.y;if(!moved&&Math.hypot(dx,dy)<4)return;moved=true;e.preventDefault();panel.classList.add('panel-moved');panel.style.left=Math.max(0,Math.min(innerWidth-48,active.left+dx))+'px';panel.style.top=Math.max(0,Math.min(innerHeight-32,active.top+dy))+'px';panel.style.right='auto';panel.style.bottom='auto';};
-  handle.onpointerup=e=>{if(active){if(moved){e.preventDefault();panel.dataset.dragged='1';}active=null;}};
-  handle.onpointercancel=()=>{active=null;};
-  listen(handle,'click',e=>{if(panel.dataset.dragged){e.preventDefault();delete panel.dataset.dragged;}});
- }
- $('reset-panels').onclick=()=>{for(const id of panels){const p=$(id);p.removeAttribute('style');p.classList.remove('panel-moved');}edStatus('Panel layout reset.');};
-}
-edPanels();
+/* Reset the anchored workspace disclosures and scrolling. */
+$('reset-panels').onclick=()=>{
+ for(const id of ['display-panel','level-info'])$(id).open=false;
+ for(const id of ['objects-panel','editor','add-panel','project-panel'])$(id).open=true;
+ for(const id of ['level-right','objects-panel'])if($(id))$(id).scrollTop=0;
+ edStatus('Panel layout reset.');
+};
 
 const touchHome=structuredClone(cam);
 window.EditorTouch={mode:'tool',modes:[['tool','Active object tool'],['look','Look / orbit'],['pan','Pan camera']],

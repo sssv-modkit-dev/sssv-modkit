@@ -36,10 +36,10 @@ try{
    const shared=await js(s,"(async()=>!!(await window.ROMSession?.get()))()");
    if(page==='model-editor'){
     if(!shared){await setFile(c,s,'#local-table',process.env.MOBILE_TABLE);await until(c,s,"document.getElementById('msg').textContent.includes('indexed locally')");await setFile(c,s,'#source-file',rom);}
-    await until(c,s,'!!ModelEditorHost.getSource()',60000);
+    await until(c,s,'!!ModelEditorHost.getSource()&&EditorSession.ready',60000);
    }else if(page==='level-editor'){
     await until(c,s,"document.getElementById('setup').hidden");
-    if(!shared)await setFile(c,s,'#level-rom',rom);await until(c,s,"!!window.SSSVLevelRom && document.getElementById('setup').hidden",60000);
+    if(!shared)await setFile(c,s,'#level-rom',rom);await until(c,s,"!!window.SSSVLevelRom && EditorSession.ready && document.getElementById('setup').hidden",60000);
    }else{if(!shared)await setFile(c,s,'#rom',rom);await until(c,s,'ready && !busy',60000);}
   }else if(page==='model-editor')await until(c,s,"typeof demoPreset==='function'");
   else if(page==='level-editor'){
@@ -124,8 +124,8 @@ try{
    await until(c,s,"document.body.classList.contains('editor-phone')",3000).catch(async error=>{throw Error(error.message+' '+JSON.stringify(await js(s,"({width:innerWidth,media:matchMedia('(max-width:767px)').matches,errors:document.body.className})"))+' '+JSON.stringify(c.errors));});
   }else{
    await check("!document.getElementById('mobile-dock')",'desktop unchanged');
-   if(page==='model-editor')await check("getComputedStyle(document.body).display==='grid'&&document.getElementById('view-settings').parentElement.id==='view'",'desktop model columns and tools');
-   if(page==='level-editor')await check("getComputedStyle(document.getElementById('project-panel')).resize==='both'",'desktop panels resize');
+   if(page==='model-editor')await check("getComputedStyle(document.body).display==='grid'&&document.getElementById('view-settings').parentElement.id==='side'",'desktop model columns and tools');
+   if(page==='level-editor')await check("document.getElementById('project-panel').parentElement.id==='level-right'&&getComputedStyle(document.getElementById('objects-panel')).position==='fixed'",'desktop anchored tree and rail');
   }
   await js(s,'localStorage.clear()');
   results.push({page,width,romLoaded:!!rom,passed:true});console.log(`Mobile checks: ${page} ${width} passed`);

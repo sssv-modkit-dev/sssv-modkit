@@ -145,13 +145,13 @@ def build(pack_dir, out, no_vendor=False):
         copy(src, out / dest, exclude)
     for src, dest in pack['scenes']:
         copy(src, out / dest, ())
-    for name in FAVICONS + ('editor-mobile.css', 'editor-mobile.js', 'rom-session.js', 'global-nav.css', 'list-filters.js', 'runtime-progress-worker.js'):
+    for name in FAVICONS + ('editor-mobile.css', 'editor-mobile.js', 'rom-session.js', 'global-nav.css', 'list-filters.js', 'runtime-progress-worker.js', 'session-edits.js', 'textures-redirect.js', 'level-workspace.js', 'model-workspace.js'):
         shutil.copyfile(HERE / 'web' / name, out / name)
     (out / 'model-editor.html').write_text(model_editor(pack), encoding='utf-8')
     level_editor(pack, out)
     story = out / 'story'
     story.mkdir(exist_ok=True)
-    for name in ('dialogue.html', 'terrain.html'):
+    for name in ('dialogue.html', 'textures.html', 'terrain.html'):
         shutil.copyfile(HERE / 'web' / name, out / name)
     for name in ('story.js', 'story.css'):
         shutil.copyfile(HERE / 'web' / name, story / name)
@@ -164,9 +164,9 @@ def build(pack_dir, out, no_vendor=False):
     # One navigation and local ROM session on every available page, including pack Home/Play.
     available = [(name, label) for name, label in (
         ('index', 'Home'), ('model-editor', 'Model'), ('level-editor', 'Level'),
-        ('play', 'Play'), ('dialogue', 'Dialogue'), ('terrain', 'Terrain'))
+        ('play', 'Play'), ('dialogue', 'Dialogue'), ('textures', 'Textures & Tilesets'))
         if (out / (name + '.html')).is_file()]
-    for name, _ in available:
+    for name, _ in available + ([('start', 'Guided build')] if (out / 'start.html').is_file() else []):
         page = out / (name + '.html')
         html = page.read_text(encoding='utf-8')
         links = ''.join('<a href="%s.html"%s>%s</a>' % (dest, ' aria-current="page"' if dest == name else '', label) for dest, label in available)
@@ -178,7 +178,7 @@ def build(pack_dir, out, no_vendor=False):
             html = html[:first] + re.sub(r'<nav\b[^>]*>.*?</nav>', '', html[first:], flags=re.S)
         else:
             html = re.sub(r'(<main[^>]*>)', lambda m: m[0] + nav, html, count=1)
-        html = html.replace('</head>', '<link rel="stylesheet" href="global-nav.css"><script src="rom-session.js" defer></script><script src="list-filters.js" defer></script></head>', 1)
+        html = html.replace('</head>', '<link rel="stylesheet" href="global-nav.css"><script src="rom-session.js" defer></script><script src="list-filters.js" defer></script><script src="session-edits.js" defer></script></head>', 1)
         page.write_text(html, encoding='utf-8')
     return pack
 

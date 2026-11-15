@@ -13,21 +13,22 @@ function normalize(buffer){const b=new Uint8Array(buffer.slice(0));if(b.length<0
 async function identify(buffer){const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-1',buffer))].map(n=>n.toString(16).padStart(2,'0')).join('');if(hash!==US){const b=new Uint8Array(buffer),title=new TextDecoder().decode(b.slice(0x20,0x34));if(!title.includes('SSSV')&&!title.includes('SILICON VALLEY'))throw Error('This ROM is for a different game. Choose your SSSV US ROM.');if(b[0x3e]!==0x45)throw Error('This ROM is for another region. Choose the US version.');}return {hash,verified:hash===US};}
 function show(text){const e=document.getElementById('session-state');if(e)e.textContent=text;}
 async function get(){if(active)return active;const saved=await storage('rom');if(saved){const identity=await identify(saved.buffer);if(identity.hash!==saved.hash)throw Error('The saved ROM copy could not be verified. Choose your ROM again.');active={...saved,...identity};}return active;}
-async function set(file){const buffer=normalize(await file.arrayBuffer()),identity=await identify(buffer),old=await get();if(old?.hash!==identity.hash){if(window.EditorROMBeforeReplace&&!window.EditorROMBeforeReplace())throw Error('ROM change cancelled. Your shared ROM and edits are still here.');await storage('story',null);await storage('terrain',null);await storage('table',null);}active={buffer,name:file.name,...identity};await storage('rom',active);revision++;showState();return active;}
-function showState(){show(active?`${active.verified?'US 1.0 verified':'Modified US ROM · original identity not verified'} · ${active.name}`:'No ROM loaded');const b=document.getElementById('forget-rom');if(b)b.disabled=!active;}
+async function set(file){const buffer=normalize(await file.arrayBuffer()),identity=await identify(buffer),old=await get();if(old?.hash!==identity.hash){if(window.EditorROMBeforeReplace&&!window.EditorROMBeforeReplace())throw Error('ROM change cancelled. Your shared ROM and edits are still here.');await storage('story',null);await storage('terrain',null);await storage('table',null);await storage('model',null);await storage('level',null);await storage('guided-build',null);}active={buffer,name:file.name,...identity};await storage('rom',active);revision++;showState();return active;}
+function showState(){window.dispatchEvent(new Event('rom-session-ready'));const summary=document.querySelector('#source-panel>summary');if(summary){summary.textContent=active?'Change ROM':'Open ROM';if(active)summary.parentElement.open=false;}show(active?`${active.verified?'US 1.0 verified':'Modified US ROM · original identity not verified'} · ${active.name}`:'No ROM loaded');const b=document.getElementById('forget-rom');if(b)b.disabled=!active;}
 async function forget(){revision++;active=null;const d=await db();try{await new Promise((resolve,reject)=>{const t=d.transaction(STORE,'readwrite');t.objectStore(STORE).clear();t.oncomplete=resolve;t.onerror=()=>reject(t.error);});}finally{d.close();}await new Promise(resolve=>{const r=indexedDB.deleteDatabase('sssv-modkit-viewer');r.onsuccess=r.onerror=r.onblocked=resolve;});channel?.postMessage('forgotten');window.dispatchEvent(new Event('rom-session-forgotten'));location.reload();}
 window.ROMSession={get,set,forget,read:key=>storage(key),write,normalize,identify,show};
 document.addEventListener('DOMContentLoaded',async()=>{
  const nav=document.querySelector('.global-nav'),box=document.createElement('div');box.id='rom-session';
  const state=document.createElement('output');state.id='session-state';state.setAttribute('role','status');
- const button=document.createElement('button');button.id='forget-rom';button.textContent='Forget ROM';button.disabled=true;button.onclick=()=>{if(confirm('Forget the shared ROM and Dialogue / Terrain edits stored in this browser?'))forget().catch(e=>show(e.message));};
- const note=document.createElement('small');note.textContent='Shared locally across editors until you choose Forget ROM. Nothing is uploaded.';box.append(state,button,note);
+ const button=document.createElement('button');button.id='forget-rom';button.textContent='Forget ROM';button.disabled=true;button.onclick=()=>{if(confirm('Forget the shared ROM and saved edits stored in this browser?'))forget().catch(e=>show(e.message));};
+ const note=document.createElement('small');note.textContent='ROM and edits are remembered locally across editors until you choose Forget ROM. Nothing is uploaded.';box.append(state,button,note);
  if(nav)nav.append(box);else document.body.prepend(box);
  const input=document.querySelector('#source-file,#level-rom,#rom,#b-rom');
  // The pack's older optional cache is superseded by this one shared source.
  const remember=document.getElementById('remember-source'),legacyForget=document.getElementById('forget-source');
  if(remember){remember.checked=false;remember.closest('label').hidden=true;}
  if(legacyForget)legacyForget.hidden=true;
+ const legacyEdits=document.getElementById('remember-edits');if(legacyEdits){legacyEdits.checked=false;legacyEdits.closest('div').hidden=true;}
  if(window.ModelEditorHost){const use=ModelEditorHost.useSource.bind(ModelEditorHost);ModelEditorHost.useSource=value=>{
    if(active){const b=new Uint8Array(value.bytes),a=new Uint8Array(active.buffer);if(a.length!==b.length||a.some((v,i)=>v!==b[i]))return 'The shared ROM has changed. Choose your ROM again to continue.';}
    return use(value);
@@ -46,6 +47,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
    catch(error){const message="Animal indexing could not finish. Check that this site's Python runtime files are available, then choose your ROM again.";show(message);throw Error(message);}
    finally{clearInterval(timer);progress.remove();}
  };}
- try{await get();showState();if(input&&active&&!input.files.length){const token=revision;setTimeout(()=>{if(token===revision&&!input.files.length)deliver(active);},100);}}catch(error){show(error.message);}
+ try{await get();showState();if(input&&active&&!input.files.length&&!(input.id==='b-rom'&&new URLSearchParams(location.search).get('build')==='guided')){const token=revision;setTimeout(()=>{if(token===revision&&!input.files.length)deliver(active);},100);}}catch(error){show(error.message);}
 });
 })();
