@@ -155,6 +155,7 @@ def build(pack_dir, out, no_vendor=False):
         shutil.copyfile(HERE / 'web' / name, out / name)
     for name in ('story.js', 'story.css'):
         shutil.copyfile(HERE / 'web' / name, story / name)
+    copy(HERE / 'web/story', story, ())
     if pack['hook']:
         spec = importlib.util.spec_from_file_location('pack_build_hook', pack['hook'])
         module = importlib.util.module_from_spec(spec)

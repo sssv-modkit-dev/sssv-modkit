@@ -15,6 +15,8 @@ async function restore() {
 }
 try {
   let s = await open(c, origin+'/dialogue.html');
+  await until(c,s,"!!document.getElementById('bridge').onclick");
+  await evaluate(c,s,"document.getElementById('bridge').click()");
   await until(c,s,"!document.getElementById('save').disabled");
   assert.equal(await evaluate(c,s,"document.getElementById('bank').options.length"),Object.keys(original.banks).length);
   await evaluate(c,s,`document.getElementById('lines').value='4';document.getElementById('lines').onchange()`);
@@ -24,6 +26,8 @@ try {
   await evaluate(c,s,`document.getElementById('text').value=${JSON.stringify(replacement)};document.getElementById('text').oninput();document.querySelector('#holds input').value=${hold+1};document.querySelector('#holds input').oninput();document.getElementById('save').click()`);
   await until(c,s,"document.getElementById('status').textContent.startsWith('Saved')");
   s = await open(c,origin+'/dialogue.html');
+  await until(c,s,"!!document.getElementById('bridge').onclick");
+  await evaluate(c,s,"document.getElementById('bridge').click()");
   await until(c,s,"!document.getElementById('save').disabled");
   await evaluate(c,s,"document.getElementById('lines').value='4';document.getElementById('lines').onchange()");
   assert.equal(await evaluate(c,s,"document.getElementById('text').value"),replacement);
@@ -40,6 +44,8 @@ try {
   await until(c,s,"document.getElementById('status').textContent.startsWith('Saved')");
 
   s = await open(c,origin+'/terrain.html');
+  await until(c,s,"!!document.getElementById('bridge').onclick");
+  await evaluate(c,s,"document.getElementById('bridge').click()");
   await until(c,s,"!document.getElementById('save').disabled",60000);
   originalSheet = await evaluate(c,s,"document.getElementById('sheet').toDataURL().split(',')[1]");
   const pixel = "Array.from(document.getElementById('tile').getContext('2d').getImageData(0,0,1,1).data)";
@@ -60,6 +66,8 @@ try {
   await evaluate(c,s,"document.getElementById('save').click()");
   await until(c,s,"document.getElementById('status').textContent.startsWith('Saved')");
   s = await open(c,origin+'/terrain.html');
+  await until(c,s,"!!document.getElementById('bridge').onclick");
+  await evaluate(c,s,"document.getElementById('bridge').click()");
   await until(c,s,"!document.getElementById('save').disabled",60000);
   assert.deepEqual(await evaluate(c,s,pixel),[0,255,0,255]);
   if(process.env.STORY_SCREENSHOT) {
