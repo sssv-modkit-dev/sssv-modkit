@@ -9,7 +9,7 @@ probe=r"""
 setTimeout(async()=>{
  const failures=[],check=(v,m)=>{if(!v)failures.push(m)},wait=ms=>new Promise(r=>setTimeout(r,ms)),el=id=>document.getElementById(id),cv=el('c');
  try{
- check(el('setup').hidden,'sample startup');check(el('camera-mode').value==='free','freecam default');
+ check(el('setup').hidden,'sample startup');check(el('camera-mode').value==='free','freecam default');check(!el('sea'),'no fake sea toggle');check(getComputedStyle(el('sky')).backgroundColor==='rgb(5, 5, 9)','game-style dark backdrop');
  check(el('ed-save').closest('#project-panel'),'save controls own panel');
  check(getComputedStyle(el('objects-panel')).position==='fixed'&&el('objects-panel').getBoundingClientRect().left===0,'anchored source tree');
  const rail=[...el('level-right').children].map(p=>p.getBoundingClientRect());check(rail.every((r,i)=>!i||r.top>=rail[i-1].bottom),'rail panels do not overlap');
@@ -19,6 +19,7 @@ setTimeout(async()=>{
  // Restore direction for a ray through the terrain at screen centre.
  cv.dispatchEvent(new MouseEvent('mousedown',{button:2,clientX:660,clientY:420,bubbles:true}));window.dispatchEvent(new MouseEvent('mousemove',{clientX:600,clientY:400,bubbles:true}));window.dispatchEvent(new MouseEvent('mouseup',{button:2,bubbles:true}));
  const before=session.camera.t.slice();cv.dispatchEvent(new WheelEvent('wheel',{deltaY:-120,bubbles:true,cancelable:true}));check(Math.hypot(...session.camera.t.map((v,i)=>v-before[i]))>0,'wheel dollies freecam');
+ el('ed-tool-pan').click();check(getComputedStyle(cv).cursor==='grab','pan tool cursor');const panBefore=session.camera.t.slice();cv.dispatchEvent(new MouseEvent('mousedown',{button:0,clientX:600,clientY:400,bubbles:true}));window.dispatchEvent(new MouseEvent('mousemove',{button:0,clientX:660,clientY:430,bubbles:true}));window.dispatchEvent(new MouseEvent('mouseup',{button:0,bubbles:true}));check(Math.hypot(...session.camera.t.map((v,i)=>v-panBefore[i]))>0,'pan tool left-drag pans with mouse');check(!document.querySelector('.ed-marquee'),'pan drag draws no marquee');el('ed-tool-select').click();
  el('ed-tool-add').click();el('pal-grid').querySelector('button').click();
  const r=cv.getBoundingClientRect(),x=r.width/2,y=r.height/2,p={button:0,clientX:x,clientY:y,bubbles:true};
  const count=()=>session.records[session.level.id].animals.length,old=count();
@@ -44,5 +45,5 @@ with tempfile.TemporaryDirectory(prefix='level-usability-') as tmp:
     try:
         result=subprocess.run([chrome,'--headless','--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader','--no-proxy-server',f'--user-data-dir={out/"profile"}','--window-size=1400,900','--virtual-time-budget=6000','--dump-dom',f'http://127.0.0.1:{server.server_port}/level-editor.html'],capture_output=True,text=True,encoding='utf-8',timeout=45)
         assert '<pre id="usability-result">[]</pre>' in result.stdout,result.stdout[-7000:]+result.stderr[-1500:]
-        print('Browser freecam, anchored source tree and nonoverlapping rails, terrain click/double-tap placement, sky rejection and undo/redo passed.')
+        print('Browser freecam, mouse pan tool, game-style starfield, anchored source tree and nonoverlapping rails, terrain click/double-tap placement, sky rejection and undo/redo passed.')
     finally:server.shutdown()

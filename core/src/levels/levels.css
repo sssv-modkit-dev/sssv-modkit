@@ -1,7 +1,7 @@
 
 html,body{margin:0;height:100%;background:#1a1d22;color:#ddd;font:13px sans-serif;overflow:hidden}
 canvas{width:100%;height:100%;display:block;touch-action:none;position:relative;z-index:1}
-#sky{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 50% 120%,#1b2a4a 0%,#0a0f1e 55%,#03050b 100%)}
+#sky{position:fixed;inset:0;z-index:0;background-color:#050509;background-repeat:repeat}
 #ui{position:absolute;z-index:2;top:10px;left:10px;max-width:min(560px,calc(100% - 20px));box-sizing:border-box;overflow-wrap:anywhere;background:rgba(14,18,28,.82);backdrop-filter:blur(6px);padding:10px 12px;border-radius:10px;border:1px solid #ffffff1a;box-shadow:0 6px 24px #0008;line-height:1.9}
 #ui.min>*:not(#hd){display:none}
 #hd{display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:.3px}#hd #mode{margin-left:auto}
