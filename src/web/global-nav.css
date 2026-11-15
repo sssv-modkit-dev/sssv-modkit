@@ -1,0 +1,11 @@
+.global-nav{font:14px/1.5 system-ui,sans-serif;background:#141821;color:#eaf0fa;display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:8px;box-sizing:border-box;max-width:100%;min-width:0}
+.global-nav>a{color:#ffbd78;display:inline-flex;align-items:center;min-height:44px;padding:0 6px;box-sizing:border-box;text-decoration:none}
+.global-nav>a[aria-current=page]{color:#fff;text-decoration:underline;text-underline-offset:5px}
+#rom-session{flex:1 1 240px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0}
+#rom-session output{flex:1 1 200px;overflow-wrap:anywhere}#rom-session small{flex-basis:100%;font-size:12px;color:#b7c6d8}
+#forget-rom{font:inherit;min-height:44px;background:#293344;color:#eaf0fa;border:1px solid #8998ac;border-radius:6px;padding:6px 10px}
+#index-progress{width:100%;height:10px}
+.list-filter{display:block;margin:6px 0;font:14px/1.4 system-ui,sans-serif}.list-filter input{box-sizing:border-box;width:100%;min-height:44px;background:#202638;color:#edf1fa;border:1px solid #8998ac;border-radius:5px;padding:8px}
+.global-nav [hidden],[data-filtered=true]{display:none!important}
+.list-filter[hidden],#source-panel label[hidden],#forget-source[hidden]{display:none!important}
+#ed-category{display:block;max-width:100%}

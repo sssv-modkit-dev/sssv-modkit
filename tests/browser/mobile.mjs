@@ -12,7 +12,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'mobile-'));
 const site=process.env.MOBILE_SITE||path.join(tmp,'site'),evidence=process.env.MOBILE_EVIDENCE;
 if(!process.env.MOBILE_SITE)execFileSync('python',[path.join(root,'src/build_site.py'),'--pack',path.join(root,'packs/sample'),'--out',site,'--no-vendor']);
-const server=spawn('python',['-m','http.server','8767','--bind','127.0.0.1','--directory',site],{stdio:'ignore',windowsHide:true});
+const server=spawn('python',['-c',"import mimetypes,runpy;mimetypes.add_type('text/javascript','.mjs');runpy.run_module('http.server',run_name='__main__')",'8767','--bind','127.0.0.1','--directory',site],{stdio:'ignore',windowsHide:true});
 await sleep(700);const c=await launch(9337),results=[];
 const js=(s,code)=>evaluate(c,s,code);
 async function screenshot(s,name){if(evidence){fs.mkdirSync(evidence,{recursive:true});const r=await c.send('Page.captureScreenshot',{format:'png'},s);fs.writeFileSync(path.join(evidence,name+'.png'),Buffer.from(r.data,'base64'));}}
@@ -31,13 +31,16 @@ try{
   await until(c,s,"document.readyState==='complete'");
   const rom=process.env.MOBILE_ROM;
   if(rom){
+   // A shared source auto-loads after navigation. Do not race it by waiting for
+   // the transient "table indexed" message from the old manual upload flow.
+   const shared=await js(s,"(async()=>!!(await window.ROMSession?.get()))()");
    if(page==='model-editor'){
-    await setFile(c,s,'#local-table',process.env.MOBILE_TABLE);await until(c,s,"document.getElementById('msg').textContent.includes('indexed locally')");
-    await setFile(c,s,'#source-file',rom);await until(c,s,'!!ModelEditorHost.getSource()',60000);
+    if(!shared){await setFile(c,s,'#local-table',process.env.MOBILE_TABLE);await until(c,s,"document.getElementById('msg').textContent.includes('indexed locally')");await setFile(c,s,'#source-file',rom);}
+    await until(c,s,'!!ModelEditorHost.getSource()',60000);
    }else if(page==='level-editor'){
     await until(c,s,"document.getElementById('setup').hidden");
-    await setFile(c,s,'#level-rom',rom);await until(c,s,"!!window.SSSVLevelRom && document.getElementById('setup').hidden",60000);
-   }else{await setFile(c,s,'#rom',rom);await until(c,s,'ready && !busy',60000);}
+    if(!shared)await setFile(c,s,'#level-rom',rom);await until(c,s,"!!window.SSSVLevelRom && document.getElementById('setup').hidden",60000);
+   }else{if(!shared)await setFile(c,s,'#rom',rom);await until(c,s,'ready && !busy',60000);}
   }else if(page==='model-editor')await until(c,s,"typeof demoPreset==='function'");
   else if(page==='level-editor'){
    await until(c,s,"document.getElementById('setup').hidden");

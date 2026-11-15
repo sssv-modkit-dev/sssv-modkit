@@ -6,20 +6,36 @@ function download(bytes, name, type = 'application/octet-stream') {
   const url = URL.createObjectURL(new Blob([bytes], {type})), a = document.createElement('a');
   a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function exportROM(asIPS = false) {
+let sessionSave=Promise.resolve(),sessionSaved=true,saveVersion=0;
+async function persistSession(){
+ if(!project||!window.ROMSession)return;
+ const version=++saveVersion,source=await ROMSession.get();if(!source)return;sessionSaved=false;
+ const data=document.body.dataset.page==='dialogue'?{hash:source.hash,data:structuredClone(currentData)}:{hash:source.hash,sheets:structuredClone(terrainSheets)};
+ sessionSave=sessionSave.catch(()=>{}).then(()=>ROMSession.write(document.body.dataset.page==='dialogue'?'story':'terrain',data));
+ try{await sessionSave;if(version===saveVersion)sessionSaved=true;}catch(error){status(error.message+' Keep this page open or download your edits.');}
+}
+let terrainSheets={};
+window.addEventListener('rom-session-forgotten',()=>{dirty=false;busy=false;sessionSaved=true;});
+async function exportROM(asIPS = false) {
   status('Building in your browser...');
-  const rom = project.build(localData, terrainEdit());
+  await persistSession();await sessionSave;
+  const source=await window.ROMSession?.get(),story=source?await ROMSession.read('story'):null,tiles=source?await ROMSession.read('terrain'):null;
+  const data=story&&story.hash===source?.hash?story.data:localData;
+  StoryROM.validate(project.original,data);
+  const sheets=tiles&&tiles.hash===source?.hash?Object.values(tiles.sheets):terrainEdit();
+  const rom = project.build(data, sheets);
   download(asIPS ? StoryROM.ips(project.rom, rom) : rom, asIPS ? 'story-patched.ips' : 'story-patched.z64');
   status(asIPS ? 'IPS downloaded for the current edits.' : 'ROM downloaded for the current edits.');
 }
 const status = text => { $('status').textContent = text; };
-function changed() { dirty = contentChanged(); enabled(); status(dirty ? 'Unsaved changes.' : 'No changes from the loaded original.'); }
+function changed() { dirty = contentChanged(); enabled(); status(dirty ? (project?'Edits applied live; shared with Dialogue / Terrain in this browser.':'Unsaved changes.') : 'No changes from the loaded original.');persistSession(); }
 function enabled() {
   for (const id of ['save','build']) $(id).disabled = busy || !ready;
   $('ips').hidden = ready && !project;
   let valid = true;
-  if (project && currentData) { try { StoryROM.validate(originalData, currentData); } catch { valid = false; } }
-  $('ips').disabled = busy || !ready || !project || !dirty || !valid;
+  if (project && currentData) { try { StoryROM.validate(project.original, currentData); } catch { valid = false; } }
+  const hasEdits=dirty||project&&(StoryROM.hasChanges(project.original,currentData)||Object.keys(terrainSheets).length>0);
+  $('ips').disabled = busy || !ready || !project || !hasEdits || !valid;
   if (project) $('build').disabled ||= !valid;
 }
 async function bridgeAPI(path, data) {
@@ -46,11 +62,11 @@ async function action(fn) {
   finally { busy = false; enabled(); }
 }
 function option(select, value, label) { const o = document.createElement('option'); o.value = value; o.textContent = label; select.append(o); }
-window.addEventListener('beforeunload', event => { if (dirty || busy) { event.preventDefault(); event.returnValue = ''; } });
+window.addEventListener('beforeunload', event => { if ((!project&&dirty) || (project&&!sessionSaved) || busy) { event.preventDefault(); event.returnValue = ''; } });
 
 async function dialogue() {
   const data = await api('/api/dialogue');
-  currentData = data; originalData = structuredClone(data);
+  currentData = data; originalData = structuredClone(project?project.original:data);
   terrainEdit = () => undefined;
   contentChanged = () => StoryROM.hasChanges(originalData, data);
   let bank, line;
@@ -135,11 +151,11 @@ async function dialogue() {
   }
   $('save').onclick = () => action(() => locked(save));
   $('build').onclick = () => action(() => locked(async () => {
-    if(project) { exportROM(); return; }
+    if(project) { await exportROM(); return; }
     await save(); status('Building story ROM. This may take a few minutes...');
     const result = await api('/api/build', {kind:'dialogue'}); status(result.message); $('log').textContent = result.log;
   }));
-  showBank(); dirty = false; ready = true; enabled(); status(project ? 'ROM loaded. Edit dialogue or timing, then download.' : 'Ready. Changes save to local working JSON files.');
+  showBank(); dirty = contentChanged(); ready = true; enabled(); status(project ? 'ROM loaded. Edit dialogue or timing, then download.' : 'Ready. Changes save to local working JSON files.');
 }
 
 async function terrain() {
@@ -163,8 +179,8 @@ async function terrain() {
     action(action){if(action==='in')setZoom(pixelSize*1.5);if(action==='out')setZoom(pixelSize/1.5);if(action==='fit')setZoom((scroller.clientWidth-2)/32);if(action==='pixels')setZoom(44);const d={left:[-96,0],right:[96,0],up:[0,-96],down:[0,96]}[action];if(d)scroller.scrollBy(...d);}
   };window.dispatchEvent(new Event('editor-touch-ready'));
   currentData = data; originalData = structuredClone(data);
-  terrainEdit = () => ({level,rgba:ctx.getImageData(0,0,272,136).data});
-  contentChanged = () => !!originalPixels && StoryROM.pixelsChanged(originalPixels, terrainEdit().rgba);
+  terrainEdit = () => ({level,rgba:ctx.getImageData(0,0,272,136).data,original:originalPixels});
+  contentChanged = () => {const value=terrainEdit(),changed=!!originalPixels&&StoryROM.pixelsChanged(originalPixels,value.rgba);if(loaded){if(changed)terrainSheets[level]=value;else delete terrainSheets[level];}return changed;};
   const origin = () => [(index%8)*34, Math.floor(index/8)*34];
   function render() {
     const [x,y] = origin(); tc.clearRect(0,0,32,32); tc.drawImage(sheet,x,y,32,32,0,0,32,32);
@@ -174,7 +190,8 @@ async function terrain() {
   }
   function snapshot() { history.push(ctx.getImageData(0,0,272,136)); if(history.length>30) history.shift(); }
   async function load() {
-    if (dirty && !confirm('Discard unsaved tile changes before changing level?')) { $('terrain-level').value = level; status('Level change cancelled. Your tile changes are still here.'); return; }
+    if (dirty && !project && !confirm('Discard unsaved tile changes before changing level?')) { $('terrain-level').value = level; status('Level change cancelled. Your tile changes are still here.'); return; }
+    if(project&&loaded){contentChanged();await persistSession();}
     const next = $('terrain-level').value;
     loaded = false; ready = false; enabled(); $('terrain-level').disabled = true;
     status('Loading tile sheet...');
@@ -184,7 +201,9 @@ async function terrain() {
       if (!response.ok) throw Error((await response.json()).error);
       const bitmap = await createImageBitmap(await response.blob());
       ctx.clearRect(0,0,272,136); ctx.drawImage(bitmap,0,0); bitmap.close(); }
-      level = next; originalPixels = ctx.getImageData(0,0,272,136).data.slice(); dirty = false; history = []; picked = null; loaded = true; ready = true;
+      level = next; originalPixels = ctx.getImageData(0,0,272,136).data.slice();
+      if(project&&terrainSheets[level])ctx.putImageData(new ImageData(terrainSheets[level].rgba,272,136),0,0);
+      dirty = !!terrainSheets[level]; history = []; picked = null; loaded = true; ready = true;
       $('recolour').disabled = true; render(); status(`Level ${level} ready. Select a tile, then paint.`);
     } finally { $('terrain-level').disabled = false; enabled(); }
   }
@@ -240,7 +259,7 @@ async function terrain() {
   async function save() { if(project) { download(await new Promise(resolve => sheet.toBlob(resolve, 'image/png')), 'terrain-sheet.png','image/png'); status('Edits downloaded.'); return; } const result = await api('/api/sheet', {level, png:sheet.toDataURL('image/png').split(',')[1]}); status(result.message); }
   $('save').onclick = () => action(save);
   $('build').onclick = () => action(async () => {
-    if(project) { exportROM(); return; }
+    if(project) { await exportROM(); return; }
     await save(); status('Building selected terrain + saved story ROM. This may take a few minutes...');
     const result = await api('/api/build', {kind:'terrain', level}); status(result.message); $('log').textContent = result.log;
   });
@@ -248,10 +267,16 @@ async function terrain() {
 }
 
 const start = () => document.body.dataset.page === 'dialogue' ? dialogue() : terrain();
+window.EditorROMBeforeReplace=()=>!dirty||confirm('Discard current edits and load another ROM?');
 $('rom').onchange = () => action(async () => {
-  if (dirty && !confirm('Discard current edits and load another ROM?')) return;
+  if (!window.ROMSession && !window.EditorROMBeforeReplace()) return;
   const file = $('rom').files[0]; if (!file) return;
-  const next = new StoryROM.Project(new Uint8Array(await file.arrayBuffer()));
+  const source=await window.ROMSession?.get();
+  status('Reading dialogue banks and terrain metadata...');await new Promise(resolve=>setTimeout(resolve,0));
+  let next;try{next = new StoryROM.Project(new Uint8Array(await file.arrayBuffer()));}catch{throw Error('This ROM could not be read. Choose your unmodified SSSV US 1.0 ROM and try again.');}
+  const saved=source?await ROMSession.read('story'):null,tiles=source?await ROMSession.read('terrain'):null;
+  if(saved&&saved.hash===source?.hash){StoryROM.validate(next.original,saved.data);next.data=saved.data;}
+  terrainSheets=tiles&&tiles.hash===source?.hash?tiles.sheets:{};
   project = next; localData = next.data; dirty = false; ready = false;
   let filename=$('rom-name');if(!filename){filename=document.createElement('output');filename.id='rom-name';$('rom').parentElement.after(filename);}filename.textContent=file.name;filename.title=file.name;
   for(const id of ['bank','lines','terrain-level']) if($(id)) $(id).replaceChildren();
@@ -262,6 +287,7 @@ $('rom').onchange = () => action(async () => {
   await start();
 });
 $('ips').onclick = () => action(() => exportROM(true));
+for(const link of document.querySelectorAll('.global-nav>a'))link.addEventListener('click',async event=>{if(!project||event.ctrlKey||event.metaKey||event.shiftKey)return;event.preventDefault();await persistSession();if(!sessionSaved)return;location.href=link.href;});
 const useBridge = () => action(async () => {
   // Probe before replacing a working in-browser project.
   $('bridge-setup').hidden = false;

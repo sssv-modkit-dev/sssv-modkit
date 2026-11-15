@@ -27,9 +27,18 @@ const edBaseLoad=load;load=function(i){edBaseLoad(i);edSelection=new Set(['props
 for(let i=0;i<=36;i++){const n=document.createElement('option');n.value=i;n.textContent=i===0?'0 · hub (runtime hook)':i+' · level';$('ed-target').append(n);}
 $('ed-object').onchange=()=>{edSelected=$('ed-object').value;edSelection=new Set([edSelected]);edFields();};
 $('ed-focus').onclick=()=>{const entries=edEntries().filter(e=>edSelection.has(e.key));if(!entries.length)return;const points=entries.map(e=>e.values.slice(1,4));cam.t=[0,1,2].map(i=>points.reduce((a,p)=>a+p[i],0)/points.length);cam.d=Math.max(500,...points.map(p=>Math.hypot(...p.map((v,i)=>v-cam.t[i]))*3));};
-$('ed-apply').onclick=()=>{try{const c=edCurrent(),v=['type','x','y','z','yaw','target'].map(k=>Number($('ed-'+k).value));const hex=EditorRecords.update(c.hex,c.kind,v);edSnapshot();edRecords[L.id][c.kind][c.index]=hex;edRefresh();edStatus('Spawn updated. Save level edits to export.');}catch(e){edStatus(e.message);}};
+let edFieldGesture=false;
+function edApplyFields(){try{
+ const c=edCurrent();if(!c.hex)return;
+ const fields=['type','x','y','z','yaw','target'];if(fields.some(k=>$('ed-'+k).value===''))return;
+ const v=fields.map(k=>Number($('ed-'+k).value)),hex=EditorRecords.update(c.hex,c.kind,v);
+ if(hex===c.hex)return;
+ if(!edFieldGesture){edSnapshot();edFieldGesture=true;}
+ edRecords[L.id][c.kind][c.index]=hex;edRefresh();edStatus('Applied live. Undo restores the previous edit.');
+}catch(e){edStatus(e.message);}}
+$('ed-apply').onclick=()=>{edApplyFields();edFieldGesture=false;};
 $('ed-duplicate').onclick=()=>{const entries=edEntries().filter(e=>edSelection.has(e.key));if(!entries.length||entries.some(e=>e.kind!=='props'||e.values[0]===55))return;edSnapshot();const selected=[];for(const e of entries){edRecords[L.id].props.push(e.hex);selected.push('props:'+(edRecords[L.id].props.length-1));}edSelection=new Set(selected);edSelected=selected[0];edRefresh();edStatus('Selected props duplicated in place. Use Move (3) or Alt-drag to position the group.');};
-function edHistory(from,to){if(!from.length)return;to.push(JSON.stringify(edRecords));edRecords=JSON.parse(from.pop());edRefresh();}
+function edHistory(from,to){edFieldGesture=false;if(!from.length)return;to.push(JSON.stringify(edRecords));edRecords=JSON.parse(from.pop());edRefresh();}
 $('ed-undo').onclick=()=>edHistory(edUndo,edRedo);$('ed-redo').onclick=()=>edHistory(edRedo,edUndo);
 function edDiff(){return EditorRecords.diff(edRecords);}
 const edNormalize=v=>window.EditsExport?EditsExport.normalize(v):v;
@@ -117,10 +126,11 @@ palRender();
 
 $('ed-parts-download').onclick=()=>{if(!edParts){edStatus('Attach an animal config first.');return;}const a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(edParts.config,null,2)],{type:'application/json'}));a.href=u;a.download=edParts.name.split(/[\\/]/).pop()||'animal-config.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);edStatus('Animal config downloaded. Open it with Model Editor Open edits.');};
 
-function edTree(){const tree=$('object-tree');tree.replaceChildren();const groups=new Map();for(const e of edEntries()){const id=e.kind+':'+e.values[0];if(!groups.has(id))groups.set(id,[]);groups.get(id).push(e);}for(const entries of groups.values()){const group=document.createElement('details');group.open=true;const title=document.createElement('summary');title.textContent=entries[0].name+' ('+entries.length+')';group.append(title);for(const e of entries){const b=document.createElement('button');b.textContent=e.name+' #'+e.index;b.setAttribute('aria-pressed',String(edSelection.has(e.key)));b.onclick=event=>{if(!event.ctrlKey&&!event.shiftKey)edSelection.clear();edSelection.add(e.key);edSelected=e.key;edFields();};group.append(b);}tree.append(group);}}
-function edTypePicker(kind,type){const grid=$('type-picker');if(grid.dataset.kind===kind){for(const b of grid.children)b.setAttribute('aria-pressed',String(+b.dataset.type===type));return;}grid.dataset.kind=kind;grid.replaceChildren();for(let i=0;i<(kind==='props'?247:68);i++){const b=document.createElement('button'),art=document.createElement('span');art.className='pal-art';palArt(kind,i,art);b.append(art,document.createTextNode(LevelSelection.name(kind,i)));b.dataset.type=i;b.setAttribute('aria-pressed',String(i===type));b.onclick=()=>{$('ed-type').value=i;edTypePicker(kind,i);};grid.append(b);}}
+for(const id of ['ed-type','ed-target']){$(id).onchange=()=>{edApplyFields();edFieldGesture=false;};}
+function edTree(){const tree=$('object-tree');tree.replaceChildren();const groups=new Map();for(const e of edEntries().filter(e=>$('ed-category').value==='all'||e.category===$('ed-category').value)){const id=e.kind+':'+e.values[0];if(!groups.has(id))groups.set(id,[]);groups.get(id).push(e);}for(const entries of groups.values()){const group=document.createElement('details');group.open=true;const title=document.createElement('summary');title.textContent=entries[0].name+' ('+entries.length+')';group.append(title);for(const e of entries){const b=document.createElement('button');b.textContent=e.name+' #'+e.index;b.setAttribute('aria-pressed',String(edSelection.has(e.key)));b.onclick=event=>{if(!event.ctrlKey&&!event.shiftKey)edSelection.clear();edSelection.add(e.key);edSelected=e.key;edFields();};group.append(b);}tree.append(group);}}
+function edTypePicker(kind,type){const grid=$('type-picker');if(grid.dataset.kind===kind){for(const b of grid.children)b.setAttribute('aria-pressed',String(+b.dataset.type===type));return;}grid.dataset.kind=kind;grid.replaceChildren();for(let i=0;i<(kind==='props'?247:68);i++){const b=document.createElement('button'),art=document.createElement('span');art.className='pal-art';palArt(kind,i,art);b.append(art,document.createTextNode(LevelSelection.name(kind,i)));b.dataset.type=i;b.setAttribute('aria-pressed',String(i===type));b.onclick=()=>{$('ed-type').value=i;edApplyFields();edFieldGesture=false;edTypePicker(kind,i);};grid.append(b);}}
 $('ed-delete').onclick=()=>{if($('ed-delete').disabled)return;edSnapshot();LevelSelection.removeAppended(edRecords[L.id],EDITOR_STOCK[L.id],Array.from(edSelection));edSelection.clear();edSelected=null;edRefresh();edStatus('Appended spawns deleted.');};
-for(const k of ['x','y','z','yaw']){const n=$('ed-'+k),r=$('ed-'+k+'-slider');r.oninput=()=>n.value=r.value;n.oninput=()=>r.value=n.value;}
+for(const k of ['x','y','z','yaw']){const n=$('ed-'+k),r=$('ed-'+k+'-slider');r.oninput=()=>{n.value=r.value;edApplyFields();};n.oninput=()=>{r.value=n.value;edApplyFields();};for(const input of [n,r]){listen(input,'change',()=>edFieldGesture=false);listen(input,'blur',()=>edFieldGesture=false);}}
 function edViewport(){$('tip').style.display='none';edGhostPoint=null;}
 listen(window,'resize',edViewport);listen(window,'orientationchange',edViewport);edViewport();
 

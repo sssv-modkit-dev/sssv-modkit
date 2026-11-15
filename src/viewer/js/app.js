@@ -197,7 +197,24 @@ const NAMED_COLOURS={Black:'000000',White:'FFFFFF',Red:'FF0000',Green:'008000',B
 function colourName(hex){const rgb=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));let best='Colour',dist=Infinity;for(const [name,val] of Object.entries(NAMED_COLOURS)){const c=[0,2,4].map(i=>parseInt(val.slice(i,i+2),16));const d=c.reduce((sum,x,i)=>sum+(x-rgb[i])**2,0);if(d<dist){dist=d;best=name}}return best}
 const hex2=s=>[0,2,4].map(i=>parseInt(s.substr(i,2),16)/255);
 // Embedded reviewed labels are defaults; local user names take precedence.
-function partLabel(animal,symbol){return partNames[animal]?.[symbol]||TABLE[animal]?.p.find(p=>p.s===symbol)?.n||''}
+// Descriptions are positional suggestions, not anatomical metadata.
+function positionPartNames(parts,captured){
+ const centres=parts.map(P=>{
+  const instances=(captured?.parts||[]).filter(p=>p.dl===P.sym),bb=P.viewBB||P.bb,local=bb.slice(0,3).map((v,k)=>(v+bb[k+3])/2);
+  const points=instances.length?instances.map(pp=>asmXf(pp)(local)):[local];
+  return {P,instances:instances.length,point:[0,1,2].map(k=>points.reduce((sum,p)=>sum+p[k],0)/points.length)};
+ });
+ if(!centres.length)return {};
+ const posed=captured?centres.filter(c=>c.instances):centres,reference=posed.length?posed:centres;
+ const lo=[0,1,2].map(k=>Math.min(...reference.map(c=>c.point[k]))),hi=[0,1,2].map(k=>Math.max(...reference.map(c=>c.point[k]))),counts={};
+ return Object.fromEntries(centres.map(({P,point,instances})=>{
+  const relative=k=>(point[k]-lo[k])/Math.max(1,hi[k]-lo[k]);
+  const height=relative(1),depth=relative(2),region=captured?(!instances?'Variant part':instances>1&&height<.55?'Leg / foot':height>.65&&depth>.55?'Head / upper front':depth<.2?'Rear / tail':height<.3?'Lower body':'Body'):(height>.65?'Upper part':height<.3?'Lower part':'Centre part');
+  counts[region]=(counts[region]||0)+1;return [P.sym,region+' '+counts[region]];
+ }));
+}
+let suggestedPartNames={};
+function partLabel(animal,symbol){return partNames[animal]?.[symbol]||TABLE[animal]?.p.find(p=>p.s===symbol)?.n||(typeof name!=='undefined'&&animal===name&&typeof suggestedPartNames!=='undefined'?suggestedPartNames[symbol]:'')||''}
 function labelHTML(text){return text.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const visibleParts=()=>parsed.filter(
   P=>!variant||P.sections.includes(variant)
@@ -230,7 +247,7 @@ const mk=(t,on,f)=>{const r=document.createElement('button');r.type='button';r.c
 
 cur.p.forEach((p,i)=>{
   if(variant&&!(p.v||[]).includes(variant))return;
-  mk((partLabel(name,p.s)?'<strong class=custom-part-name>'+labelHTML(partLabel(name,p.s))+'</strong> | ':'')+'<span class=raw-part-id>'+labelHTML(p.s)+'</span> | '+parsed[i].tris.length+' triangles'+
+  mk((partLabel(name,p.s)?'<strong class=custom-part-name>'+labelHTML(partLabel(name,p.s))+'</strong> | ':'')+'<small class=raw-part-id title="ROM part name; friendly names may be position-based suggestions">'+labelHTML(p.s)+'</small> | '+parsed[i].tris.length+' triangles'+
     (noOwnColour(parsed[i])?
       ' &nbsp;<i title="No prim colour in this list">vtx col</i>':''),
     selectedParts.has(p.s),
@@ -244,7 +261,7 @@ function paletteUI(){const D=$('pal');D.innerHTML='';let scope=$('palette-scope'
  if(paletteScoped){const note=document.createElement('p');note.className='mut';note.textContent=!targets.length?'Select one or more parts to colour them.':demoMode?'Colours apply only to the selected parts.':'Changes affect only colour commands owned by the selected parts. Repeated instances sharing one part or colour command still change together; inherited colours need their own material.';D.append(note)}
  for(const o of pal){const r=document.createElement('div');r.className='row';const first=targets.find(P=>editableColours(P).includes(o)),ci=first?.cols.findIndex(c=>c.rgba===o),current=paletteScoped&&first?paletteColour(first,ci,o):map[o]||o;const describe=value=>colourName(value)+' #'+value.slice(0,6);r.title=describe(current);r.innerHTML='<div class="sw" style="background:#'+current.slice(0,6)+'"></div>';const input=document.createElement('input');input.type='color';input.setAttribute('aria-label',r.title);input.value='#'+current.slice(0,6);if(!demoMode&&!targets.some(P=>P.cols.some(c=>c.rgba===o&&Number.isInteger(c.at)))){input.disabled=true;input.title='This surface inherits its colour; no local colour command is available.';}input.oninput=()=>{const next=input.value.slice(1).toUpperCase()+o.slice(6);r.title=describe(next);input.setAttribute('aria-label',r.title);r.querySelector('.sw').style.background=input.value;if(!paletteScoped){if(next===o)delete map[o];else map[o]=next}else for(const P of targets){if(!editableColours(P).includes(o))continue;if(demoMode){const local=partColors[P.sym]||(partColors[P.sym]={});if(next===o)delete local[o];else local[o]=next;if(!Object.keys(local).length)delete partColors[P.sym]}else for(const c of P.cols)if(c.rgba===o&&Number.isInteger(c.at)){if(next===o)delete wordEdits[c.at];else wordEdits[c.at]={word_rom:c.at,expect:o,new:next}}}rebuild(false)};r.append(input);D.append(r)}
 }
-function numberRow(group,label,min,max,step,value,apply,{log=false}={}){const row=document.createElement('div');row.className='axis-edit';const tag=document.createElement('span');tag.className='axis-tag';tag.textContent=label.split(' ').at(-1);const slider=document.createElement('input'),number=document.createElement('input');slider.type='range';number.type='number';number.className='axis-number';number.min=min;number.max=max;number.step=step;number.value=value;number.setAttribute('aria-label',label+' value');number.title='Type a value, or focus and scroll to adjust';slider.min=log?-100:min;slider.max=log?100:max;slider.step=log?1:step;slider.value=log?Math.log10(value)*100:value;slider.setAttribute('aria-label',label);
+function numberRow(group,label,min,max,step,value,apply,{log=false}={}){const row=document.createElement('div');row.className='axis-edit';const tag=document.createElement('span');tag.className='axis-tag';tag.textContent=label.split(' ').at(-1);const slider=document.createElement('input'),number=document.createElement('input');slider.type='range';number.type='number';number.className='axis-number';number.min=min;number.max=max;number.step=step;number.value=String(Math.round(value*1000)/1000);number.setAttribute('aria-label',label+' value');number.title='Type a value, or focus and scroll to adjust';slider.min=log?-100:min;slider.max=log?100:max;slider.step=log?1:step;slider.value=log?Math.log10(value)*100:value;slider.setAttribute('aria-label',label);
  let lastValue=value;const set=(v,syncNumber=true)=>{if(!Number.isFinite(v))return;v=Math.max(min,Math.min(max,v));lastValue=v;if(syncNumber)number.value=String(Math.round(v*1000)/1000);slider.value=log?Math.log10(v)*100:v;apply(v)};slider.oninput=()=>set(log?Math.pow(10,+slider.value/100):+slider.value);number.oninput=()=>{if(number.value!=='')set(+number.value,false)};number.onchange=()=>set(number.value===''?lastValue:+number.value);number.onwheel=e=>{if(document.activeElement!==number)return;e.preventDefault();window.ModelEditorHistory?.begin();set(+number.value+(e.deltaY<0?step:-step));window.ModelEditorHistory?.end()};number.addEventListener('wheel',number.onwheel,{passive:false});number.onwheel=null;row.append(tag,slider,number);group.append(row);return {slider,number}}
 function meshUI(){const D=$('mesh');D.innerHTML='';if(gallery)return;const P=parsed.find(p=>p.sym===selectedSym)||parsed[sel];if((all||sheet)&&!selectedSym||!P){D.innerHTML='<div class="mut mesh-hint">Select a part to edit its mesh.</div>';return}const sym=P.sym,E=mesh[sym]||{s:[1,1,1],m:[0,0,0],o:false};
  const title=document.createElement('h4');title.innerHTML=(partLabel(name,sym)?'<strong class="custom-part-name">'+labelHTML(partLabel(name,sym))+'</strong><br>':'')+'<span class="raw-part-id">'+labelHTML(sym)+'</span>';D.append(title);
@@ -259,9 +276,9 @@ function meshUI(){const D=$('mesh');D.innerHTML='';if(gallery)return;const P=par
 function updateModelStates(){if(!cur)return;
  const cycle=(id,options,value,apply)=>{const host=$(id);host.replaceChildren();const index=Math.max(0,options.findIndex(o=>o.value===value));for(const step of [-1,0,1]){const el=document.createElement(step?'button':'span');el.textContent=step?(step<0?'\u25c0':'\u25b6'):options[index].label;if(step){el.type='button';el.disabled=options.length<2;el.setAttribute('aria-label',(step<0?'Previous ':'Next ')+host.dataset.label);el.onclick=()=>apply(options[(index+step+options.length)%options.length].value)}host.append(el)}};
  cycle('model-state',Array.from($('variant').options,o=>({value:o.value,label:o.textContent})),variant,v=>{$('variant').value=v;$('variant').onchange()});
- cycle('model-pose',[...(poseOk()?[{value:'pose',label:'Captured pose'}]:[]),{value:'parts',label:'Exploded parts'}],assembled?'pose':'parts',v=>{assembled=v==='pose';sheet=!assembled;all=false;SH=sheetLayout(visibleParts());ui();rebuild(true)});
+ cycle('model-pose',[{value:poseOk()?'pose':'none',label:poseOk()?'Captured pose':'No captured pose'}],poseOk()?'pose':'none',()=>{});
  cycle('model-animation',[{value:'none',label:'No animation loaded'}],'none',()=>{});
- $('model-state-note').textContent=poseOk()?'Captured static pose; variant filters its original part list.':'No captured assembly pose available.';
+ $('model-state-note').textContent=poseOk()?'Captured static pose; variant filters its original part list.':'Parts view: this animal or variant has no captured pose.';
 }
 function info(){meshUI();$('info').textContent=''}
 
@@ -304,7 +321,7 @@ V.onchange=()=>{
   ui();
   rebuild(true);
   info();
-};const saved=modelEdits.get((demoMode?'demo:':'src:')+n);map=saved.map||{};partColors=saved.partColors||{};wordEdits=saved.wordEdits||{};mesh=saved.mesh||{};deform=saved.deform||{};deformOn=!!saved.deformOn;deformCache.clear();pose=BUNDLED_POSES[n]||null;if(!demoMode&&pose&&!pose.parts.every(p=>cur.p.some(q=>q.s===p.dl)))pose=null;assembled=poseOk();sel=0;all=demoMode&&!BUNDLED_ANIMALS.has(n);sheet=saved.exploded===undefined?!all&&!assembled:!!saved.exploded;if(sheet){assembled=false;all=false}SH=sheetLayout(visibleParts());$('an').value=n;buildDemoPicker();if(!demoMode){$('demo-status').textContent=sheet&&!variant&&sections.length>1?'Your ROM: variant parts shown side by side. Choose a variant to isolate it.':assembled?'Your ROM: assembled with a captured pose.':'Your ROM: parts view; no matching captured pose is available.';$('demo-assemble').hidden=!poseOk();}ui();rebuild(true);info()}
+};const saved=modelEdits.get((demoMode?'demo:':'src:')+n);map=saved.map||{};partColors=saved.partColors||{};wordEdits=saved.wordEdits||{};mesh=saved.mesh||{};deform=saved.deform||{};deformOn=!!saved.deformOn;deformCache.clear();pose=BUNDLED_POSES[n]||null;if(!demoMode&&pose&&!pose.parts.every(p=>cur.p.some(q=>q.s===p.dl)))pose=null;assembled=poseOk();sel=0;all=demoMode&&!BUNDLED_ANIMALS.has(n);sheet=!all&&!assembled;suggestedPartNames=positionPartNames(parsed,pose);SH=sheetLayout(visibleParts());$('an').value=n;buildDemoPicker();if(!demoMode){$('demo-status').textContent=sheet&&!variant&&sections.length>1?'Your ROM: variant parts shown side by side. Choose a variant to isolate it.':assembled?'Your ROM: assembled with a captured pose.':'Your ROM: parts view; no matching captured pose is available.';$('demo-assemble').hidden=!poseOk();}ui();rebuild(true);info()}
 //#HOST-START
 /* A data-source plug-in hands the editor a parts table plus the geometry bytes it indexes. Returns an error message, or null on success. */
 function makeModelEditorHost(env){

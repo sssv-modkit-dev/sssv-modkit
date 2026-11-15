@@ -17,6 +17,8 @@ python -m http.server --directory build/site 8000
 
 Then open http://localhost:8000/. Nothing is uploaded; files you open are read inside your browser.
 
+In ROM-enabled packs, opening a ROM shares it across the editors using local browser storage. Each page shows its identity; **Forget ROM** removes the shared source and Dialogue/Terrain edits. Dialogue and painted terrain sheets combine in one browser build. Model and Level controls apply live; Undo reverses an edit or a complete slider gesture. Download your edit files to keep a separate backup.
+
 | Page | What you can do |
 |---|---|
 | Level Editor | Select, move, rotate and add objects; undo/redo; save and reopen edits (`scene-edits-v1`) |
