@@ -1,6 +1,6 @@
 {
  "tag": "github/editor",
- "commit": "955f8b1b002a9f92cbe76ea062f42159c10e3be0",
+ "commit": "63988b0d79c0681e2803c61a8bcc5f8816bb0566",
  "files": {
   ".gitignore": "3ad2750af909c18ed688f1571f91a873e942cb61dfc71e72ed8a64ef986e2562",
   ".gitlab-ci.yml": "cd5b67aff57cf27a4ceb555e7f2ca96c957d431775570dd5d4e4eb7b1b891b42",
@@ -47,8 +47,8 @@
   "src/viewer/js/import/ui.js": "5ab2beb04ef25705bca94fed91b10c0355c03efcf39ff233d71a40d615e1a662",
   "src/viewer/js/parts-lab.js": "898a89ddc3350fdc0c0413a887928c3947c847794f8a7d3b0397cb48eb7ce6db",
   "src/web/dialogue.html": "2e5f7f4ed991d81ad8e6961320050ba1763d26bf30fb9a254f52c87e6689c559",
-  "src/web/editor-mobile.css": "5b43e50d29ed12d2fbba4f8d71660ffc5d7fe77bfb8a620d199028dabca91703",
-  "src/web/editor-mobile.js": "61fe5399afba4e81a5ece18aa0e7463dea690b44fc2dc95c72c2e9465aab53b3",
+  "src/web/editor-mobile.css": "557a590d11f003ae24288f18919cf3645379e2ac91bd60b18ac3d1f30e6f26df",
+  "src/web/editor-mobile.js": "a72cad07dc4a2a9d94f3ea4918e19c81103c14364f66cf34ab762e5ebd4e27ec",
   "src/web/favicon-level-editor.svg": "046b0828271607023f1641925f9e7f7c36a3e1da5f58ca74202a718091f70c23",
   "src/web/favicon-model-editor.svg": "94ea59fd10f80bd89940f221d2bcb0ed096ab3e9c588b35065188ae1ab1cd789",
   "src/web/favicon.svg": "0fd233c150b067dafb37c24cc6bfd62a878ebcde126b67bf2b71d3a1dddcad09",
@@ -70,7 +70,7 @@
   "tests/browser/cdp.mjs": "c8a05ebf9878174f5dd04fa9c2cd62c448328bd7ca1c6bd485ced3595c34fb5b",
   "tests/browser/friction.mjs": "18f87b1e2ca498c55af6c7fb9af62b694af04fa7650c3834299d070c378e30e7",
   "tests/browser/guided.mjs": "218eb42944caac287ad98a6d538d8f239949b399f8a1921924b1b4595c3b462f",
-  "tests/browser/mobile.mjs": "cb683cd67a1823529f58d42fdf79c51da7d10aec882ff7ab184cf0695bb379ab",
+  "tests/browser/mobile.mjs": "359c5c57ce52d3e4869f77bf99e7e41686a727157069e51caadd1f843ecfb650",
   "tests/browser/roundtrip.mjs": "bfc280fd60bc761c7dcdbcca53ffa845227fac28cbcccc5d21f1c2c4e641d514",
   "tests/browser/story-rom.mjs": "13a30f9624f5adc066d753e3ab54f26939efc5b8e1b706d1038b15618d4086db",
   "tests/browser/story.mjs": "371e41ab24d652203275548a68462a583e4d25f4cd744b0b35896f4605b00ef0",

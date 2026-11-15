@@ -17,6 +17,9 @@
  .editor-phone a{display:inline-flex;align-items:center;min-height:44px}
  #mobile-toolbar{position:fixed;inset:0 0 auto;z-index:60;display:flex;gap:8px;padding:6px 10px;background:var(--pn,#141821);border-bottom:1px solid var(--bd,#59647a)}
  #mobile-toolbar button{flex:1;margin:0}
+ #mobile-desktop-tip{position:relative;z-index:3;display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--pn,#141821);border-bottom:1px solid var(--bd,#59647a);line-height:1.4}
+ #mobile-desktop-tip p{flex:1;margin:0}
+ #mobile-desktop-tip button{flex:none;margin:0}
  #mobile-dock>*{scroll-margin-top:70px}
  #mobile-viewport{position:relative;flex:none;width:100%;height:54svh;min-height:260px;overflow:hidden}
  #mobile-viewport>#view,#mobile-viewport>#c{position:relative;width:100%;height:100%;margin:0}
@@ -48,7 +51,7 @@
  .editor-phone.mobile-panels-hidden #mobile-dock{display:none}
  .editor-phone.mobile-fullscreen{height:100dvh!important;overflow:hidden!important}
  .editor-phone.mobile-fullscreen #mobile-viewport{flex:1;min-height:0;height:auto}
- .editor-phone.mobile-fullscreen #mobile-dock,.editor-phone.mobile-fullscreen .mobile-camera,.editor-phone.mobile-fullscreen>footer{display:none}
+ .editor-phone.mobile-fullscreen #mobile-dock,.editor-phone.mobile-fullscreen #mobile-desktop-tip,.editor-phone.mobile-fullscreen .mobile-camera,.editor-phone.mobile-fullscreen>footer{display:none}
  .editor-phone #setup{padding:16px;z-index:70}
  .editor-phone #gallery{z-index:70}
  .editor-phone[data-page=dialogue] #mobile-viewport{display:none}
