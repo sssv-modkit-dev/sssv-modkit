@@ -51,13 +51,22 @@
    move(document.querySelector('main'),dock);
    viewport.hidden=true;
   }
+  if(kind==='model'||kind==='level')tip();
   panels(false);attachCamera();window.dispatchEvent(new Event('resize'));
+ }
+ function tip(){
+  const key='editor-desktop-tip-dismissed';
+  try{if(localStorage.getItem(key))return;}catch(e){}
+  const note=document.createElement('div');note.id='mobile-desktop-tip';note.setAttribute('role','note');
+  const text=document.createElement('p');text.textContent='Tip: this editor works best in a desktop browser. On a phone you can still look around and make small edits.';
+  note.append(text,button('Dismiss',()=>{note.remove();try{localStorage.setItem(key,'1');}catch(e){}window.dispatchEvent(new Event('resize'));},'mobile-desktop-tip-close'));
+  viewport.before(note);
  }
  function leave(){
   if(!active)return;active=false;
   for(const [el,anchor] of moves.reverse()){anchor.replaceWith(el);}moves=[];
   for(const [el,open] of disclosures)el.open=open;disclosures=[];
-  for(const el of [bar,viewport,dock,camera])el?.remove();camera=null;
+  for(const el of [bar,viewport,dock,camera,document.getElementById('mobile-desktop-tip')])el?.remove();camera=null;
   body.classList.remove('editor-phone','mobile-panels-hidden','mobile-fullscreen');window.dispatchEvent(new Event('resize'));
  }
  window.addEventListener('editor-touch-ready',attachCamera);

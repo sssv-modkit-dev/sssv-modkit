@@ -55,6 +55,9 @@ try{
    await check("document.querySelector('#mobile-panels').getBoundingClientRect().height>=44",'44 px toggle');
    await check("[...document.querySelectorAll('button,select,summary,input:not([type=hidden]):not([type=checkbox])')].filter(e=>e.getClientRects().length).every(e=>e.getBoundingClientRect().height>=44)",'44 px visible controls');
    if(page==='model-editor'||page==='level-editor'){
+    await check("(t=>!!t&&document.elementFromPoint(t.getBoundingClientRect().x+20,t.getBoundingClientRect().y+20)?.closest('#mobile-desktop-tip')===t)(document.getElementById('mobile-desktop-tip'))",'desktop tip visible on phones');
+    await js(s,"document.getElementById('mobile-desktop-tip-close').click()");
+    await check("!document.getElementById('mobile-desktop-tip')&&localStorage.getItem('editor-desktop-tip-dismissed')==='1'",'desktop tip dismiss remembered');
     await check("document.getElementById('mobile-dock').getBoundingClientRect().top>=document.getElementById('mobile-viewport').getBoundingClientRect().bottom",'panels below canvas');
     await check("[...document.querySelectorAll('#mobile-camera button')].every(b=>b.getBoundingClientRect().height>=44&&b.getBoundingClientRect().width>=44)",'44 px camera buttons');
     await js(s,"document.getElementById('mobile-panels').click()");await check("getComputedStyle(document.getElementById('mobile-dock')).display==='none'",'hide all panels');
@@ -124,6 +127,7 @@ try{
    await until(c,s,"document.body.classList.contains('editor-phone')",3000).catch(async error=>{throw Error(error.message+' '+JSON.stringify(await js(s,"({width:innerWidth,media:matchMedia('(max-width:767px)').matches,errors:document.body.className})"))+' '+JSON.stringify(c.errors));});
   }else{
    await check("!document.getElementById('mobile-dock')",'desktop unchanged');
+   await check("!document.getElementById('mobile-desktop-tip')",'no desktop tip on desktop');
    if(page==='model-editor')await check("getComputedStyle(document.body).display==='grid'&&document.getElementById('view-settings').parentElement.id==='side'",'desktop model columns and tools');
    if(page==='level-editor')await check("document.getElementById('project-panel').parentElement.id==='level-right'&&getComputedStyle(document.getElementById('objects-panel')).position==='fixed'",'desktop anchored tree and rail');
   }
