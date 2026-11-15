@@ -26,9 +26,6 @@ const tP=gl.getAttribLocation(T,'p'),tC=gl.getAttribLocation(T,'c'),tU=gl.getAtt
 const TEX={};function atlasTex(k){if(TEX[k])return TEX[k];const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([128,128,128,255]));
  for(const[a,b]of[[gl.TEXTURE_MIN_FILTER,gl.NEAREST],[gl.TEXTURE_MAG_FILTER,gl.NEAREST],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,a,b);
  const im=new Image();im.onload=()=>{gl.bindTexture(gl.TEXTURE_2D,t);gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL,gl.NONE);gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,im);};im.src=ATLAS[k];return TEX[k]=t;}
-const SW=prog('attribute vec3 p;uniform mat4 m;varying vec2 w;void main(){w=p.xy;gl_Position=m*vec4(p,1.);}',
- 'precision mediump float;uniform float t;varying vec2 w;void main(){float r=sin(w.x*.012+t*1.3)*sin(w.y*.010-t*1.1)+.5*sin((w.x+w.y)*.02+t*2.);vec3 c=mix(vec3(.05,.22,.45),vec3(.25,.55,.8),.5+.25*r);gl_FragColor=vec4(c,.82);}');
-const swP=gl.getAttribLocation(SW,'p'),swM=gl.getUniformLocation(SW,'m'),swT=gl.getUniformLocation(SW,'t');
 const aP=gl.getAttribLocation(P,'p'),aC=gl.getAttribLocation(P,'c'),uM=gl.getUniformLocation(P,'m'),uS=gl.getUniformLocation(P,'ps');
 function buf(a){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,a,gl.STATIC_DRAW);return b;}
 function hue(t){const h=((t*47)%360)/60,x=1-Math.abs(h%2-1);const r=[[1,x,0],[x,1,0],[0,1,x],[0,x,1],[x,0,1],[1,0,x]][Math.floor(h)%6];return r;}
@@ -46,7 +43,7 @@ function recolor(){const m=+$('gm').value%3,n=L.n,pf=L.pf,out=new Float32Array(n
   out.set(c,k*3);}
  gl.bindBuffer(gl.ARRAY_BUFFER,mesh.c);gl.bufferData(gl.ARRAY_BUFFER,out,gl.STATIC_DRAW);}
 function load(i){
- for(const object of [mesh,lines,grid,spw,bxs,bxl,bxo,bxlo,msh,L?.anm,L?.sea])if(object)for(const key of ['p','c','uv','sl','wa'])if(object[key])gl.deleteBuffer(object[key]);
+ for(const object of [mesh,lines,grid,spw,bxs,bxl,bxo,bxlo,msh,L?.anm])if(object)for(const key of ['p','c','uv','sl','wa'])if(object[key])gl.deleteBuffer(object[key]);
  L={...LEVELS[i]};const pos=dec(L.pos,Int32Array),col=dec(L.col,Uint8Array),n=L.n;
  const pf=new Float32Array(pos),cf=new Float32Array(n*3);
  let zmin=1e9,zmax=-1e9;for(let k=2;k<pf.length;k+=3){zmin=Math.min(zmin,pf[k]);zmax=Math.max(zmax,pf[k]);}
@@ -97,7 +94,6 @@ function buildAnimals(){
   for(const[lx,ly]of[[16,10],[16,-10],[-16,10],[-16,-10]])box(x+(lx*ca-ly*sa)*S,y+(lx*sa+ly*ca)*S,z+7*S,4*S,4*S,7*S,ca,sa,col.map(v=>v*.6)); // legs
  }
  L.anm={p:buf(new Float32Array(P)),c:buf(new Float32Array(C)),n:P.length/3};
- const b=L.bb,m=3000,sz=b[2]-24;L.sea={p:buf(new Float32Array([b[0]-m,b[1]-m,sz,b[3]+m,b[1]-m,sz,b[3]+m,b[4]+m,sz,b[0]-m,b[1]-m,sz,b[3]+m,b[4]+m,sz,b[0]-m,b[4]+m,sz])),n:6};
 }
 function buildMeshes(){
  const S=+$('ms').value||1,lift=false,P=[],C=[];let nt=0,ni=0;
@@ -134,7 +130,6 @@ function frame(){
   for(const a of[tU,tS,tW])gl.disableVertexAttribArray(a);gl.useProgram(P);}
  else draw($('wf').checked?lines:mesh,$('wf').checked?gl.LINES:gl.TRIANGLES);
  if($('an').checked&&L.anm.n)draw(L.anm,gl.TRIANGLES);
- if($('sea').checked){gl.useProgram(SW);gl.uniformMatrix4fv(swM,false,M);gl.uniform1f(swT,performance.now()/1000);gl.bindBuffer(gl.ARRAY_BUFFER,L.sea.p);gl.enableVertexAttribArray(swP);gl.vertexAttribPointer(swP,3,gl.FLOAT,false,0,0);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.drawArrays(gl.TRIANGLES,0,6);gl.disable(gl.BLEND);gl.useProgram(P);}
  if($('gr').checked)draw(grid,gl.POINTS,2);
  if($('sp').checked){if($('bx').checked){const pv=$('pm').value,mm=pv!='0';if(mm)draw(msh,gl.TRIANGLES);if(pv!='2'){draw(mm?bxo:bxs,gl.TRIANGLES);draw(mm?bxlo:bxl,gl.LINES);}}else draw(spw,gl.POINTS,9);}
  edOverlay();edDrawGhost();flyStep();requestAnimationFrame(frame);
@@ -194,7 +189,7 @@ $('gm').onchange=recolor;$('ms').onchange=()=>{buildMeshes();};
 $('lv').onchange=()=>load(+$('lv').value);
 (function(root){
   'use strict';
-  const checks=['wt','sea','an','wf','gr','sp','bx','ml'];
+  const checks=['wt','an','wf','gr','sp','bx','ml'];
   const number=(v,min,max)=>typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max;
   function validate(v,levelIds){
     if(!v||v.format!=='sssv-level-view-v1'||!levelIds.includes(v.level))throw Error('Choose a compatible SSSV level view file.');
@@ -241,7 +236,7 @@ $('view-file').onchange=async e=>{
 const HP=new URLSearchParams(location.hash.slice(1));
 if(gl){load(+(HP.get('lv')||0));$('lv').value=+(HP.get('lv')||0);
  if(HP.get('cam')){const c=HP.get('cam').split(',').map(Number),d=Math.hypot(c[3]-c[0],c[4]-c[1],c[5]-c[2]);cam.t=c.slice(0,3);cam.d=d;cam.yaw=Math.atan2(c[4]-c[1],c[3]-c[0]);cam.pitch=Math.asin((c[5]-c[2])/d);}
- for(const k of['sea','an','sp'])if(HP.get(k)=='0')$(k).checked=false;if(HP.get('ui')=='0')$('ui').style.display='none';
+ for(const k of['an','sp'])if(HP.get(k)=='0')$(k).checked=false;if(HP.get('ui')=='0')$('ui').style.display='none';
  requestAnimationFrame(frame);}
 
 /*EDITOR*/

@@ -9,7 +9,7 @@ probe=r"""
 setTimeout(async()=>{
  const failures=[],check=(v,m)=>{if(!v)failures.push(m)},wait=ms=>new Promise(r=>setTimeout(r,ms)),el=id=>document.getElementById(id),cv=el('c');
  try{
- check(el('setup').hidden,'sample startup');check(el('camera-mode').value==='free','freecam default');
+ check(el('setup').hidden,'sample startup');check(el('camera-mode').value==='free','freecam default');check(!el('sea'),'no fake sea toggle');
  check(el('ed-save').closest('#project-panel'),'save controls own panel');
  check(getComputedStyle(el('objects-panel')).position==='fixed'&&el('objects-panel').getBoundingClientRect().left===0,'anchored source tree');
  const rail=[...el('level-right').children].map(p=>p.getBoundingClientRect());check(rail.every((r,i)=>!i||r.top>=rail[i-1].bottom),'rail panels do not overlap');
