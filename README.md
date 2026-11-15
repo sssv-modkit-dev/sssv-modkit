@@ -20,7 +20,7 @@
 | I want to… | Start here | What I need to know |
 | --- | --- | --- |
 | Explore demo models | [Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/model-editor.html) | Bundled demos work without a ROM. |
-| Edit a stage | [Level Editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) · [Guide](docs/guides/LEVEL-EDITOR.md) | Select your own supported ROM. Terrain is read-only; verify edited builds in game. |
+| Edit a stage | [Level Editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) · [Guide](docs/guides/LEVEL-EDITOR.md) | Select your own supported ROM. Edit terrain in the Terrain editor; verify edited builds in game. |
 | Play in the browser | [Browser Play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html) | Experimental; compatibility and performance need more testing. Select your own uncompressed ROM or patched build. |
 | Build an animal patch | [Getting started](docs/guides/GETTING-STARTED.md) | Requires your own unmodified US 1.0 ROM and Python. |
 
@@ -39,10 +39,10 @@ The builder writes an IPS patch and, by default, a patched ROM under `build/`. I
 ## Features and current limits
 
 - **Model Editor:** recolour and reshape existing animal parts, edit vertices, preview changes, and import or export configs. Geometry edits preserve vertex and triangle counts; shading and in-game appearance still need checking.
-- **Level Editor:** inspect and edit supported stage objects, save projects, and build ROMs or IPS patches. Terrain editing is not implemented, and arbitrary edits are not guaranteed to work in game.
+- **Level Editor:** inspect and edit supported stage objects, save projects, and build ROMs or IPS patches. Edit terrain textures in the Terrain editor. Arbitrary edits are not guaranteed to work in game.
 - **Patch builders:** create animal and level edits locally with source checks and IPS round-trip validation. Animal configs require the US 1.0 ROM; see the [Level Editor guide](docs/guides/LEVEL-EDITOR.md) for level-build constraints.
 - **Browser Play and Build & Play:** experimental. Compatibility, controls, and performance need further testing.
-- **Not implemented:** importing entirely new character rigs, terrain editing, and a finished combined mod campaign.
+- **Not implemented:** importing entirely new character rigs and a finished combined mod campaign.
 
 For current capabilities, prototypes, and validation status, see [Project status](docs/PROJECT.md).
 
