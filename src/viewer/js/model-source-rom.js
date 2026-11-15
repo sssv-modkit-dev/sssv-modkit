@@ -64,9 +64,20 @@ async function loadROM(ab,filename,restored=false){
       const raw=await window.SSSVBuilder.deriveTable(ab,{onProgress:p=>H.message(p.detail)});
       partsTable=normaliseLocalTable(raw);
     }
+    if(window.SSSVAnimalPoses){
+      const captured=await window.SSSVAnimalPoses.load(Object.keys(partsTable).filter(n=>window.SSSVAnimalPoses.species.some(([,name])=>name===n)));
+      Object.assign(BUNDLED_POSES,captured.poses);
+      for(const [name,error] of Object.entries(captured.errors))console.warn('Skipped '+name+' pose: '+error);
+    }
     currentSourceHash=hash;currentSourceBytes=ab;
     const error=H.useSource({table:partsTable,bytes:ab,label:(restored?'Restored saved ROM: ':'')+filename,note:ok});
     if(error){H.message(error);return false}
+    // Seed only untouched view choices; source replacement clears old edit states.
+    if(window.SSSVAnimalPoses)for(const [,n] of window.SSSVAnimalPoses.species){
+      if(!BUNDLED_POSES[n]||!partsTable[n]||!BUNDLED_POSES[n].parts.every(p=>partsTable[n].p.some(q=>q.s===p.dl)))continue;
+      const key='src:'+n,state=modelEdits.get(key);
+      if(state.exploded===undefined)modelEdits.put(key,{...state,exploded:false});
+    }
     const opened=hash&&restoreEdits(hash);H.expandSourceAnimals?.();
     if(opened)H.message('Restored remembered edits for '+filename+'. '+ok);
     if(restored)$('remember-source').checked=true;

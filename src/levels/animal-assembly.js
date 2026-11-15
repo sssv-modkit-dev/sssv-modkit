@@ -27,7 +27,13 @@ function assembleAnimal(rom,animal,pose){
 }
 async function fromROM(rom,progress=()=>{}){
  progress('Reading animal geometry from your ROM...');const table=await root.SSSVBuilder.deriveTable(rom,{onProgress:p=>progress(p.detail)}),models={},species={},names={};
- for(const [id,name] of [[0,'seagull'],[6,'fox'],[22,'bear'],[31,'dog'],[33,'sheep']]){if(!table[name])continue;const response=await fetch('demo/poses/'+name+'.json');if(!response.ok)throw Error('Could not load captured '+name+' pose');const model=assembleAnimal(rom,table[name],await response.json());if(model){models[name]=model;species[id]=name;names[name]=name;}}
+ const captured=await root.SSSVAnimalPoses.load(root.SSSVAnimalPoses.species.filter(([,name])=>table[name]).map(([,name])=>name));
+ for(const [id,name] of root.SSSVAnimalPoses.species){if(!table[name]||!captured.poses[name])continue;
+  try{const model=assembleAnimal(rom,table[name],captured.poses[name]);if(model){models[name]=model;species[id]=name;names[name]=name;}}
+  catch(error){captured.errors[name]=error.message;}
+ }
+ for(const [name,error] of Object.entries(captured.errors))progress('Skipped '+name+' pose: '+error);
+
  return {models,species,names};
 }
 root.LevelAnimalAssembly={assembleAnimal,fromROM};

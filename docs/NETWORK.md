@@ -37,6 +37,7 @@ Links to the other pages and to GitHub are ordinary navigation (only on click).
 |---|---|---|
 | `<link rel=icon>` | `favicon-model-editor.svg` | always |
 | `src/viewer/js/parts-lab.js:60` | `demo/heads/<name>.png` (8 demo heads; three original creatures have none and fall back to a placeholder, which shows as 404 in the console) | always |
+| `src/web/animal-poses.js` | `demo/poses/<name>.json` (GET, no body; 23 supported species, cached embedded poses reused) | after opening a ROM, independently per animal |
 | `src/viewer/js/app.js` | none; the page is one inline script. Your ROM and table are read with the File API; the optional "Remember ROM" uses IndexedDB (local) | on your action |
 | `src/web/handoff.js:15` | `window.open('play.html')` plus a same-origin `postMessage` of your edit JSON (and the ROM, if loaded) | on Build & Play |
 
@@ -46,6 +47,7 @@ Links to the other pages and to GitHub are ordinary navigation (only on click).
 | `<link rel=stylesheet>`, `<script src>` | `levels/levels.css`, `levels/{rom,selection,palette,runtime,gallery,loader}.js`, `handoff.js`, `favicon-level-editor.svg` | always |
 | `levels/loader.js:37` | `fetch('demo/level-4.json')` (GET, no body) | always unless `?rom=1` |
 | `levels/loader.js:9`, `gallery.js:33`, `editor.js:92` | `demo/heads/<name>.png` | always |
+| `src/web/animal-poses.js` | `demo/poses/<name>.json` (GET, no body; 23 supported species) | after opening a ROM, independently per animal |
 | `levels/runtime.js:23` | texture atlas from a `data:` URL (embedded in the demo JSON or decoded from your ROM) | always |
 | `handoff.js` | as above | on Build & Play |
 

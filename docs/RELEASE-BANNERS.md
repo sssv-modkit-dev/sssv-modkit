@@ -1,16 +1,15 @@
 # Release banners
 
-The README shows the **Velvet Midnight Rat** edition (pre-alpha v0.01) as a light/dark pair:
-`docs/images/releases/velvet-midnight-rat-light.png` and `velvet-midnight-rat-dark.png`, switched by the
-reader's GitHub theme with a `<picture>` element. They were made with:
+The README shows **Amberish Mane Lion** (pre-alpha v0.01):
+`docs/images/releases/amberish-mane-lion.png`, a 1500 x 500 banner with amber accents on midnight blue and a captured lion head facing the title. The eyes use the local ROM's CI4 texture, rendered as texel geometry. Only the final documentation banner is included here.
 
-```sh
-python src/make_release_banner.py --palette purple --theme light --anchor left --head rat   --head-image RAT.png --name "Velvet Midnight Rat" --version "PRE-ALPHA v0.01" --quote-style anglo
+Made with the separately maintained [Version Banner Generator](https://github.com/sssv-modkit-dev/version-banner-generator), run without changes:
+
+```powershell
+powershell -NoProfile -File tools/make-banner.ps1 -Project 'SSSV MODKIT' -Name 'Amberish Mane Lion' -Version 'PRE-ALPHA v0.01' -Palette orange -ImagePath LION-HEAD.png -QuoteStyle english -Out amberish-mane-lion.png
 ```
 
-(`--theme dark` for the other one). `RAT.png` is a transparent three-quarter render of the rat model from the
-owner's own ROM, mirrored so it faces the text; it is not committed. The earlier Auburnish Ear Bear banner
-(`auburnish-ear-bear-v3.png`) remains archived.
+The input head and generated settings remain private. The earlier Velvet Midnight Rat light/dark pair and Auburnish Ear Bear banner remain archived. The commands below describe the older in-repo generator.
 
 Generate a minimal banner from the verified local game-head branding render:
 
@@ -71,7 +70,7 @@ Owner's pick for release banners: EVO, EVO chip, polar bear, camel, elephant, an
 
 ## Publication
 
-The selected README banners are `docs/images/releases/velvet-midnight-rat-light.png` and `-dark.png`.
+The selected README banner is `docs/images/releases/amberish-mane-lion.png`.
 Future concepts remain local in build; no version numbers or releases are implied.
 Review images under docs/PREPUBLISH.md. Game-head renders remain third-party game
 content, outside the CC0 dedication; see NOTICE.md. Never publish ROMs, extracted

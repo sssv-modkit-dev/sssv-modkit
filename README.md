@@ -1,9 +1,6 @@
 # Space Station Silicon Valley Modkit
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/releases/velvet-midnight-rat-dark.png">
-  <img alt="SSSV Modkit — Velvet Midnight Rat edition" src="docs/images/releases/velvet-midnight-rat-light.png">
-</picture>
+![SSSV Modkit, Amberish Mane Lion edition](docs/images/releases/amberish-mane-lion.png)
 
 **Explore and edit *Space Station Silicon Valley* (Nintendo 64).** Try the browser editors, or build ROM patches from your own game files with the local tools.
 
@@ -16,7 +13,7 @@
 
 ![Model Editor showing original demo geometry and Save edits controls](docs/images/features/parts-lab.jpg)
 
-*The public Model Editor demo uses original sample geometry. Game-specific editing requires your own supported game files.* See [image notes](docs/images/features/README.md).
+*The public Model Editor demo uses original sample geometry. Game-specific editing requires your own supported game files. Captured static poses support 23 species, including 18 more animals when you load your ROM; see the [assembled animal list and partial captures](docs/guides/MODEL-EDITOR.md).* See [image notes](docs/images/features/README.md).
 
 ## Choose your path
 

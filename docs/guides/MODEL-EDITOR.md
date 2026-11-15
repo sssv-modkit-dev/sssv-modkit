@@ -4,7 +4,12 @@
 
 Preview animal parts, experiment with their colours and shapes, and save edits
 for a ROM build. The public demo includes five bundled animals with captured
-poses and three original creatures; you can explore it without supplying a ROM.
+poses (bear, dog, fox, seagull and sheep) and three original creatures; you can explore it without supplying a ROM.
+
+Loading your ROM also enables captured poses for camel, cool cod, desert fox, elephant, gorilla, husky, hyena, kangaroo, lion, mouse, piranha, polar bear, rabbit, rat, scorpion, tortoise, vulture and walrus. No additional game geometry is bundled. These are static previews, not animation clips.
+
+Partial captures: camel 19/22 parts, elephant 6/9, polar bear 6/8 and rat 7/8.
+Selected variant captures: desert fox attacking, boxing kangaroo, racing mouse, heli rabbit and tortoise tank. Other variants may differ; level previews use approximate size and materials.
 
 ![Model Editor showing the wind-up robot demo and Save edits controls](../images/features/parts-lab.jpg)
 
