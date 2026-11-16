@@ -79,6 +79,8 @@ function birdJoints(rig,phase,mode){
  const [w1,w2]=rig.wings,[a,b]=mode==='flap'?flapAngles(Math.floor(ph*37/256)):[90+(raw(ph)>>11),90+(raw(ph)>>11)];
  J[22]=[(w1*sin(a))>>8,0,h+((w1*cos(a))>>8)];J[23]=[J[22][0]+((w2*sin(b))>>8),0,J[22][2]+((w2*cos(b))>>8)];J[24]=[-J[22][0],0,J[22][2]];J[25]=[-J[23][0],0,J[23][2]];
  J[26]=[0,-L-((rig.tail*cos(20))>>8),h+((rig.tail*sin(20))>>8)];
+ // perching birds (parrot, feet 0x802C4448): one foot point under the body, nothing walks
+ if(rig.legs.p2===undefined){J[5]=[0,0,h-rig.legs.p1];return J}
  const {p1,p2,p3,p4}=rig.legs,walk=mode==='walk',u=(ph*4)&255,curl=v=>v<65||v>191?0:(((raw((v*2+64)&255)>>7)+256)*p4)>>10;
  const sw=walk?((raw(u)>>7)*p4)>>8:0,la=walk?curl(u):0,lc=walk?curl((u+128)&255):0,z=h-p1,s=(p4*11)>>4;
  J[5]=[0,sw,z];J[27]=[0,-sw,z];J[3]=[-p2,sw,z];J[4]=[p2,-sw,z];J[13]=[-p2,sw-p3,z];J[14]=[p2,-sw-p3,z];

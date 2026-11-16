@@ -26,6 +26,7 @@ const sn=d=>Math.round(Math.sin(d*Math.PI/180)*256),cs=d=>Math.round(Math.cos(d*
 const fl=R.joints(bird,28,'flap');assert.deepEqual(fl[22],[(1125*sn(170))>>8,0,812+((1125*cs(170))>>8)]);assert.equal(fl[24][0],-fl[22][0]);
 assert.ok(R.joints(bird,0,'walk')[22][2]===812,'glide starts level');
 assert.ok(R.joints(bird,32,'walk')[8][2]<-100&&R.joints(bird,64,'flap')[8][2]===0,'toes curl only when walking');
+const perch={...bird,head:[468,468,0],legs:{p1:609}},pj=R.joints(perch,0,'flap');assert.deepEqual(pj[5],[0,0,812-609]);assert.equal(pj[8],undefined,'perching birds have no toes');
 // set poses: weight 0 keeps the skeleton, 32 lands exactly on the pose; hit ramps in, holds and returns to 0
 const sp={root:[0,0,190],bones:[[0,1,390,90,0],[1,19,600,27,56]]},B=[[0,0,400],[0,390,400]];B[19]=[0,700,900];
 const Z=R.setPoseJoints(sp,0,B);assert.deepEqual([Z[0],Z[1],Z[19]],[[0,0,400],[0,390,400],[0,700,900]]);
