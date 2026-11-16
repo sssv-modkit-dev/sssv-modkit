@@ -35,6 +35,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
  };}
  let replay=false,loading=false;
  const deliver=value=>{const files=new DataTransfer();files.items.add(new File([value.buffer],value.name,{type:'application/octet-stream'}));input.files=files.files;replay=true;input.dispatchEvent(new Event('change',{bubbles:true}));replay=false;};
+ const browse=document.createElement('label');browse.className='rom-browse';browse.textContent='Browse ROM';
+ const picker=document.createElement('input');picker.type='file';picker.accept='.z64,.v64,.n64';picker.id='session-rom-file';picker.setAttribute('aria-label','Browse for your SSSV ROM');browse.append(picker);box.insertBefore(browse,button);
+ picker.addEventListener('change',async()=>{const file=picker.files[0];if(!file||loading)return;loading=true;picker.disabled=true;show('Checking ROM identity…');try{const value=await set(file);if(input)deliver(value);}catch(error){show(error.message);}finally{picker.value='';picker.disabled=false;loading=false;}});
  document.addEventListener('change',event=>{if(event.target!==input||replay)return;event.stopImmediatePropagation();const file=input.files[0];if(!file||loading)return;loading=true;const oldDisabled=input.disabled;input.disabled=true;show('Checking ROM identity…');set(file).then(deliver).catch(error=>{input.value='';show(error.message);}).finally(()=>{loading=false;input.disabled=oldDisabled;});},true);
  // Indexing reports actual worker stages and elapsed time; no invented percentage.
  const builder=window.SSSVBuilder;
