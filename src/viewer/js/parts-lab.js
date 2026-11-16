@@ -151,25 +151,47 @@ if(window.ModelEditorHost){window.ModelEditorHost.captureSession=captureModelHis
 addEventListener('model-source-ready',()=>{if(!demoMode){modelCategory='Animals';buildDemoPicker();}});
 // Walk/Run/Flap, set-pose (Hit, Knocked out) and action (Lift & throw, Chest beat, Dance) playback (RigPlayer, rig-player.js): only for assembled animals whose pack attached pose.anim.
 var animBind=null,animMode="",animPhase=0,animTimer=0,animPaused=false;
+// Loop and queue: animQueue lists the modes to play in turn (one full cycle each), animQi is the one playing, animTravel
+// counts the phase steps played of it. Loop off: playback stops on the last frame of the last entry (animDone).
+var animLoop=true,animQueue=[],animQi=0,animTravel=0,animDone=false,animAddMode=false,animBusy='';
 var ANIM_MODES=['walk','run','flap','hit','ko','lift','beat','dance'],ANIM_STEP={run:8,flap:12,hit:8,ko:8,lift:3,beat:3,dance:3};
-var animStep=m=>ANIM_STEP[m]||5,animFrames=m=>Math.ceil(256/animStep(m));
-function animStop(){animMode='';clearInterval(animTimer);animTimer=0;animParts=null;animBind=null;animPaused=false;animBar()}
+var animStep=m=>ANIM_STEP[m]||5,animLen=m=>window.RigPlayer?.loopLen?.(m)||256,animFrames=m=>Math.ceil(animLen(m)/animStep(m));
+var animStartPhase=m=>m==='walk'||m==='run'||m==='flap'?(animBind?.rest.ph||0):0,animLabel=m=>$('anim-'+m)?.textContent||m;
+function animStop(){animMode='';clearInterval(animTimer);animTimer=0;animParts=null;animBind=null;animPaused=false;animQueue=[];animQi=0;animTravel=0;animDone=false;animBar()}
 function animSync(){const ok=assembled&&!gallery&&poseOk()&&!!pose?.anim;if(animMode&&(!ok||animBind?.pose!==pose))animStop();
- for(const m of ['walk','run','flap','hit','ko','lift','beat','dance']){const b=$('anim-'+m);if(!b)continue;b.hidden=!ok||!(pose.anim.modes||Object.keys(pose.anim.legs?.tables||{})).concat(Object.keys(pose.anim.setposes||{}),Object.keys(pose.anim.actions||{})).includes(m);b.setAttribute('aria-pressed',String(animMode===m));b.classList.toggle('on',animMode===m)}
+ for(const m of ['walk','run','flap','hit','ko','lift','beat','dance']){const b=$('anim-'+m);if(!b)continue;b.hidden=!ok||!(pose.anim.modes||Object.keys(pose.anim.legs?.tables||{})).concat(Object.keys(pose.anim.setposes||{}),Object.keys(pose.anim.actions||{})).includes(m);b.setAttribute('aria-pressed',String(animMode===m));b.classList.toggle('on',animMode===m);b.classList.toggle('queued',!!animQueue?.includes(m))}
  animBar()}
-// Timeline bar (shown while an animation is loaded): play/pause, one frame back/forward, scrub slider.
+// (animSync runs from ui() before the vars above are assigned: keep the literal mode list and the ?. on animQueue.)
+// Timeline bar (shown while an animation is loaded): play/pause, one frame back/forward, loop, queue, scrub slider.
 function animBar(){const bar=$('anim-timeline');if(!bar)return;bar.hidden=!animMode;if(!animMode)return;const play=$('anim-play');
  play.textContent=animPaused?'▶':'⏸';play.title=animPaused?'Play (Space)':'Pause (Space)';play.setAttribute('aria-label',animPaused?'Play':'Pause');
- $('anim-scrub').value=String(animPhase);$('anim-frame').textContent=`${$('anim-'+animMode)?.textContent||animMode} · ${Math.floor(animPhase/animStep(animMode))+1}/${animFrames(animMode)}`}
+ const lp=$('anim-loop'),add=$('anim-add'),q=$('anim-queue');
+ if(lp){lp.setAttribute('aria-pressed',String(animLoop));lp.classList.toggle('on',animLoop);lp.title=`Loop: ${animLoop?'on':'off'} (L). Off plays once and stops.`}
+ if(add){add.setAttribute('aria-pressed',String(animAddMode));add.classList.toggle('on',animAddMode)}
+ if(q){const key=animQueue.join(',')+'|'+animQi;q.hidden=animQueue.length<2;if(q.dataset.key!==key){q.dataset.key=key;q.textContent='';
+   if(animQueue.length>1){animQueue.forEach((m,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','listitem');b.textContent=`${i+1}. ${animLabel(m)} ×`;b.title='Remove from the queue';b.classList.toggle('on',i===animQi);b.onclick=()=>animUnqueue(i);q.append(b)});
+    const c=document.createElement('button');c.type='button';c.textContent='Clear';c.title='Keep only the animation playing now';c.onclick=()=>{animQueue=[animMode];animQi=0;animSync()};q.append(c)}}}
+ $('anim-scrub').max=String(animLen(animMode)-1);$('anim-scrub').value=String(animPhase);$('anim-frame').textContent=animBusy||`${animLabel(animMode)} · ${Math.floor(animPhase/animStep(animMode))+1}/${animFrames(animMode)}`}
 function animShow(){if(!animBind||animBind.pose!==pose||!assembled){animStop();ui();rebuild(false);return}animParts=animBind.frame(animPhase,animMode);rebuild(false);animBar()}
-function animAdvance(d){const m=animMode,st=animStep(m)*d;animPhase=m==='ko'?Math.max(0,Math.min(255,animPhase+st)):(animPhase+st+256)&255}
-function animTogglePause(){if(!animMode)return;animPaused=!animPaused;animBar()}
+function animAdvance(d){const m=animMode,st=animStep(m)*d,L=animLen(m);animPhase=m==='ko'?Math.max(0,Math.min(255,animPhase+st)):((animPhase+st)%L+L)%L}
+function animGoto(i){animQi=i;animMode=animQueue[i];animPhase=animStartPhase(animMode);animTravel=0;animDone=false;animSync();animShow()}
+// One timer tick: after a full cycle move to the next queue entry (wrapping when Loop is on) or, with Loop off, stop.
+function animTick(){const m=animMode;if(animTravel+animStep(m)>=animLen(m)){const last=animQi+1>=animQueue.length;
+  if(last&&!animLoop){animPaused=true;animDone=true;animTravel=0;animBar();return}
+  if(animQueue.length>1){animGoto(last?0:animQi+1);return}animTravel=-animStep(m)}
+ animTravel+=animStep(m);animAdvance(1);animShow()}
+function animTogglePause(){if(!animMode)return;if(animDone){animPaused=false;animGoto(0);return}animPaused=!animPaused;animBar()}
 function animFrameStep(d){if(!animMode)return;animPaused=true;animAdvance(d);animShow()}
-function animStart(m){if(animMode===m){animStop();ui();rebuild(false);return}
- const bound=window.RigPlayer?.bind(pose);if(!bound)return;animStop();animBind={...bound,pose};animMode=m;animPhase=m==='ko'||m==='hit'||m==='lift'||m==='beat'||m==='dance'?0:bound.rest.ph;
- animTimer=setInterval(()=>{if(animPaused)return;animAdvance(1);animShow()},40);ui()}
-for(const m of ANIM_MODES)if($('anim-'+m))$('anim-'+m).onclick=()=>animStart(m);
+function animUnqueue(i){if(animQueue.length<2)return;animQueue.splice(i,1);if(i<animQi)animQi--;else if(i===animQi){animGoto(animQi%animQueue.length);return}animSync()}
+// The frames one pass of the queue shows, in order (used by the GIF/WebM export).
+function animSequence(){const out=[];for(const m of animQueue.length?animQueue:[animMode]){const st=animStep(m),L=animLen(m),p0=animStartPhase(m);for(let i=0;i<animFrames(m);i++)out.push({m,ph:m==='ko'?Math.min(255,i*st):(p0+i*st)%L})}return out}
+function animStart(m,add){if(animMode&&(add||animAddMode)){animQueue.push(m);animDone=false;animSync();return}
+ if(animMode===m&&animQueue.length<2){animStop();ui();rebuild(false);return}
+ const bound=window.RigPlayer?.bind(pose);if(!bound)return;animStop();animBind={...bound,pose};animMode=m;animQueue=[m];animPhase=animStartPhase(m);
+ animTimer=setInterval(()=>{if(!animPaused)animTick()},40);ui()}
+for(const m of ANIM_MODES)if($('anim-'+m))$('anim-'+m).onclick=e=>animStart(m,e.shiftKey);
 if($('anim-timeline')){$('anim-play').onclick=animTogglePause;$('anim-back').onclick=()=>animFrameStep(-1);$('anim-fwd').onclick=()=>animFrameStep(1);
- $('anim-scrub').oninput=e=>{if(!animMode)return;animPaused=true;animPhase=+e.target.value&255;animShow()};
+ if($('anim-loop'))$('anim-loop').onclick=()=>{animLoop=!animLoop;animBar()};if($('anim-add'))$('anim-add').onclick=()=>{animAddMode=!animAddMode;animBar()};
+ $('anim-scrub').oninput=e=>{if(!animMode)return;animPaused=true;animPhase=Math.min(+e.target.value,animLen(animMode)-1);animShow()};
  addEventListener('keydown',e=>{if(!animMode||e.ctrlKey||e.metaKey||e.altKey||/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName||'')&&e.target.id!=='anim-scrub'||e.target?.isContentEditable)return;
-  if(e.key===' '&&e.target?.tagName!=='BUTTON'){e.preventDefault();animTogglePause()}else if(e.key===','){e.preventDefault();animFrameStep(-1)}else if(e.key==='.'){e.preventDefault();animFrameStep(1)}})}
+  if(e.key==='l'||e.key==='L'){e.preventDefault();animLoop=!animLoop;animBar()}else if(e.key===' '&&e.target?.tagName!=='BUTTON'){e.preventDefault();animTogglePause()}else if(e.key===','){e.preventDefault();animFrameStep(-1)}else if(e.key==='.'){e.preventDefault();animFrameStep(1)}})}

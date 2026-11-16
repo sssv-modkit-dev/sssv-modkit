@@ -87,7 +87,8 @@ def model_editor(pack):
           + (base / 'js/history.js').read_text(encoding='utf-8') + '\n'
           + (base / 'js/app.js').read_text(encoding='utf-8').replace('/*TABLE*/null', '{}') + '\n'
           + (base / 'js/parts-lab.js').read_text(encoding='utf-8') + '\n'
-          + (base / 'js/rig-player.js').read_text(encoding='utf-8'))
+          + (base / 'js/rig-player.js').read_text(encoding='utf-8') + '\n'
+          + (base / 'js/anim-export.js').read_text(encoding='utf-8'))
     for name in ('parse', 'segment', 'decimate', 'texture', 'output', 'ui'):
         js += '\n' + (base / 'js/import' / (name + '.js')).read_text(encoding='utf-8-sig')
     for script in pack['scripts']['model-editor']:

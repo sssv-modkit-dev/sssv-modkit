@@ -202,4 +202,6 @@ a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,selec
 .anim-timeline[hidden]{display:none}
 .anim-timeline button{min-width:34px;padding:4px 6px;font-size:15px;line-height:1}
 .anim-timeline input[type=range]{flex:1;min-width:60px;accent-color:var(--ac)}
+.anim-timeline{flex-wrap:wrap}.anim-timeline button.on{border-color:var(--ac);color:var(--ac)}.anim-queue{flex-basis:100%;display:flex;flex-wrap:wrap;gap:4px;align-items:center}.anim-queue[hidden]{display:none}.anim-timeline .anim-queue button{font-size:11px;padding:3px 7px;min-width:0}.anim-timeline .anim-queue button.on{background:var(--ac);color:var(--bg,#000)}
+.anim-timeline #anim-gif,.anim-timeline #anim-webm{font-size:11px;padding:4px 7px}
 .anim-timeline #anim-frame{font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
