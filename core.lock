@@ -1,6 +1,6 @@
 {
  "tag": "claude/anim-20261116",
- "commit": "c35d2bcc0f934c14de24a0465ee71fbbb052fab8",
+ "commit": "8ba8a4ef952cb9274b0b3b40651637f7be108e74",
  "files": {
   ".gitignore": "3ad2750af909c18ed688f1571f91a873e942cb61dfc71e72ed8a64ef986e2562",
   ".gitlab-ci.yml": "cd5b67aff57cf27a4ceb555e7f2ca96c957d431775570dd5d4e4eb7b1b891b42",
@@ -46,7 +46,7 @@
   "src/viewer/js/import/texture.js": "f9f47c30e83ff6e3e3c6221beadbff69d04e01f5e60c3d4cb3ca234366f7bbae",
   "src/viewer/js/import/ui.js": "5ab2beb04ef25705bca94fed91b10c0355c03efcf39ff233d71a40d615e1a662",
   "src/viewer/js/parts-lab.js": "9ad26aad0f5be1d97e9c55738de8142d8978414c98263496acf33dc14cc52add",
-  "src/viewer/js/rig-player.js": "07ab0e0d85551374499c503063cc023088fa53fe27f7bc6be06cd8320a8f13d6",
+  "src/viewer/js/rig-player.js": "f61ca5b955ddc419ccc4b00f507e1435ea3afa443d7a1ecf0b18ca212b4b2bd7",
   "src/web/dialogue.html": "49e05d4d891c176eb5031702a5e14d3333db98aadc4b1c2f603b0881696875db",
   "src/web/editor-mobile.css": "557a590d11f003ae24288f18919cf3645379e2ac91bd60b18ac3d1f30e6f26df",
   "src/web/editor-mobile.js": "a72cad07dc4a2a9d94f3ea4918e19c81103c14364f66cf34ab762e5ebd4e27ec",
@@ -90,7 +90,7 @@
   "tests/test_model_source.js": "154e1b200cedaa1e0e17de7478ef2e22c9fdca35e6862953bb1fb7906142c1f1",
   "tests/test_model_workbench.js": "abcc9e6dde756a08253a9fb5852243b7c32b2070f260ae7ad4391580bad8c9e8",
   "tests/test_parts_lab.js": "1b7daa4547a1a5cff1a0d84cbeb1ea89a4b649d76a020a21053d7c18afc9464d",
-  "tests/test_rig_player.js": "8c7a3765e17595578608effb2d1043ae96552d8e47cfb2184bfc8db244630f4a",
+  "tests/test_rig_player.js": "66c274471b68f14c37bbf6bdeb535b57ef6dbdd20dca339ea2f4608d315951fd",
   "tests/test_sample_pack.js": "3c890846128d394ef30ba6a56165798ac567fc0967d755d11f937bca592cfd62",
   "tests/test_scene.js": "75a4453b4334b3097bd818339701cb5e488531eb2fa01b36dabfb91f46ef56fb",
   "tests/test_story_editor.py": "42840617171b6eba2c33586cd6507f5a9b855c00f0dab54869f1c58ea22dce29",
