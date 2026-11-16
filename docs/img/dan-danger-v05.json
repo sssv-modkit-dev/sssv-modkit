@@ -1,0 +1,22 @@
+{
+  "format": "version-banner-generator-v1",
+  "project": "SSSV EDITOR CORE",
+  "name": "Dan Danger",
+  "version": "PRE-ALPHA v0.5",
+  "palette": "blue",
+  "accent": "#8dc4ed",
+  "quoteStyle": "english",
+  "caption": "“Dan Danger” edition",
+  "width": 1500,
+  "height": 500,
+  "image": "dan_danger.png",
+  "imageSha256": "517c3a2aa95b71a82c76392656c9f0eac4a78bc9e22486b6d52563fd78bc21e6",
+  "images": [
+    {
+      "image": "dan_danger.png",
+      "sha256": "517c3a2aa95b71a82c76392656c9f0eac4a78bc9e22486b6d52563fd78bc21e6"
+    }
+  ],
+  "titleFont": "system-ui",
+  "titleStyle": "semibold italic"
+}
