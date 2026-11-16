@@ -113,9 +113,10 @@ function setPoseJoints(sp,t,B){const J=B.map(v=>v&&v.slice()),f=t/32;if(sp.root)
   J[c]=J[p].map((v,k)=>v+Math.trunc(wa*tg[k]+wb*cur[k]))}
  return J}
 // Actions (bear lift & throw): chains without a root (0x802DB7C4) applied in steps [frames, base, table, w0, w1];
-// a step first lays the base table fully (weight 32), then blends the table in with a weight from w0 to w1.
+// a step first lays the base table fully (weight 32), then blends the table in with a weight from w0 to w1, or
+// (osc flag, gorilla chest beat) 17+sin>>11 clipped to 32 on a 16-frame cycle.
 function actionJoints(act,phase,B){const total=act.steps.reduce((s,x)=>s+x[0],0);let fr=Math.floor((phase&255)*total/256);
- for(const [n,base,tab,w0,w1] of act.steps){if(fr>=n){fr-=n;continue}const t=Math.round(w0+(w1-w0)*fr/n),ch=i=>({bones:act.bones.map((b,k)=>[...b,...act.tabs[i][k]])});
+ for(const [n,base,tab,w0,w1,osc] of act.steps){if(fr>=n){fr-=n;continue}const t=osc?Math.min(32,17+(raw((fr&15)*16)>>11)):Math.round(w0+(w1-w0)*fr/n),ch=i=>({bones:act.bones.map((b,k)=>[...b,...act.tabs[i][k]])});
   let J=base>=0?setPoseJoints(ch(base),32,B):B;return tab>=0?setPoseJoints(ch(tab),t,J):J}
  return B}
 function rigFrames(rig,phase,mode,rest){const sp=rig.setposes&&rig.setposes[mode],act=rig.actions&&rig.actions[mode],
