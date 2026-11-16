@@ -121,15 +121,17 @@ function actionJoints(act,phase,B){const total=act.steps.reduce((s,x)=>s+x[0],0)
  for(const [n,base,tab,w0,w1,osc] of act.steps){if(fr>=n){fr-=n;continue}const t=osc?Math.min(32,17+(raw((fr&15)*16)>>11)):Math.round(w0+(w1-w0)*fr/n),ch=i=>({bones:act.bones.map((b,k)=>[...b,...act.tabs[i][k]])});
   let J=base>=0?setPoseJoints(ch(base),32,B):B;return tab>=0?setPoseJoints(ch(tab),t,J):J}
  return B}
-// Dance (a fan extra, not a game animation): 8 beats a loop (32 phase steps a beat). Body and legs are the rig's own
-// run cycle at 4x rate plus a hop each beat and a side sway; arms reuse an action chain (parent/child/len, rest angles
+// Dance (a fan extra, not a game animation): 12 beats a loop (32 phase steps a beat, DANCE_LEN phase steps in all). Body and legs
+// are the rig's own run cycle plus a hop each beat and a side sway; arms reuse an action chain (parent/child/len, rest angles
 // from one of its tables). Beats 0-3 horse ride: forearms crossed in front, pumping like reins; beats 4-7 lasso: the
-// first arm raised and circling overhead (one turn every 2 beats) while the other keeps the reins.
-function danceJoints(rig,phase){const d=rig.actions.dance,src=rig.actions[d.chain],ph=phase&255,f=(ph&31)/32,lasso=ph>=128;
- const J=joints(rig,(ph*4)&255,'run'),hop=Math.round(Math.sin(f*Math.PI)*(d.hop||0)),sway=Math.round(Math.sin(ph/64*2*Math.PI)*(d.sway||0));
+// first arm raised and circling overhead (one turn every 2 beats) while the other keeps the reins; beats 8-11 shuffle: the
+// feet run at twice the rate in place (one stride a beat), a small hop, a wide sway and both fists swinging in turn.
+const DANCE_LEN=384,loopLen=mode=>mode==='dance'?DANCE_LEN:256;
+function danceJoints(rig,phase){const d=rig.actions.dance,src=rig.actions[d.chain],ph=((phase%DANCE_LEN)+DANCE_LEN)%DANCE_LEN,f=(ph&31)/32,lasso=ph>=128&&ph<256,shuffle=ph>=256;
+ const J=joints(rig,(ph*(shuffle?8:4))&255,'run'),hop=Math.round(Math.sin(f*Math.PI)*(d.hop||0)*(shuffle?.5:1)),sway=Math.round(Math.sin(ph/(shuffle?32:64)*2*Math.PI)*(d.sway||0)*(shuffle?1.5:1));
  for(const v of J)if(v){v[0]+=sway;v[2]+=hop}
  const pump=Math.round(Math.sin(f*2*Math.PI)*14),[s1,a1,s2,a2]=d.arms,cross=d.cross||35,ang={};
- ang[s1]=lasso?[90,90]:null;ang[a1]=lasso?[20,Math.floor(ph*360/64)%360]:[100+pump,360-cross];ang[a2]=[100+pump,cross];
+ ang[s1]=lasso?[90,90]:null;ang[a1]=lasso?[20,Math.floor(ph*360/64)%360]:[100+(shuffle?-pump:pump),360-cross];ang[a2]=[100+pump,cross];
  if(d.head!=null)ang[d.head]=[80+pump,0];
  if(!src)return J;const rest=src.tabs[d.rest||0];
  return setPoseJoints({bones:src.bones.map((b,k)=>[...b,...(ang[b[1]]||rest[k])])},32,J)}
@@ -154,8 +156,8 @@ function bind(pose){
  const place=(m,i)=>({rows:m.R.map((r,j)=>vm(r,Rot).map(v=>v*cap[i].size[j])),T:vm(m.T,Rot).map((v,k)=>v*best.s+best.t[k])});
  // parts without both joints (arms, harness...) move with their first computed joint instead of floating
  const J0=rigFrames(rig,best.ph,best.mode).J,anchor=rig.parts.map(p=>p?[p[0],p[1],0].find(j=>J0[j]):0);
- return {modes,rest:best,setposes:Object.keys(rig.setposes||{}),frame(phase,mode){const w=rigFrames(rig,phase&255,mode,best);return pose.parts.map((pp,i)=>{if(w[i])return {...pp,...place(w[i],i)};
+ return {modes,rest:best,setposes:Object.keys(rig.setposes||{}),frame(phase,mode){const w=rigFrames(rig,mode==='dance'?phase:phase&255,mode,best);return pose.parts.map((pp,i)=>{if(w[i])return {...pp,...place(w[i],i)};
   const j=anchor[i],a=w.J[j],b=J0[j];if(!a||!b)return pp;const d=vm(a.map((v,k)=>(v-b[k])/8),Rot).map(v=>v*best.s);return {...pp,T:pp.T.map((v,k)=>v+d[k])}})}};
 }
-root.RigPlayer={keyAngle,quadJoints,bipedJoints,joints,setPoseJoints,setPoseWeight,actionJoints,danceJoints,partMatrix,bind};
+root.RigPlayer={DANCE_LEN,loopLen,keyAngle,quadJoints,bipedJoints,joints,setPoseJoints,setPoseWeight,actionJoints,danceJoints,partMatrix,bind};
 })(typeof window==='undefined'?globalThis:window);

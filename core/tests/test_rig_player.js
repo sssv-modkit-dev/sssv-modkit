@@ -41,4 +41,10 @@ const osc={...act,steps:[[16,-1,1,0,0,1]]},ws=[0,64,128,192].map(p=>R.actionJoin
 const drig={body:{kind:'biped',h:1296},legs:{len:1556,side:25},parts:[[7,8],[10,11]],actions:{lift:{bones:[[0,1,1296],[1,7,1037],[1,10,1037],[7,8,2334],[10,11,2334]],tabs:[[[0,0],[94,86],[90,254],[112,346],[122,22]]]},dance:{chain:'lift',arms:[7,8,10,11],hop:300,sway:250}}};
 const dz=p=>R.danceJoints(drig,p)[8][2]-R.danceJoints(drig,p)[7][2];assert.ok(Math.abs(dz(16))<1200&&dz(160)>2000,'dance: reins in front, then lasso arm overhead');
 assert.notDeepEqual(R.danceJoints(drig,160)[8],R.danceJoints(drig,176)[8],'lasso circles');
+assert.equal(R.DANCE_LEN,384);assert.equal(R.loopLen('dance'),384);assert.equal(R.loopLen('walk'),256);
+assert.deepEqual(R.danceJoints(drig,384+16),R.danceJoints(drig,16),'dance loops after 12 beats');
+assert.deepEqual(R.danceJoints(drig,-368),R.danceJoints(drig,16),'negative phase wraps');
+const sh=R.danceJoints(drig,288);assert.notDeepEqual(sh,R.danceJoints(drig,160),'shuffle differs from lasso');
+assert.ok(Math.abs(R.danceJoints(drig,288)[8][2]-R.danceJoints(drig,288)[7][2])<1200,'shuffle: no arm raised overhead');
+assert.notDeepEqual(R.danceJoints(drig,288),R.danceJoints(drig,304),'shuffle moves');
 console.log('Rig player: dance, bind, rest frame, leg swing, three-bone legs, bird wings, set poses and actions passed.');
