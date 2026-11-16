@@ -53,6 +53,12 @@ async function forgetLastROM(){const db=await openRomDB();try{await new Promise(
   const tx=db.transaction('state','readwrite');tx.objectStore('state').delete('last-rom');
   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error('Could not clear saved ROM'));
 })}finally{db.close()}}
+// Stage props (web_build.prop_models): readable names from the Level Editor's list, and an in-place pose (one part each).
+function namePropModels(table){const names=window.SSSVPropNames||{},out=Object.create(null),slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,40);
+  const props=[];for(const [key,m] of Object.entries(table)){if(m.prop===undefined){out[key]=m;continue}const where=key.slice(8),label=names[m.prop]?slug(names[m.prop]):'';props.push(['prop_'+(label?label+'_':'')+String(m.prop).padStart(3,'0')+where,m]);}
+  for(const [k,m] of props.sort((x,y)=>x[0].localeCompare(y[0],'en',{numeric:true})))out[k]=m;
+  return out;}
+function propPoses(table){const out={};for(const [name,m] of Object.entries(table))if(m.prop!==undefined)out[name]={animal:name,parts:m.p.map(p=>({dl:p.s,rows:[[1,0,0],[0,1,0],[0,0,1]],T:[0,0,0],mirror:0}))};return out;}
 async function loadROM(ab,filename,restored=false){
   saveEdits();loadingROM=true;
   try{
@@ -64,16 +70,17 @@ async function loadROM(ab,filename,restored=false){
       const raw=await window.SSSVBuilder.deriveTable(ab,{onProgress:p=>H.message(p.detail)});
       partsTable=normaliseLocalTable(raw);
     }
+    partsTable=namePropModels(partsTable);
     if(window.SSSVAnimalPoses){
       const captured=await window.SSSVAnimalPoses.load(Object.keys(partsTable).filter(n=>window.SSSVAnimalPoses.names().includes(n)));
-      Object.assign(BUNDLED_POSES,captured.poses);
+      Object.assign(BUNDLED_POSES,captured.poses,propPoses(partsTable));
       for(const [name,error] of Object.entries(captured.errors))console.warn('Skipped '+name+' pose: '+error);
     }
     currentSourceHash=hash;currentSourceBytes=ab;
     const error=H.useSource({table:partsTable,bytes:ab,label:(restored?'Restored saved ROM: ':'')+filename,note:ok});
     if(error){H.message(error);return false}
     // Seed only untouched view choices; source replacement clears old edit states.
-    if(window.SSSVAnimalPoses)for(const n of window.SSSVAnimalPoses.names()){
+    if(window.SSSVAnimalPoses)for(const n of window.SSSVAnimalPoses.names().concat(Object.keys(partsTable).filter(k=>partsTable[k].prop!==undefined))){
       if(!BUNDLED_POSES[n]||!partsTable[n]||!BUNDLED_POSES[n].parts.every(p=>partsTable[n].p.some(q=>q.s===p.dl)))continue;
       const key='src:'+n,state=modelEdits.get(key);
       if(state.exploded===undefined)modelEdits.put(key,{...state,exploded:false});

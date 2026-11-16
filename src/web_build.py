@@ -61,14 +61,85 @@ def extra_models(rom):
     return out
 
 
+OBJECT_TABLE, OBJECT_STRIDE, OBJECT_TYPES = 0x7B9BD8, 0x9C, 247   # per prop type; +4 = model display list
+RESIDENT = 0x398D0                                                 # segment 1 ROM base
+WORLD_BANKS = {0: 0xC7A30, 1: 0xDD5C0, 2: 0xE75B0, 3: 0xF1060, 5: 0xFFD50}   # segment 4 by level zone
+STAGE_BANKS, STAGE_BANK_START = 0x7B7150, {0: 0, 1: 11, 3: 21, 2: 31, 5: 0}  # segment 5: entry start + sub - 1
+
+
+def _dl_tree(addr, bases, seen, depth=0):
+    """Segment addresses of a display list and every list it calls (the viewer draws each as one part)."""
+    if addr in seen or depth > 6 or (addr >> 24) not in bases:
+        return
+    seen.append(addr)
+    o = bases[addr >> 24] + (addr & 0xFFFFFF)
+    for i in range(3000):
+        if o + 8 * i + 8 > len(animal_table.ROM):
+            return
+        w0, w1 = struct.unpack_from('>II', animal_table.ROM, o + 8 * i)
+        if w0 >> 24 == 0xB8:
+            return
+        if w0 >> 24 == 0x06:
+            _dl_tree(w1, bases, seen, depth + 1)
+            if (w0 >> 16) & 0xFF:
+                return
+
+
+def prop_models(rom):
+    """Table entries for every prop type placed in a stage, with the banks that stage loads. Prop types whose model
+    lives in a world or stage bank get one entry per world (prop_008_z0) or stage (prop_074_L1). Model Editor only."""
+    rd = lambda o: struct.unpack_from('>I', rom, o)[0]
+    model = {t: rd(OBJECT_TABLE + t * OBJECT_STRIDE + 4) for t in range(OBJECT_TYPES)}
+    out = {}
+    for stage in range(1, 37):
+        body, _ = levels.rnc.unpack(rom, rd(levels.TABLE + (stage - 1) * 8))
+        chunks = {cid: data for cid, _, data in levels.split_chunks(body)[0]}
+        header, spawns = chunks[12], chunks[0]
+        zone, sub = header[0x21], header[0x53]
+        bases = {1: RESIDENT}
+        if zone in WORLD_BANKS:
+            bases[4] = WORLD_BANKS[zone]
+        if zone in STAGE_BANK_START:
+            start, end = struct.unpack_from('>II', rom, STAGE_BANKS + 8 * (STAGE_BANK_START[zone] + sub - 1))
+            if end - start > 0x10:
+                bases[5] = start
+        types = sorted({struct.unpack_from('>H', spawns, 2 + 22 * i)[0] for i in range(struct.unpack_from('>H', spawns)[0])})
+        for t in types:
+            addr = model.get(t, 0)
+            seg = addr >> 24
+            if seg not in bases:
+                continue
+            name = 'prop_%03d' % t + {1: '', 4: '_z%d' % zone, 5: '_L%d' % stage}[seg]
+            if name in out:
+                continue
+            seen = []
+            _dl_tree(addr, bases, seen)
+            parts = []
+            for v in seen:
+                at = bases[v >> 24] + (v & 0xFFFFFF)
+                d = animal_table.parse_dl(at, bases)
+                if not d['ended'] or d['bad']:
+                    parts = []
+                    break
+                if d['tris']:
+                    d.update({'symbol': 'D_%08X_%X' % (v, at), 'seg': v >> 24, 'rom': at, 'joint_calls': [], 'sections': []})
+                    parts.append(d)
+            if parts:
+                out[name] = {'file': None, 'seg_bases': {k: hex(b) for k, b in bases.items()}, 'parts': parts,
+                             'variants': [], 'sections': [], 'draw_funcs': [], 'prop': t,
+                             'palette': sorted({c['rgba'] for p in parts for c in p['primcolors']})}
+    return out
+
+
 def derive_table(rom, extras=False):
     """animal_table.py --from-rom in memory; returned in the shape animal_table.json has after a JSON round trip.
-    extras=True adds the EXTRA_MODELS characters (Model Editor only; builds never need them)."""
+    extras=True adds the EXTRA_MODELS characters and the stage props (Model Editor only; builds never need them)."""
     animal_table.ROM = rom
     try:
         result = animal_rom.build_from_rom(rom, animal_table.parse_dl)
         if extras:
             result.update(extra_models(rom))
+            result.update(prop_models(rom))
     finally:
         animal_table.ROM = b''
     return json.loads(json.dumps(result))

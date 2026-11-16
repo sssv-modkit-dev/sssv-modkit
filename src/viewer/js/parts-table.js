@@ -13,15 +13,15 @@ function normaliseLocalTable(raw){
     }
     const sections=a.sections||[];
     if(!Array.isArray(sections)||!sections.every(safe))throw new Error('Invalid sections.');
-    const p=[];
+    const p=[],prop=Number.isInteger(a.prop)&&a.prop>=0&&a.prop<256?a.prop:null;
     for(const q of a.parts){
-      if(!q.ended||q.seg===1)continue;
+      if(!q.ended||q.seg===1&&prop===null)continue;   // props may live in segment 1; animal seg-1 parts are shared extras
       if(!safe(q.symbol)||!Number.isInteger(q.rom)||q.rom<0||q.rom>=0x2000000||!Array.isArray(q.sections||[])||!(q.sections||[]).every(safe))throw new Error('Invalid part metadata.');
       const part={s:q.symbol,r:q.rom,j:'local',v:q.sections||[],t:[]};
       if(q.texture){const t=q.texture;if(t.format!=='ci4'||t.width!==16||t.height!==16||![t.image,t.palette].every(n=>Number.isInteger(n)&&n>=0x1000&&n<0x2000000))throw new Error('Invalid texture metadata.');part.texture={format:'ci4',width:16,height:16,image:t.image,palette:t.palette};}
       p.push(part);
     }
-    if(p.length)out[name]={b,p,s:sections,draw_funcs:a.draw_funcs||[]};
+    if(p.length)out[name]=prop===null?{b,p,s:sections,draw_funcs:a.draw_funcs||[]}:{b,p,s:sections,draw_funcs:[],prop};
   }
   if(!Object.keys(out).length)throw new Error('No renderable parts in that table.');
   return out;

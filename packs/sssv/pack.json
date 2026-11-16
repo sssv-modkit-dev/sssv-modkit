@@ -14,6 +14,8 @@
  "scripts": {
   "model-editor": [
    "../../src/web/animal-poses.js",
+   "../../src/web/prop-names-shim.js",
+   "../../src/levels/names.js",
    "../../src/web/handoff.js",
    "../../src/web/builder.js",
    "../../src/viewer/js/parts-table.js",
