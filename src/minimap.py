@@ -4,8 +4,9 @@ minimaps(rom) -> bytes: for each of the 35 levels, a 64 x 96 CI4 texture (3072 B
 a 32-byte RGBA5551 palette (TLUT); 3104 bytes per level, 108640 in total. One texel covers 64 x 64 world units:
 col = (x - 256) / 64, row = (6656 - y) / 64. Colour classes come from the ground polygons of each level (water flags,
 height bands, steep faces as rock, a shore band next to water) and exit pads are marked with a ring. Gaps in the ground
-data (cliff faces, ledges, chasms up to 6 texels across) and holes enclosed by ground are drawn as rock; index 0 (outside
-the level) is opaque and matches the minimap backing, so no texel is see-through. Nothing from the
+data up to 6 texels across are drawn as rock when the ground on either side differs in height (cliff faces, ledges) and
+as pit (dark) when both sides are level, like holes enclosed by ground (pits, chasms, the crash site in level 1).
+Index 0 (outside the level, also the exit-pad ring) is opaque and matches the minimap backing, so nothing is see-through. Nothing from the
 game is stored here: the picture is drawn from the level geometry in the ROM it is given.
 """
 import math
@@ -17,7 +18,7 @@ from build_levels import TABLE, split_chunks
 TW, TH, UPT, X0, Y1, SS = 64, 96, 64, 256, 6656, 4
 COLORS = ['101820', '287FC8', 'C6B878', 'E8D49C', '315C38', '427747',
           '599451', '79AE61', 'A0BC78', '9FA886', '687783', '89959C',
-          'B1BBC0', 'D7DDDA', '101820', 'F7F1C8']
+          'B1BBC0', 'D7DDDA', '2E2836', 'F7F1C8']
 LEVELS = 35
 RECORD = TW * TH // 2 + 32
 
@@ -30,7 +31,7 @@ def _rgba5551(hex_colour, index):
 TLUT = b''.join(struct.pack('>H', _rgba5551(c, i)) for i, c in enumerate(COLORS))
 
 
-def _polygon(buf, points, value):
+def _polygon(buf, points, value, zbuf=None, z=0):
     """Fill a polygon on the supersampled grid with inclusive integer scanlines."""
     width = TW * SS
     for y in range(max(0, math.ceil(min(p[1] for p in points))),
@@ -47,6 +48,8 @@ def _polygon(buf, points, value):
             hi = min(width - 1, math.floor(max(hits)))
             if hi >= lo:
                 buf[y * width + lo:y * width + hi + 1] = bytes([value]) * (hi - lo + 1)
+                if zbuf is not None:
+                    zbuf[y * width + lo:y * width + hi + 1] = [z] * (hi - lo + 1)
 
 
 def _ground(data):
@@ -89,6 +92,7 @@ def level_texture(rom, level):
     zs = [v[2] for t, _ in tris for v in t]
     zl, zh = min(zs), max(zs)
     big = bytearray(TW * TH * SS * SS)
+    zbig = [0] * (TW * TH * SS * SS)
     for tri, water in sorted(tris, key=lambda q: sum(v[2] for v in q[0])):
         h = (sum(v[2] for v in tri) / 3 - zl) / max(1, zh - zl)
         (ax, ay, az), (bx, by, bz), (cx, cy, cz) = tri
@@ -99,11 +103,13 @@ def level_texture(rom, level):
         lit = abs(nz) / n * .55 + max(0, (-nx + ny) / n) * .45 if nz else .5
         shade = min(1, (.35 + .45 * h) * (.6 + .6 * lit))
         idx = 1 if water else (10 + min(3, int(h * 4)) if abs(nz) / n < .65 else 4 + min(5, int(max(0, (shade - .21) / .75) * 6)))
-        _polygon(big, [((x - X0) * SS / UPT, (Y1 - y) * SS / UPT) for x, y, z in tri], idx)
-    grid = []
+        _polygon(big, [((x - X0) * SS / UPT, (Y1 - y) * SS / UPT) for x, y, z in tri], idx, zbig, sum(v[2] for v in tri) / 3)
+    grid, zgrid = [], []
     for r in range(TH):
         for c in range(TW):
-            samples = [big[(r * SS + dy) * TW * SS + c * SS + dx] for dy in range(SS) for dx in range(SS)]
+            at = [(r * SS + dy) * TW * SS + c * SS + dx for dy in range(SS) for dx in range(SS)]
+            samples = [big[k] for k in at]
+            zgrid.append(max((zbig[k] for k in at if big[k]), default=0))
             covered = [v for v in samples if v]
             inside = len(covered) / 16 > .35 and c not in (0, TW - 1) and r not in (0, TH - 1)
             grid.append(max(set(covered), key=lambda v: (covered.count(v), v)) if inside else 0)
@@ -117,7 +123,7 @@ def level_texture(rom, level):
                             and original[(r + dy) * TW + c + dx] == 1), default=3)
             if distance < 3:
                 grid[r * TW + c] = 2 if distance == 1 else 3
-    _fill_gaps(grid)
+    _fill_gaps(grid, zgrid)
     d0 = ch.get(0, bytes(2))
     for i in range(struct.unpack_from('>H', d0)[0]):
         kind, ex, ey, _ = struct.unpack_from('>Hhhh', d0, 2 + i * 22)
@@ -127,16 +133,16 @@ def level_texture(rom, level):
                 for dc in range(-2, 3):
                     c, r = ec + dc, er + dr
                     if 1 <= c < TW - 1 and 1 <= r < TH - 1:
-                        grid[r * TW + c] = 14 if max(abs(dr), abs(dc)) in (0, 2) else 15
+                        grid[r * TW + c] = 0 if max(abs(dr), abs(dc)) in (0, 2) else 15
     return bytes((grid[i] << 4) | grid[i + 1] for i in range(0, len(grid), 2))
 
 
-GAP, ROCK = 6, 11
+GAP, ROCK, PIT, LEVEL = 6, 11, 14, 96      # LEVEL: max height difference (world units) across a gap that is a pit
 
 
-def _fill_gaps(grid):
-    """Rock where the ground data has no top surface but the player sees ground or wall: holes not connected to the
-    map border, and runs of up to GAP empty texels with ground on both sides (horizontally or vertically)."""
+def _fill_gaps(grid, zgrid):
+    """Fill texels with no ground top: holes not connected to the map border are pits; runs of up to GAP empty
+    texels with ground on both sides (horizontally or vertically) are pits if both sides are level, else rock."""
     outside, todo = set(), [i for i in range(TW * TH) if not grid[i] and (i % TW in (0, TW - 1) or i // TW in (0, TH - 1))]
     while todo:
         i = todo.pop()
@@ -152,25 +158,28 @@ def _fill_gaps(grid):
             if original[i]:
                 continue
             if i not in outside:
-                grid[i] = ROCK
+                grid[i] = PIT
                 continue
             for dc, dr in ((1, 0), (0, 1)):
                 span = [k for k in range(-GAP, GAP + 1) if 0 <= c + k * dc < TW and 0 <= r + k * dr < TH]
                 before = any(original[(r + k * dr) * TW + c + k * dc] for k in span if k < 0)
                 after = any(original[(r + k * dr) * TW + c + k * dc] for k in span if k > 0)
-                if before and after and _run(original, c, r, dc, dr) <= GAP:
-                    grid[i] = ROCK
+                n, ends = _run(original, c, r, dc, dr)
+                if before and after and n <= GAP:
+                    grid[i] = PIT if len(ends) == 2 and abs(zgrid[ends[0]] - zgrid[ends[1]]) <= LEVEL else ROCK
                     break
 
 
 def _run(grid, c, r, dc, dr):
-    """Length of the empty run through (c, r) along (dc, dr)."""
-    n = 1
+    """Length of the empty run through (c, r) along (dc, dr), and the ground texels at its two ends."""
+    n, ends = 1, []
     for s in (1, -1):
         x, y = c + s * dc, r + s * dr
         while 0 <= x < TW and 0 <= y < TH and not grid[y * TW + x]:
             n += 1; x += s * dc; y += s * dr
-    return n
+        if 0 <= x < TW and 0 <= y < TH:
+            ends.append(y * TW + x)
+    return n, ends
 
 
 def minimaps(rom, progress=None):
