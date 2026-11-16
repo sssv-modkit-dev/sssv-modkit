@@ -3,7 +3,9 @@
 minimaps(rom) -> bytes: for each of the 35 levels, a 64 x 96 CI4 texture (3072 B, high nibble = left texel) followed by
 a 32-byte RGBA5551 palette (TLUT); 3104 bytes per level, 108640 in total. One texel covers 64 x 64 world units:
 col = (x - 256) / 64, row = (6656 - y) / 64. Colour classes come from the ground polygons of each level (water flags,
-height bands, steep faces as rock, a shore band next to water) and exit pads are marked with a ring. Nothing from the
+height bands, steep faces as rock, a shore band next to water) and exit pads are marked with a ring. Gaps in the ground
+data (cliff faces, ledges, chasms up to 6 texels across) and holes enclosed by ground are drawn as rock; index 0 (outside
+the level) is opaque and matches the minimap backing, so no texel is see-through. Nothing from the
 game is stored here: the picture is drawn from the level geometry in the ROM it is given.
 """
 import math
@@ -13,7 +15,7 @@ import level_rnc as rnc
 from build_levels import TABLE, split_chunks
 
 TW, TH, UPT, X0, Y1, SS = 64, 96, 64, 256, 6656, 4
-COLORS = ['000000', '287FC8', 'C6B878', 'E8D49C', '315C38', '427747',
+COLORS = ['101820', '287FC8', 'C6B878', 'E8D49C', '315C38', '427747',
           '599451', '79AE61', 'A0BC78', '9FA886', '687783', '89959C',
           'B1BBC0', 'D7DDDA', '101820', 'F7F1C8']
 LEVELS = 35
@@ -22,7 +24,7 @@ RECORD = TW * TH // 2 + 32
 
 def _rgba5551(hex_colour, index):
     r, g, b = bytes.fromhex(hex_colour)
-    return (r >> 3) << 11 | (g >> 3) << 6 | (b >> 3) << 1 | bool(index)
+    return (r >> 3) << 11 | (g >> 3) << 6 | (b >> 3) << 1 | 1      # all opaque (index 0 = backing colour)
 
 
 TLUT = b''.join(struct.pack('>H', _rgba5551(c, i)) for i, c in enumerate(COLORS))
@@ -115,6 +117,7 @@ def level_texture(rom, level):
                             and original[(r + dy) * TW + c + dx] == 1), default=3)
             if distance < 3:
                 grid[r * TW + c] = 2 if distance == 1 else 3
+    _fill_gaps(grid)
     d0 = ch.get(0, bytes(2))
     for i in range(struct.unpack_from('>H', d0)[0]):
         kind, ex, ey, _ = struct.unpack_from('>Hhhh', d0, 2 + i * 22)
@@ -126,6 +129,48 @@ def level_texture(rom, level):
                     if 1 <= c < TW - 1 and 1 <= r < TH - 1:
                         grid[r * TW + c] = 14 if max(abs(dr), abs(dc)) in (0, 2) else 15
     return bytes((grid[i] << 4) | grid[i + 1] for i in range(0, len(grid), 2))
+
+
+GAP, ROCK = 6, 11
+
+
+def _fill_gaps(grid):
+    """Rock where the ground data has no top surface but the player sees ground or wall: holes not connected to the
+    map border, and runs of up to GAP empty texels with ground on both sides (horizontally or vertically)."""
+    outside, todo = set(), [i for i in range(TW * TH) if not grid[i] and (i % TW in (0, TW - 1) or i // TW in (0, TH - 1))]
+    while todo:
+        i = todo.pop()
+        if i in outside or grid[i]:
+            continue
+        outside.add(i)
+        c, r = i % TW, i // TW
+        todo += [j for j, ok in ((i - 1, c > 0), (i + 1, c < TW - 1), (i - TW, r > 0), (i + TW, r < TH - 1)) if ok]
+    original = grid[:]
+    for r in range(1, TH - 1):
+        for c in range(1, TW - 1):
+            i = r * TW + c
+            if original[i]:
+                continue
+            if i not in outside:
+                grid[i] = ROCK
+                continue
+            for dc, dr in ((1, 0), (0, 1)):
+                span = [k for k in range(-GAP, GAP + 1) if 0 <= c + k * dc < TW and 0 <= r + k * dr < TH]
+                before = any(original[(r + k * dr) * TW + c + k * dc] for k in span if k < 0)
+                after = any(original[(r + k * dr) * TW + c + k * dc] for k in span if k > 0)
+                if before and after and _run(original, c, r, dc, dr) <= GAP:
+                    grid[i] = ROCK
+                    break
+
+
+def _run(grid, c, r, dc, dr):
+    """Length of the empty run through (c, r) along (dc, dr)."""
+    n = 1
+    for s in (1, -1):
+        x, y = c + s * dc, r + s * dr
+        while 0 <= x < TW and 0 <= y < TH and not grid[y * TW + x]:
+            n += 1; x += s * dc; y += s * dr
+    return n
 
 
 def minimaps(rom, progress=None):

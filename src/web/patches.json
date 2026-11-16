@@ -5,7 +5,7 @@
  {"id": "jukebox", "name": "Jukebox", "description": "While paused, press L or R to change the music.", "category": "qol", "status": "available"},
  {"id": "hide-cells", "name": "Puzzle mode (hide power cells)", "description": "Hide the power cells and their counters so levels are about the puzzles. Trophies stay.", "category": "qol", "status": "available"},
  {"id": "widescreen", "name": "Widescreen", "description": "Draw the game for 16:9 screens.", "category": "qol", "status": "available"},
- {"id": "minimap", "name": "Minimap", "description": "A small map of the area around you, top right, on every level. Drawn from your own ROM when you build.", "category": "qol", "status": "available"},
+ {"id": "minimap", "name": "Minimap", "description": "A small map of the area around you, top right, on every level. You are the yellow dot; its pointer shows which way you are heading (a joined second player is a blue dot). Drawn from your own ROM when you build.", "category": "qol", "status": "available"},
  {"id": "health-energy", "name": "Health as head pips + energy battery", "description": "Health as blocks beside your animal's head and energy as a battery. Turns on the minimap too.", "category": "qol", "status": "coming-soon"},
  {"id": "fat-bear-trophy", "name": "Fat Bear Mountain trophy fix", "description": "Make the Fat Bear Mountain trophy collectable.", "category": "bugfix", "status": "available"},
  {"id": "two-player", "name": "Two-player mode (experimental)", "description": "Experimental. Controller 2 presses Start to join and controls a nearby animal; the camera keeps both players in view.", "category": "qol", "status": "available"}
