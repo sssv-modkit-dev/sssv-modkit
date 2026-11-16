@@ -38,4 +38,7 @@ const act={bones:[[0,1,100]],tabs:[[[0,0]],[[90,90]]],steps:[[10,-1,0,0,32],[10,
 assert.deepEqual(R.actionJoints(act,0,AB),AB);assert.deepEqual(R.actionJoints(act,128,AB)[1],[0,0,600]);
 const end=R.actionJoints(act,255,AB)[1];assert.ok(end[0]>90&&Math.abs(end[2]-500)<20,'second step swings the bone level');
 const osc={...act,steps:[[16,-1,1,0,0,1]]},ws=[0,64,128,192].map(p=>R.actionJoints(osc,p,AB)[1][0]);assert.ok(new Set(ws).size>1,'chest beat oscillates');
-console.log('Rig player: bind, rest frame, leg swing, three-bone legs, bird wings, set poses and actions passed.');
+const drig={body:{kind:'biped',h:1296},legs:{len:1556,side:25},parts:[[7,8],[10,11]],actions:{lift:{bones:[[0,1,1296],[1,7,1037],[1,10,1037],[7,8,2334],[10,11,2334]],tabs:[[[0,0],[94,86],[90,254],[112,346],[122,22]]]},dance:{chain:'lift',arms:[7,8,10,11],hop:300,sway:250}}};
+const dz=p=>R.danceJoints(drig,p)[8][2]-R.danceJoints(drig,p)[7][2];assert.ok(Math.abs(dz(16))<1200&&dz(160)>2000,'dance: reins in front, then lasso arm overhead');
+assert.notDeepEqual(R.danceJoints(drig,160)[8],R.danceJoints(drig,176)[8],'lasso circles');
+console.log('Rig player: dance, bind, rest frame, leg swing, three-bone legs, bird wings, set poses and actions passed.');
