@@ -51,6 +51,8 @@ try{
   await check("!document.getElementById('ed-category').hidden",`level ${width}: visible category filter`);
   await js(s,"document.getElementById('ed-category').value='animals';document.getElementById('ed-category').dispatchEvent(new Event('change'))");
   await check("[...document.querySelectorAll('#object-tree summary')].every(e=>!e.textContent.includes('portal'))",`level ${width}: category filters object tree`);
+  await js(s,"window.camBefore=JSON.stringify(editorSession.camera.t);const b=document.querySelector('#object-tree button');b.dispatchEvent(new MouseEvent('dblclick',{bubbles:true}))");
+  await check("JSON.stringify(editorSession.camera.t)!==camBefore",`level ${width}: double-click in object tree focuses the camera`);
   await js(s,"document.getElementById('ed-category').value='all';document.getElementById('ed-category').dispatchEvent(new Event('change'));document.getElementById('ed-tool-add').click();document.getElementById('find-pal-grid').value='dog';document.getElementById('find-pal-grid').dispatchEvent(new Event('input'))");
   await check("[...document.querySelectorAll('#pal-grid button')].filter(b=>b.dataset.filtered!=='true').every(b=>b.textContent.toLowerCase().includes('dog'))",`level ${width}: palette filter`);
   await js(s,"window.beforeX=+document.getElementById('ed-x').value;window.undoCount=editorSession.undo?.length;const n=document.getElementById('ed-x-slider');n.value=beforeX+1;n.dispatchEvent(new Event('input'));n.value=beforeX+2;n.dispatchEvent(new Event('input'));n.dispatchEvent(new Event('change'))");
