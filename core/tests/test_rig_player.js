@@ -26,4 +26,10 @@ const sn=d=>Math.round(Math.sin(d*Math.PI/180)*256),cs=d=>Math.round(Math.cos(d*
 const fl=R.joints(bird,28,'flap');assert.deepEqual(fl[22],[(1125*sn(170))>>8,0,812+((1125*cs(170))>>8)]);assert.equal(fl[24][0],-fl[22][0]);
 assert.ok(R.joints(bird,0,'walk')[22][2]===812,'glide starts level');
 assert.ok(R.joints(bird,32,'walk')[8][2]<-100&&R.joints(bird,64,'flap')[8][2]===0,'toes curl only when walking');
-console.log('Rig player: bind, rest frame, leg swing, three-bone legs and bird wings passed.');
+// set poses: weight 0 keeps the skeleton, 32 lands exactly on the pose; hit ramps in, holds and returns to 0
+const sp={root:[0,0,190],bones:[[0,1,390,90,0],[1,19,600,27,56]]},B=[[0,0,400],[0,390,400]];B[19]=[0,700,900];
+const Z=R.setPoseJoints(sp,0,B);assert.deepEqual([Z[0],Z[1],Z[19]],[[0,0,400],[0,390,400],[0,700,900]]);
+const P=R.setPoseJoints(sp,32,B),ta=(600*sn(27))>>8;
+assert.deepEqual(P[1],[0,390,190]);assert.ok(Math.abs(P[19][0]-((sn(56)*ta)>>8))<=1&&Math.abs(P[19][1]-(390+((cs(56)*ta)>>8)))<=1&&Math.abs(P[19][2]-(190+((600*cs(27))>>8)))<=1);
+assert.deepEqual([0,32,100,200,255].map(p=>R.setPoseWeight('hit',p)),[0,32,32,28,1]);assert.equal(R.setPoseWeight('ko',255),32);
+console.log('Rig player: bind, rest frame, leg swing, three-bone legs, bird wings and set poses passed.');
