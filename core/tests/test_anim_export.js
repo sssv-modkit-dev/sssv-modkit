@@ -9,4 +9,9 @@ assert.equal(String.fromCharCode(...g.slice(0,6)),'GIF89a');assert.equal(g[6]|g[
 const s=Buffer.from(g).toString('latin1');assert.ok(s.includes('NETSCAPE2.0'),'loops');assert.equal(s.split('\x21\xF9\x04\x09').length-1,frames.length,'one transparent graphic control block per frame');
 assert.throws(()=>encodeGif([],w,h,4));
 if(process.env.GIF_OUT)fs.writeFileSync(process.env.GIF_OUT,g);
-console.log('Animation export: GIF encoder header, loop, per-frame transparency passed.');
+const {muxMp4,unionBounds}=root.AnimExport,mp4=muxMp4({w:16,h:16,fps:25,samples:[{data:new Uint8Array(10).fill(1),key:true},{data:new Uint8Array(7).fill(2),key:false}],avcC:new Uint8Array([1,66,0,31,255,224,0])}),dv=new DataView(mp4.buffer);
+{let o=0;const top=[];while(o<mp4.length){top.push(String.fromCharCode(...mp4.slice(o+4,o+8)));o+=dv.getUint32(o)}assert.deepEqual(top,['ftyp','moov','mdat']);assert.equal(o,mp4.length);
+ const m=Buffer.from(mp4).toString('latin1'),co=m.indexOf('stco'),off=dv.getUint32(co+12);assert.equal(mp4[off],1,'chunk offset points at the first sample');assert.equal(mp4[off+10],2,'samples are back to back');
+ const sz=m.indexOf('stsz');assert.deepEqual([dv.getUint32(sz+12),dv.getUint32(sz+16),dv.getUint32(sz+20)],[2,10,7],'sample sizes');assert.equal(dv.getUint32(m.indexOf('stss')+8),1,'one key frame')}
+assert.deepEqual(unionBounds([null,[[0,0,0],[1,2,3]],[[-1,1,0],[0,5,1]]]),[[-1,0,0],[1,5,3]]);assert.equal(unionBounds([null]),null);
+console.log('Animation export: GIF encoder header, loop, per-frame transparency; MP4 container layout; bounds union passed.');

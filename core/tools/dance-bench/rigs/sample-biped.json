@@ -1,0 +1,13 @@
+{
+ "note": "A made-up squat two-legged rig for trying moves. Real animals' rigs are read from the user's ROM by the pack and are not stored here.",
+ "modes": ["walk", "run"],
+ "body": {"kind": "biped", "h": 1300},
+ "legs": {"len": 1500, "side": 25},
+ "neck": [130, 780, 0, 20],
+ "parts": [[1, 2], [1, 20], [2, 15], [2, 18, 1], [7, 8], [10, 11, 1]],
+ "actions": {
+  "arms": {"bones": [[0, 1, 1300], [1, 19, 130], [19, 20, 780], [1, 7, 1000], [1, 10, 1000], [7, 8, 2300], [10, 11, 2300]],
+           "tabs": [[[0, 0], [84, 348], [64, 8], [94, 86], [90, 254], [112, 346], [122, 22]]]},
+  "dance": {"chain": "arms", "rest": 0, "arms": [7, 8, 10, 11], "head": 20, "feet": [15, 18], "hop": 300, "sway": 250}
+ }
+}
