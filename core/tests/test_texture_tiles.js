@@ -1,14 +1,18 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const elements=new Map();
 class Element {
- constructor(tag='div'){this.tagName=tag;this.children=[];this.dataset={};this.style={setProperty(){}};this.attributes={};this.value='';this.disabled=false;this.clientWidth=320;this.parentElement={clientWidth:320};this.pixels=new Uint8ClampedArray(272*136*4);}
+ constructor(tag='div'){this.tagName=tag;this.children=[];this.dataset={};this.style={setProperty(){}};this.attributes={};this.value='';this.disabled=false;this.clientWidth=320;this.parentElement={clientWidth:320,style:{setProperty(){}}};this.pixels=new Uint8ClampedArray(272*136*4);}
  append(...nodes){this.children.push(...nodes);if(this.tagName==='select'&&!this.value)this.value=String(nodes[0].value);}
  replaceChildren(...nodes){this.children=nodes;}
  setAttribute(k,v){this.attributes[k]=v;}
  getAttribute(k){return this.attributes[k];}
  get firstChild(){return this.children[0];}
  get options(){return this.children;}
- getContext(){const e=this;return {getImageData(){return {data:e.pixels.slice()};},putImageData(image){e.pixels=image.data.slice();},drawImage(){},clearRect(){}};}
+ getContext(){const e=this;return {getImageData(x,y,w=272,h=136){return {data:e.pixels.slice(0,w*h*4)};},putImageData(image){e.pixels=image.data.slice();},drawImage(){},clearRect(){}};}
+ closest(){return this;}
+ before(){}
+ after(){}
+ querySelectorAll(){return this.children.filter(b=>b.dataset.tool);}
  focus(){}
 }
 const html=fs.readFileSync('src/web/textures.html','utf8');

@@ -24,7 +24,7 @@ const api=createHistory();api.create=createHistory;api.stable=stable;
 if(typeof module!=='undefined')module.exports={createHistory,stable};
 if(root.document){
   root.ModelEditorHistory=api;
-  const editable=target=>!!target?.closest?.('input,textarea,select,[contenteditable="true"]');
+  const editable=target=>!!target?.isContentEditable||!!target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])');
   root.document.addEventListener('keydown',event=>{
     if(!(event.ctrlKey||event.metaKey)||event.altKey||editable(event.target))return;
     const key=event.key.toLowerCase(),undo=key==='z'&&!event.shiftKey,redo=key==='y'||key==='z'&&event.shiftKey;

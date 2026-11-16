@@ -94,7 +94,7 @@ listen(cv,'touchstart',e=>{if(edPanMode||['look','pan'].includes(window.EditorTo
 listen(cv,'touchmove',e=>{if(!edTouch||e.touches.length!==1)return;const t=e.touches[0];if(Math.hypot(t.clientX-edTouch.x,t.clientY-edTouch.y)>8)edTouch.moved=true;if(!edTouch.tool){if(edTouch.place){edGhostPoint=edPoint(t);e.preventDefault();e.stopImmediatePropagation();}return;}e.preventDefault();e.stopImmediatePropagation();if(!edTouch.moved)return;if(edBox)edBox.end=edPoint(t);else if(edMove)edMoveTo(edPoint(t),edFlag('ed-height'),edFlag('ed-snap'));},{capture:true,passive:false});
 listen(cv,'touchend',e=>{const touch=edTouch;if(!touch||e.touches.length)return;edTouch=null;const t=e.changedTouches[0],p=edPoint(t),tap=!touch.moved&&performance.now()-touch.time<500;if(touch.tool){e.stopImmediatePropagation();if(edBox){if(tap)edBox=null;else edBoxEnd(p);}if(edMove){if(tap){edMove=null;edFields();}else edMoveEnd();}}if(tap){if(edAddMode){e.preventDefault();e.stopImmediatePropagation();edGhostPoint=p;const now=performance.now();if(edTouchPlace&&now-edTouchPlace.time<650&&Math.hypot(p[0]-edTouchPlace.point[0],p[1]-edTouchPlace.point[1])<28){edPlaceAt(p,edFlag('ed-snap'));edTouchPlace=null;}else{edTouchPlace={time:now,point:p};edStatus('Preview positioned. Tap the same spot again to place.');}}else edSelectAt(p,edFlag('ed-add'));}},{capture:true});
 listen(cv,'touchcancel',()=>{edTouch=null;edBox=null;if(edMove){edMove=null;edFields();}},{capture:true});
-listen(window,'keydown',e=>{const t=e.target.tagName;if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA')return;if(e.key==='Escape'){edTool('select');edFields();return;}if(e.key==='Delete'){e.preventDefault();$('ed-delete').click();return;}if(edMove||e.ctrlKey||e.metaKey||e.altKey)return;const tool={1:'select',3:'move',4:'add'}[e.key];if(tool){edTool(tool);return;}const delta=LevelSelection.nudge(e.key,cam.yaw,e.shiftKey?64:8);if(!delta||!edCurrent().hex)return;e.preventDefault();edShift(edEntries().filter(x=>edSelection.has(x.key)),delta);});
+listen(window,'keydown',e=>{if(e.defaultPrevented||e.target.isContentEditable)return;const t=e.target.tagName;if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA')return;if(e.key==='Escape'){edTool('select');edFields();return;}if(e.key==='Delete'){e.preventDefault();$('ed-delete').click();return;}if(edMove||e.ctrlKey||e.metaKey||e.altKey)return;const tool={1:'select',3:'move',4:'add'}[e.key];if(tool){edTool(tool);return;}const delta=LevelSelection.nudge(e.key,cam.yaw,e.shiftKey?64:8);if(!delta||!edCurrent().hex)return;e.preventDefault();edShift(edEntries().filter(x=>edSelection.has(x.key)),delta);});
 /* Palette: pick a type, then click/tap the ground (horizontal plane through the camera target) or use Place at target. */
 let palKind='animals',palChoice=null;
 const palCategories=[['all','All props'],...LevelSelection.categories.filter(c=>!['all','animals','portals'].includes(c[0])),['portals','Portals']];
@@ -181,3 +181,14 @@ for(const [id,text] of [['ed-add','Multi-select'],['ed-height','Move height'],['
  const b=document.createElement('button');b.id=id;b.textContent=text;b.setAttribute('aria-pressed','false');b.onclick=()=>b.setAttribute('aria-pressed',String(b.getAttribute('aria-pressed')!=='true'));touchOptions.append(b);
 }
 $('object-tools').append(touchOptions);
+
+let edClipboard=[];
+window.EditorShortcuts={help:['Ctrl+C/V copy/paste selected props · Delete appended objects','1 select · 3 move · 4 add · Escape cancel / deselect'],action(key){
+ if(key==='undo'||key==='redo'){$('ed-'+key).click();return true;}
+ if(key==='+'||key==='-'){window.EditorTouch.action(key==='+'?'in':'out');return true;}
+ if(key==='escape'){edTool('select');edSelection.clear();edSelected=null;edFields();return true;}
+ if(key==='delete'){$('ed-delete').click();return true;}
+ if(key==='copy'){edClipboard=edEntries().filter(e=>edSelection.has(e.key)&&e.kind==='props'&&e.values[0]!==55).map(e=>e.hex);return true;}
+ if(key==='paste'){if(!edClipboard.length)return true;edSnapshot();const selected=[];for(const hex of edClipboard){edRecords[L.id].props.push(hex);selected.push('props:'+(edRecords[L.id].props.length-1));}edSelected=selected[0];edSelection=new Set(selected);$('ed-category').value='all';edRefresh();return true;}
+ return false;
+}};

@@ -178,7 +178,7 @@ $('camera-mode').onchange=()=>{cameraMode=$('camera-mode').value;setFly(false);}
 /* Freecam keeps the eye fixed while looking; keyboard travel works without holding a mouse button. */
 function setFly(on){fly=on;}
 $('mn').onclick=()=>{const u=$('ui');u.classList.toggle('min');$('mn').innerHTML=u.classList.contains('min')?'+':'&ndash;';};
-listen(window,'keydown',e=>{const t=e.target.tagName;if(t=='INPUT'||t=='SELECT'||t=='TEXTAREA'||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();keys[k]=true;if(k.length==1&&'wasdqe '.includes(k))e.preventDefault();});
+listen(window,'keydown',e=>{if(e.defaultPrevented||e.target.isContentEditable)return;const t=e.target.tagName;if(t=='INPUT'||t=='SELECT'||t=='TEXTAREA'||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();keys[k]=true;if(k.length==1&&'wasdqe '.includes(k))e.preventDefault();});
 listen(window,'blur',()=>{for(const k of Object.keys(keys))delete keys[k];drag=null;fly=false;});
 listen(window,'keyup',e=>{keys[e.key.toLowerCase()]=false;});
 let lastT=performance.now();

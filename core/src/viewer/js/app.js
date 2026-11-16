@@ -685,3 +685,12 @@ window.EditorTouch={mode:'orbit',fit:frameCamera,
  }
 };
 window.dispatchEvent(new Event('editor-touch-ready'));
+
+/* Standard keys use the same history and camera as the visible controls. */
+window.EditorShortcuts={help:['Delete resets selected part edits · Escape clears selection','Model animation: Space play/pause · , / . step'],action(key){
+ if(key==='undo'||key==='redo'){window.ModelEditorHistory?.[key]();return true;}
+ if(key==='+'||key==='-'){zoomCamera(key==='+'?-.2:.2);return true;}
+ if(key==='escape'){selectedParts.clear();selectedSym=null;dr=null;ui();need();return true;}
+ if(key==='delete'){const targets=selectionSymbols();if(!targets.length)return false;window.ModelEditorHistory?.transaction(()=>{for(const sym of targets){delete mesh[sym];delete deform[sym];}deformOn=Object.values(deform).some(v=>v.length);deformCache.clear();rebuild(false);info();});return true;}
+ return false;
+}};

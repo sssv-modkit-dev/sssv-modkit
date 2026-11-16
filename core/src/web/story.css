@@ -16,3 +16,6 @@
 .tile-grid canvas{display:block;width:64px;max-width:100%;height:auto;margin:0 auto 4px}
 .tile-grid button[aria-pressed=true]{border:2px solid #ffbd78;background:#37496a}
 #tile-uses{overflow-wrap:anywhere;max-height:9em;overflow:auto}
+
+.tile-tools [aria-pressed=true],.tile-swatch[aria-pressed=true]{outline:2px solid #ffbd78}.tile-swatch{width:32px;height:32px;padding:0;min-height:32px}.tile-palette{gap:6px;margin:12px 0}.tile-palette output{flex-basis:100%}.tile-scroll{position:relative}.pixel-grid:after{content:"";position:absolute;top:0;left:0;width:var(--grid-size);height:var(--grid-size);pointer-events:none;background-image:linear-gradient(#ffffff55 1px,transparent 1px),linear-gradient(90deg,#ffffff55 1px,transparent 1px);background-size:var(--grid-step) var(--grid-step)}
+.columns>section{min-width:0}

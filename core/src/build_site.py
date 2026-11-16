@@ -146,7 +146,7 @@ def build(pack_dir, out, no_vendor=False):
         copy(src, out / dest, exclude)
     for src, dest in pack['scenes']:
         copy(src, out / dest, ())
-    for name in FAVICONS + ('editor-mobile.css', 'editor-mobile.js', 'rom-session.js', 'load-progress.js', 'load-progress.css', 'global-nav.css', 'list-filters.js', 'runtime-progress-worker.js', 'session-edits.js', 'textures-redirect.js', 'level-workspace.js', 'model-workspace.js'):
+    for name in FAVICONS + ('editor-mobile.css', 'editor-mobile.js', 'editor-shortcuts.js', 'rom-session.js', 'load-progress.js', 'load-progress.css', 'global-nav.css', 'list-filters.js', 'runtime-progress-worker.js', 'session-edits.js', 'textures-redirect.js', 'level-workspace.js', 'model-workspace.js'):
         shutil.copyfile(HERE / 'web' / name, out / name)
     (out / 'model-editor.html').write_text(model_editor(pack), encoding='utf-8')
     level_editor(pack, out)
@@ -154,6 +154,7 @@ def build(pack_dir, out, no_vendor=False):
     story.mkdir(exist_ok=True)
     for name in ('dialogue.html', 'textures.html', 'terrain.html'):
         shutil.copyfile(HERE / 'web' / name, out / name)
+    shutil.copyfile(HERE / 'viewer/js/history.js', story / 'history.js')
     for name in ('story.js', 'story.css'):
         shutil.copyfile(HERE / 'web' / name, story / name)
     copy(HERE / 'web/story', story, ())
@@ -191,7 +192,7 @@ def build(pack_dir, out, no_vendor=False):
             html = html[:first] + re.sub(r'<nav\b[^>]*>.*?</nav>', '', html[first:], flags=re.S)
         else:
             html = re.sub(r'(<main[^>]*>)', lambda m: m[0] + nav, html, count=1)
-        html = html.replace('</head>', '<link rel="stylesheet" href="global-nav.css"><link rel="stylesheet" href="load-progress.css"><script src="load-progress.js" defer></script><script src="rom-session.js" defer></script><script src="list-filters.js" defer></script><script src="session-edits.js" defer></script></head>', 1)
+        html = html.replace('</head>', '<link rel="stylesheet" href="global-nav.css"><link rel="stylesheet" href="load-progress.css"><script src="load-progress.js" defer></script><script src="rom-session.js" defer></script><script src="list-filters.js" defer></script><script src="session-edits.js" defer></script><script src="editor-shortcuts.js" defer></script></head>', 1)
         page.write_text(html, encoding='utf-8')
     return pack
 

@@ -53,6 +53,9 @@ async function dialogue() {
   terrainEdit = () => undefined;
   contentChanged = () => StoryROM.hasChanges(originalData, data);
   let bank, line;
+  const H=window.ModelEditorHistory;
+  if(H)H.configure({capture:()=>({banks:data.banks,levels:data.levels}),restore:value=>{data.banks=value.banks;data.levels=value.levels;showBank();changed();}});
+  window.EditorShortcuts={help:['Ctrl+Z undo · Ctrl+Y / Ctrl+Shift+Z redo','Text fields use normal text editing shortcuts.'],action(key){if(busy)return false;if(key==='undo'||key==='redo'){H?.[key]();return true;}if(key==='escape'){document.activeElement?.blur();return true;}return false;}};
   const bytes = strings => 2 + Object.values(strings).reduce((n, s) => n + 4 + 2 * s.length, 0);
   function budget() {
     const used = bytes(data.banks[bank].strings), max = data.capacities[bank];
@@ -156,14 +159,15 @@ async function dialogue() {
 }
 
 async function terrain() {
+  for(const el of document.querySelectorAll('.tile-tools,.tile-palette'))el.remove();
   const data = localData;
   const sheet = $('sheet'), ctx = sheet.getContext('2d', {willReadFrequently:true});
   const tile = $('tile'), tc = tile.getContext('2d'), rc = $('repeat').getContext('2d');
-  let level = '1', index = 0, loaded = false, drawing = false, last, picked = null, history = [];
+  let level = '1', index = 0, loaded = false, drawing = false, last, picked = null, history = [], future = [];
   let originalPixels;
   const scroller=tile.parentElement,zoom=$('tile-zoom');let touchMode='paint',pixelSize=matchMedia('(max-width:767px)').matches?44:10;
   function setZoom(size){
-    pixelSize=Math.max(1,Math.min(64,size));tile.style.setProperty('--tile-size',pixelSize*32+'px');
+    pixelSize=Math.max(1,Math.min(64,size));tile.style.setProperty('--tile-size',pixelSize*32+'px');scroller.style.setProperty('--grid-step',pixelSize+'px');scroller.style.setProperty('--grid-size',pixelSize*32+'px');
     const value=[...zoom.options].find(o=>+o.value===pixelSize);zoom.value=value?value.value:'';
   }
   function mode(value){touchMode=value;$('eyedropper').setAttribute('aria-pressed',String(value==='pick'));$('tile-navigate').setAttribute('aria-pressed',String(value==='navigate'));if(window.EditorTouch)window.EditorTouch.mode=value;const select=$('mobile-touch-mode');if(select)select.value=value;}
@@ -217,9 +221,9 @@ async function terrain() {
     $('tile-label').textContent = index < 20 ? 'Zone bank A / shared' : 'Level sub-bank';
     buttons.forEach((button,i)=>button.setAttribute('aria-pressed',String(i===index)));
     $('tile-uses').textContent=buttons[index].dataset.uses?'Also used in '+buttons[index].dataset.uses:'No identical tiles in other levels or slots.';
-    $('tile-number').value = index; $('undo').disabled = !history.length || busy;
+    $('tile-number').value = index; $('undo').disabled = !history.length || busy; $('redo').disabled = !future.length || busy; renderPalette();
   }
-  function snapshot() { history.push(ctx.getImageData(0,0,272,136)); if(history.length>30) history.shift(); }
+  function snapshot() { future = []; history.push(ctx.getImageData(0,0,272,136)); if(history.length>30) history.shift(); }
   async function load() {
     if(project&&loaded){contentChanged();await persistSession();}
     const next = $('terrain-level').value;
@@ -229,7 +233,7 @@ async function terrain() {
       ctx.putImageData(new ImageData(originals[next],272,136),0,0);
       level = next; originalPixels = ctx.getImageData(0,0,272,136).data.slice();
       if(project&&terrainSheets[level])ctx.putImageData(new ImageData(terrainSheets[level].rgba,272,136),0,0);
-      dirty = !!terrainSheets[level]; history = []; picked = null; loaded = true; ready = true;
+      dirty = !!terrainSheets[level]; history = []; future = []; picked = null; loaded = true; ready = true;
       $('recolour').disabled = true; $('tile-number').disabled=false; refreshTiles(); render(); status(`Level ${level} ready. Select a tile, then paint.`);
     } finally { $('terrain-level').disabled = false; enabled(); }
   }
@@ -243,16 +247,48 @@ async function terrain() {
   };
   $('tile-number').onchange = () => { if(busy) return; index = Math.min(31,Math.max(0,Number($('tile-number').value)||0)); index = Math.floor(index); picked = null; $('recolour').disabled = true; render(); };
   function point(event) { const box = tile.getBoundingClientRect(); return [Math.min(31,Math.max(0,Math.floor((event.clientX-box.left)*32/box.width))),Math.min(31,Math.max(0,Math.floor((event.clientY-box.top)*32/box.height)))]; }
+  let tool='pencil', brush=1, secondary='#000000', clipboard=null, strokeStart=null, strokeImage=null;
+  const tools=[['pencil','\u270e Pencil','B'],['eraser','\u232b Eraser','E'],['fill','\u25a7 Fill','G'],['line','\u2571 Line','L'],['rect','\u25a1 Rectangle','R'],['filled','\u25a0 Filled rectangle','Shift+R']];
+  const toolbar=document.createElement('div');toolbar.className='actions tile-tools';tile.closest('.columns').before(toolbar);
+  function choose(value){tool=value;mode(value==='pick'?'pick':'paint');for(const b of toolbar.querySelectorAll('[data-tool]'))b.setAttribute('aria-pressed',String(b.dataset.tool===tool));}
+  for(const [value,label,key] of tools){const b=document.createElement('button');b.textContent=label;b.title=label+' ('+key+')';b.dataset.tool=value;b.onclick=()=>choose(value);toolbar.append(b);}
+  function command(label,key,fn){const b=document.createElement('button');b.textContent=label;b.title=label+' ('+key+')';b.onclick=()=>{if(loaded&&!busy&&!drawing)fn();};toolbar.append(b);return b;}
+  const size=document.createElement('select');size.setAttribute('aria-label','Brush size');for(const n of [1,2,3])option(size,n,n+' px');size.onchange=()=>brush=+size.value;toolbar.append(size);
+  const swatches=document.createElement('div');swatches.className='actions tile-palette';toolbar.after(swatches);
+  function renderPalette(){
+    const colours=new Set(['#000000',$('colour').value]),[x,y]=origin(),px=ctx.getImageData(x,y,32,32).data;
+    for(let i=0;i<px.length;i+=4)colours.add('#'+Array.from(px.slice(i,i+3),n=>n.toString(16).padStart(2,'0')).join(''));
+    swatches.replaceChildren();const current=document.createElement('output');current.textContent='Colour '+$('colour').value;swatches.append(current);
+    for(const c of [...colours].slice(0,64)){const b=document.createElement('button');b.className='tile-swatch';b.style.background=c;b.title=c;b.setAttribute('aria-label','Colour '+c);b.setAttribute('aria-pressed',String(c===$('colour').value));b.onclick=()=>{$('colour').value=c;renderPalette();};swatches.append(b);}
+  }
+  $('colour').oninput=renderPalette;
+  function finish(){refreshTiles();render();changed();}
+  function transform(kind){snapshot();const [x,y]=origin(),src=ctx.getImageData(x,y,32,32),out=ctx.createImageData(32,32);for(let r=0;r<32;r++)for(let c=0;c<32;c++){const [u,v]=kind==='h'?[31-c,r]:kind==='v'?[c,31-r]:[r,31-c];out.data.set(src.data.subarray((v*32+u)*4,(v*32+u)*4+4),(r*32+c)*4);}ctx.putImageData(out,x,y);finish();}
+  function copyTile(){const [x,y]=origin();clipboard=ctx.getImageData(x,y,32,32);status('Tile copied.');}
+  function pasteTile(){if(!clipboard)return;snapshot();ctx.putImageData(clipboard,...origin());finish();}
+  function clearTile(){snapshot();ctx.fillStyle='#000000';ctx.fillRect(...origin(),32,32);finish();}
+  command('\u2194 Flip H','H',()=>transform('h'));command('\u2195 Flip V','V',()=>transform('v'));command('\u21bb Rotate','T',()=>transform('rotate'));
+  command('\u25a3 Copy','Ctrl+C',copyTile);command('\u25a3 Paste','Ctrl+V',pasteTile);
+  command('+ Zoom','+',()=>setZoom(pixelSize*1.5));command('- Zoom','-',()=>setZoom(pixelSize/1.5));
+  const grid=command('\u25a6 Grid','#',()=>{tile.parentElement.classList.toggle('pixel-grid');grid.setAttribute('aria-pressed',String(tile.parentElement.classList.contains('pixel-grid')));});
+  $('eyedropper').textContent='\u2316 Pick colour';$('eyedropper').title='Pick colour (I)';$('eyedropper').onclick=()=>choose(touchMode==='pick'?'pencil':'pick');
   function paint(a,b) {
-    const [ox,oy] = origin(), steps = Math.max(Math.abs(b[0]-a[0]),Math.abs(b[1]-a[1]),1);
-    ctx.fillStyle = $('colour').value;
-    for(let n=0;n<=steps;n++) ctx.fillRect(ox+Math.round(a[0]+(b[0]-a[0])*n/steps),oy+Math.round(a[1]+(b[1]-a[1])*n/steps),1,1);
-    refreshTiles(); render(); changed();
+    const [ox,oy]=origin(),steps=Math.max(Math.abs(b[0]-a[0]),Math.abs(b[1]-a[1]),1);
+    ctx.save();ctx.beginPath();ctx.rect(ox,oy,32,32);ctx.clip();ctx.fillStyle=tool==='eraser'?'#000000':$('colour').value;
+    const dot=(x,y)=>ctx.fillRect(ox+x-Math.floor(brush/2),oy+y-Math.floor(brush/2),brush,brush);
+    if(tool==='fill'){
+      const px=ctx.getImageData(ox,oy,32,32),at=(a[1]*32+a[0])*4,target=Array.from(px.data.slice(at,at+4)),colour=$('colour').value.match(/\w\w/g).map(v=>parseInt(v,16)).concat(255),queue=[a],seen=new Set();
+      while(queue.length){const [x,y]=queue.pop(),i=y*32+x;if(x<0||y<0||x>31||y>31||seen.has(i))continue;seen.add(i);if(!target.every((v,k)=>px.data[i*4+k]===v))continue;px.data.set(colour,i*4);queue.push([x-1,y],[x+1,y],[x,y-1],[x,y+1]);}ctx.putImageData(px,ox,oy);
+    }else if(tool==='rect'||tool==='filled'){
+      const x=Math.min(a[0],b[0]),y=Math.min(a[1],b[1]),w=Math.abs(a[0]-b[0])+1,h=Math.abs(a[1]-b[1])+1;
+      if(tool==='filled')ctx.fillRect(ox+x,oy+y,w,h);else {for(let c=x;c<x+w;c++){dot(c,y);dot(c,y+h-1);}for(let r=y;r<y+h;r++){dot(x,r);dot(x+w-1,r);}}
+    }else for(let n=0;n<=steps;n++)dot(Math.round(a[0]+(b[0]-a[0])*n/steps),Math.round(a[1]+(b[1]-a[1])*n/steps));
+    ctx.restore();render();
   }
   function pickColour(event){
     if(!loaded || busy)return;
     const [x,y] = point(event), [ox,oy] = origin(); picked = [...ctx.getImageData(ox+x,oy+y,1,1).data].slice(0,3);
-    $('colour').value = '#'+picked.map(n=>n.toString(16).padStart(2,'0')).join(''); $('recolour').disabled = false;
+    $('colour').value = '#'+picked.map(n=>n.toString(16).padStart(2,'0')).join(''); $('recolour').disabled = false;renderPalette();
     status('Colour picked. Choose a replacement colour, then click Replace.');
   }
   const fingers=new Map();let nav=null;
@@ -261,7 +297,7 @@ async function terrain() {
     if(!loaded || busy || event.button!==0)return;event.preventDefault();tile.setPointerCapture(event.pointerId);
     if(touchMode==='pick'){pickColour(event);return;}
     if(touchMode==='navigate'){fingers.set(event.pointerId,[event.clientX,event.clientY]);nav=gesture();return;}
-    snapshot(); drawing=true;last=point(event);paint(last,last);
+    snapshot(); drawing=true;last=point(event);strokeStart=last;strokeImage=ctx.getImageData(0,0,272,136);paint(last,last);
   };
   tile.onpointermove = event => {
     if(fingers.has(event.pointerId)){
@@ -269,9 +305,9 @@ async function terrain() {
       if(nav.d&&next.d){const ratio=next.d/nav.d,x=scroller.scrollLeft+nav.x-scroller.getBoundingClientRect().left,y=scroller.scrollTop+nav.y-scroller.getBoundingClientRect().top;setZoom(pixelSize*ratio);scroller.scrollLeft+=x*(ratio-1);scroller.scrollTop+=y*(ratio-1);}
       scroller.scrollLeft-=next.x-nav.x;scroller.scrollTop-=next.y-nav.y;nav=next;return;
     }
-    if(drawing){const next=point(event);paint(last,next);last=next;}
+    if(drawing){const next=point(event);if(['line','rect','filled'].includes(tool)){ctx.putImageData(strokeImage,0,0);paint(strokeStart,next);}else if(tool!=='fill')paint(last,next);last=next;}
   };
-  tile.onpointerup = tile.onpointercancel = event => { drawing=false;fingers.delete(event.pointerId);nav=fingers.size?gesture():null; };
+  tile.onpointerup = tile.onpointercancel = event => { if(drawing){drawing=false;finish();}fingers.delete(event.pointerId);nav=fingers.size?gesture():null; };
   tile.oncontextmenu = event => {
     event.preventDefault();pickColour(event);
   };
@@ -281,7 +317,10 @@ async function terrain() {
     for(let p=0;p<pixels.data.length;p+=4) if(picked.every((v,k)=>pixels.data[p+k]===v)) target.forEach((v,k)=>pixels.data[p+k]=v);
     ctx.putImageData(pixels,x,y); refreshTiles(); render(); changed();
   };
-  $('undo').onclick = () => { if(busy || !history.length) return; ctx.putImageData(history.pop(),0,0); refreshTiles(); render(); changed(); };
+  $('undo').onclick = () => { if(busy || drawing || !history.length) return; future.push(ctx.getImageData(0,0,272,136));ctx.putImageData(history.pop(),0,0);finish(); };
+  $('redo').onclick = () => { if(busy || drawing || !future.length)return;history.push(ctx.getImageData(0,0,272,136));ctx.putImageData(future.pop(),0,0);finish(); };
+  window.EditorShortcuts={help:['B pencil · E eraser · G fill · L line · R rectangle · Shift+R filled rectangle','I pick colour · X swap colours · H/V flip · T rotate · # grid','Ctrl+C/V copy/paste tile · Delete clear tile · +/- zoom'],action(key){if(!loaded||busy)return false;if(key==='escape'){if(drawing){ctx.putImageData(history.pop(),0,0);drawing=false;finish();}choose('pencil');return true;}if(drawing)return false;const keys={b:'pencil',e:'eraser',g:'fill',l:'line',r:'rect','shift+r':'filled',i:'pick'};if(keys[key])choose(keys[key]);else if(key==='undo')$('undo').click();else if(key==='redo')$('redo').click();else if(key==='copy')copyTile();else if(key==='paste')pasteTile();else if(key==='delete')clearTile();else if(key==='x'){const c=$('colour').value;$('colour').value=secondary;secondary=c;renderPalette();}else if(key==='h'||key==='v'||key==='t')transform(key==='t'?'rotate':key);else if(key==='#')grid.click();else if(key==='+'||key==='-')setZoom(pixelSize*(key==='+'?1.5:1/1.5));else return false;return true;}};
+  choose('pencil');
   async function save() { download(await new Promise(resolve => sheet.toBlob(resolve, 'image/png')), 'terrain-sheet.png','image/png'); status('Edits downloaded.'); }
   $('save').onclick = () => action(save);
   $('build').onclick = () => action(() => exportROM());

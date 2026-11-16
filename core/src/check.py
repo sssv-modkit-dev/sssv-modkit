@@ -30,6 +30,7 @@ COMMANDS = [
     [sys.executable, 'tools/guards.py', '.'],
     ['node', 'tests/browser/mobile.mjs'],
     ['node', 'tests/browser/roundtrip.mjs'],
+    ['node', 'tests/browser/tile-tools.mjs'],
 ]
 
 
