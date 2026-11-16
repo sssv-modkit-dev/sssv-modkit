@@ -9,3 +9,10 @@
 .tile-scroll{width:100%;max-width:100%;max-height:65vh;overflow:auto}
 #tile{display:block;width:var(--tile-size,320px);height:auto;max-width:none;touch-action:none}
 #eyedropper[aria-pressed=true],#tile-navigate[aria-pressed=true]{background:#37496a;border-color:#ffbd78}
+
+.tile-group{border:1px solid #728099;border-radius:6px;padding:10px;margin:14px 0;min-width:0}
+.tile-group h2{font-size:1rem}.tile-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.tile-grid button{min-width:0;padding:6px;font-size:12px;overflow-wrap:anywhere}
+.tile-grid canvas{display:block;width:64px;max-width:100%;height:auto;margin:0 auto 4px}
+.tile-grid button[aria-pressed=true]{border:2px solid #ffbd78;background:#37496a}
+#tile-uses{overflow-wrap:anywhere;max-height:9em;overflow:auto}

@@ -38,23 +38,6 @@ function enabled() {
   $('ips').disabled = busy || !ready || !project || !hasEdits || !valid;
   if (project) $('build').disabled ||= !valid;
 }
-async function bridgeAPI(path, data) {
-  let response;
-  try { response = await fetch(path, {...(data === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}), ...(path === '/api/dialogue' ? {signal:AbortSignal.timeout(5000)} : {})}); }
-  catch { throw Error('The optional Python bridge is not available on this page.'); }
-  if (!response.headers.get('content-type')?.includes('application/json')) throw Error('The optional Python bridge is not available on this page.');
-  let result;
-  try { result = await response.json(); } catch { throw Error('The Python bridge returned an unreadable response. Check that it is running, then check again.'); }
-  if (!response.ok) throw Error(result.error || 'The Python bridge could not complete that request.');
-  return result;
-}
-async function api(path, data) {
-  if (project) {
-    if (path === '/api/dialogue') return localData;
-    if (path === '/api/save') { localData.banks = data.banks; localData.levels = data.levels; return {message:'Edits ready in browser memory.'}; }
-  }
-  return bridgeAPI(path, data);
-}
 async function action(fn) {
   if (busy) return;
   busy = true; enabled();
@@ -65,7 +48,7 @@ function option(select, value, label) { const o = document.createElement('option
 window.addEventListener('beforeunload', event => { if ((!project&&dirty) || (project&&!sessionSaved) || busy) { event.preventDefault(); event.returnValue = ''; } });
 
 async function dialogue() {
-  const data = await api('/api/dialogue');
+  const data = localData;
   currentData = data; originalData = structuredClone(project?project.original:data);
   terrainEdit = () => undefined;
   contentChanged = () => StoryROM.hasChanges(originalData, data);
@@ -158,7 +141,7 @@ async function dialogue() {
     budget(); preview(text); changed();
     $('encoding').textContent = /^[\x20-\x7e\n]*$/.test(text) ? '' : 'Unsupported character: use plain ASCII and line breaks.';
   };
-  async function save() { if(!project) await api('/api/save', {banks:data.banks, levels:data.levels}); download(JSON.stringify({banks:data.banks,levels:data.levels},null,2), 'story-edits.json', 'application/json'); status('Edits downloaded.'); }
+  async function save() { download(JSON.stringify({banks:data.banks,levels:data.levels},null,2), 'story-edits.json', 'application/json'); status('Edits downloaded.'); }
   // Freeze editing while saving/building so a late response cannot mark newer edits saved.
   async function locked(fn) {
     const controls = [...document.querySelectorAll('input,select,textarea')];
@@ -167,15 +150,13 @@ async function dialogue() {
   }
   $('save').onclick = () => action(() => locked(save));
   $('build').onclick = () => action(() => locked(async () => {
-    if(project) { await exportROM(); return; }
-    await save(); status('Building story ROM. This may take a few minutes...');
-    const result = await api('/api/build', {kind:'dialogue'}); status(result.message); $('log').textContent = result.log;
+    await exportROM();
   }));
-  showBank(); dirty = contentChanged(); ready = true; enabled(); status(project ? 'ROM loaded. Edit dialogue or timing, then download.' : 'Ready. Changes save to local working JSON files.');
+  showBank(); dirty = contentChanged(); ready = true; enabled(); status('ROM loaded. Edit dialogue or timing, then download.');
 }
 
 async function terrain() {
-  const data = await api('/api/dialogue');
+  const data = localData;
   const sheet = $('sheet'), ctx = sheet.getContext('2d', {willReadFrequently:true});
   const tile = $('tile'), tc = tile.getContext('2d'), rc = $('repeat').getContext('2d');
   let level = '1', index = 0, loaded = false, drawing = false, last, picked = null, history = [];
@@ -197,30 +178,59 @@ async function terrain() {
   currentData = data; originalData = structuredClone(data);
   terrainEdit = () => ({level,rgba:ctx.getImageData(0,0,272,136).data,original:originalPixels});
   contentChanged = () => {const value=terrainEdit(),changed=!!originalPixels&&StoryROM.pixelsChanged(originalPixels,value.rgba);if(loaded){if(changed)terrainSheets[level]=value;else delete terrainSheets[level];}return changed;};
+  const tileKey = (pixels,i) => {
+    let key=''; const x=(i%8)*34,y=Math.floor(i/8)*34;
+    for(let r=0;r<32;r++)for(let c=0;c<32;c++){const p=4*((y+r)*272+x+c);key+=String.fromCharCode(...pixels.subarray(p,p+4));}
+    return key;
+  };
+  const originals={};for(let lv=1;lv<=31;lv++)originals[lv]=project.sheet(lv);
+  const buttons=[];
+  function selectTile(i){if(!loaded||busy)return;index=Math.max(0,Math.min(31,i));picked=null;$('recolour').disabled=true;render();}
+  $('tile-groups').replaceChildren();
+  for(const [start,end,title] of [[0,20,'Shared by every level in this zone'],[20,32,'Level sub-bank']]){
+    const group=document.createElement('section'),heading=document.createElement('h2'),grid=document.createElement('div');
+    group.className='tile-group';heading.textContent=title;grid.className='tile-grid';group.append(heading,grid);$('tile-groups').append(group);
+    for(let i=start;i<end;i++){
+      const button=document.createElement('button'),preview=document.createElement('canvas'),label=document.createElement('span');
+      preview.width=preview.height=32;preview.setAttribute('aria-hidden','true');label.textContent=`Tile ${i} / ${i<20?'Zone bank A':'Level sub-bank'}`;
+      button.type='button';button.disabled=true;button.dataset.tile=i;button.append(preview,label);button.onclick=()=>selectTile(i);
+      button.onkeydown=event=>{const step={ArrowLeft:-1,ArrowRight:1,ArrowUp:-4,ArrowDown:4}[event.key];if(step){event.preventDefault();selectTile(index+step);buttons[index].focus();}};
+      buttons.push(button);grid.append(button);
+    }
+  }
+  const keyCache=new WeakMap();
+  function refreshTiles(){
+    const pixels=ctx.getImageData(0,0,272,136).data,uses=new Map();
+    for(let lv=1;lv<=31;lv++){
+      const source=String(lv)===String(level)?pixels:(terrainSheets[lv]?.rgba||originals[lv]);
+      if(!keyCache.has(source))keyCache.set(source,Array.from({length:32},(_,i)=>tileKey(source,i)));
+      for(let i=0;i<32;i++){const key=keyCache.get(source)[i];if(!uses.has(key))uses.set(key,[]);uses.get(key).push([lv,i]);}
+    }
+    buttons.forEach((button,i)=>{button.disabled=false;button.firstChild.getContext('2d').drawImage(sheet,(i%8)*34,Math.floor(i/8)*34,32,32,0,0,32,32);
+      button.dataset.uses=(uses.get(tileKey(pixels,i))||[]).filter(([lv,n])=>String(lv)!==String(level)||n!==i).map(([lv,n])=>`Level ${lv}, tile ${n}`).join('; ');
+    });
+  }
   const origin = () => [(index%8)*34, Math.floor(index/8)*34];
   function render() {
     const [x,y] = origin(); tc.clearRect(0,0,32,32); tc.drawImage(sheet,x,y,32,32,0,0,32,32);
     for(let r=0;r<3;r++) for(let c=0;c<3;c++) rc.drawImage(tile,c*32,r*32);
-    $('tile-label').textContent = index < 20 ? 'Zone-wide tile' : 'Sub-bank tile';
+    $('tile-label').textContent = index < 20 ? 'Zone bank A / shared' : 'Level sub-bank';
+    buttons.forEach((button,i)=>button.setAttribute('aria-pressed',String(i===index)));
+    $('tile-uses').textContent=buttons[index].dataset.uses?'Also used in '+buttons[index].dataset.uses:'No identical tiles in other levels or slots.';
     $('tile-number').value = index; $('undo').disabled = !history.length || busy;
   }
   function snapshot() { history.push(ctx.getImageData(0,0,272,136)); if(history.length>30) history.shift(); }
   async function load() {
-    if (dirty && !project && !confirm('Discard unsaved tile changes before changing level?')) { $('terrain-level').value = level; status('Level change cancelled. Your tile changes are still here.'); return; }
     if(project&&loaded){contentChanged();await persistSession();}
     const next = $('terrain-level').value;
     loaded = false; ready = false; enabled(); $('terrain-level').disabled = true;
     status('Loading tile sheet...');
     try {
-      if(project) { ctx.putImageData(new ImageData(project.sheet(next),272,136),0,0); } else {
-      const response = await fetch('/api/sheet?level='+next);
-      if (!response.ok) throw Error((await response.json()).error);
-      const bitmap = await createImageBitmap(await response.blob());
-      ctx.clearRect(0,0,272,136); ctx.drawImage(bitmap,0,0); bitmap.close(); }
+      ctx.putImageData(new ImageData(originals[next],272,136),0,0);
       level = next; originalPixels = ctx.getImageData(0,0,272,136).data.slice();
       if(project&&terrainSheets[level])ctx.putImageData(new ImageData(terrainSheets[level].rgba,272,136),0,0);
       dirty = !!terrainSheets[level]; history = []; picked = null; loaded = true; ready = true;
-      $('recolour').disabled = true; render(); status(`Level ${level} ready. Select a tile, then paint.`);
+      $('recolour').disabled = true; $('tile-number').disabled=false; refreshTiles(); render(); status(`Level ${level} ready. Select a tile, then paint.`);
     } finally { $('terrain-level').disabled = false; enabled(); }
   }
   for(let lv=1;lv<=31;lv++) option($('terrain-level'), lv, `Level ${lv} / ${data.banks[String(lv-1)]?.title || ''}`);
@@ -237,7 +247,7 @@ async function terrain() {
     const [ox,oy] = origin(), steps = Math.max(Math.abs(b[0]-a[0]),Math.abs(b[1]-a[1]),1);
     ctx.fillStyle = $('colour').value;
     for(let n=0;n<=steps;n++) ctx.fillRect(ox+Math.round(a[0]+(b[0]-a[0])*n/steps),oy+Math.round(a[1]+(b[1]-a[1])*n/steps),1,1);
-    render(); changed();
+    refreshTiles(); render(); changed();
   }
   function pickColour(event){
     if(!loaded || busy)return;
@@ -269,16 +279,12 @@ async function terrain() {
     if(!picked || busy) return; snapshot();
     const [x,y] = origin(), pixels = ctx.getImageData(x,y,32,32), target = $('colour').value.match(/\w\w/g).map(v=>parseInt(v,16));
     for(let p=0;p<pixels.data.length;p+=4) if(picked.every((v,k)=>pixels.data[p+k]===v)) target.forEach((v,k)=>pixels.data[p+k]=v);
-    ctx.putImageData(pixels,x,y); render(); changed();
+    ctx.putImageData(pixels,x,y); refreshTiles(); render(); changed();
   };
-  $('undo').onclick = () => { if(busy || !history.length) return; ctx.putImageData(history.pop(),0,0); render(); changed(); };
-  async function save() { if(project) { download(await new Promise(resolve => sheet.toBlob(resolve, 'image/png')), 'terrain-sheet.png','image/png'); status('Edits downloaded.'); return; } const result = await api('/api/sheet', {level, png:sheet.toDataURL('image/png').split(',')[1]}); status(result.message); }
+  $('undo').onclick = () => { if(busy || !history.length) return; ctx.putImageData(history.pop(),0,0); refreshTiles(); render(); changed(); };
+  async function save() { download(await new Promise(resolve => sheet.toBlob(resolve, 'image/png')), 'terrain-sheet.png','image/png'); status('Edits downloaded.'); }
   $('save').onclick = () => action(save);
-  $('build').onclick = () => action(async () => {
-    if(project) { await exportROM(); return; }
-    await save(); status('Building selected terrain + saved story ROM. This may take a few minutes...');
-    const result = await api('/api/build', {kind:'terrain', level}); status(result.message); $('log').textContent = result.log;
-  });
+  $('build').onclick = () => action(() => exportROM());
   await load();
 }
 
@@ -299,22 +305,7 @@ $('rom').onchange = () => action(async () => {
   $('ips').disabled = true;
   $('save').textContent = document.body.dataset.page === 'dialogue' ? 'Download edits JSON' : 'Download sheet PNG';
   $('build').textContent = 'Save & build ROM';
-  $('bridge-setup').hidden = true;
   await start();
 });
 $('ips').onclick = () => action(() => exportROM(true));
 for(const link of document.querySelectorAll('.global-nav>a'))link.addEventListener('click',async event=>{if(!project||event.ctrlKey||event.metaKey||event.shiftKey)return;event.preventDefault();await persistSession();if(!sessionSaved)return;location.href=link.href;});
-const useBridge = () => action(async () => {
-  // Probe before replacing a working in-browser project.
-  $('bridge-setup').hidden = false;
-  try { await bridgeAPI('/api/dialogue'); }
-  catch { status('The optional Python bridge is not available on this page. Follow the setup below, or keep editing your ROM in this browser.'); return; }
-  if(dirty && !confirm('Discard current edits and use the bridge?')) return;
-  project = null; localData = null; ready = false; dirty = false;
-  $('ips').disabled = true; $('save').textContent = document.body.dataset.page === 'dialogue' ? 'Download edits JSON' : 'Save sheet PNG';
-  $('build').textContent = 'Save & build ROM';
-  for(const id of ['bank','lines','terrain-level']) if($(id)) $(id).replaceChildren();
-  await start();
-  $('bridge-setup').hidden = true;
-});
-$('bridge').onclick = $('bridge-check').onclick = useBridge;

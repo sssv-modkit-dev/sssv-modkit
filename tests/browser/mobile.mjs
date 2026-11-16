@@ -46,6 +46,25 @@ try{
    await until(c,s,"document.getElementById('setup').hidden");
    await js(s,"fetch(document.querySelector('meta[name=default-scene]').content).then(r=>r.json()).then(doc=>enterEditor(doc,true))");
   }
+  if(page==='terrain'&&!rom){
+   await until(c,s,"typeof terrain==='function'");
+   await js(s,`(async()=>{
+     localData={banks:{}};
+     project={sheet(lv){const p=new Uint8ClampedArray(272*136*4);for(let i=0;i<32;i++)for(let y=0;y<32;y++)for(let x=0;x<32;x++){const o=4*((Math.floor(i/8)*34+y)*272+i%8*34+x);p[o]=i;p[o+3]=255;}return p;}};
+     await terrain();
+   })()`);
+   assert.equal(await js(s,"document.querySelectorAll('.tile-grid button').length"),32);
+   assert.ok(await js(s,"[...document.querySelectorAll('.tile-grid button')].every((b,i)=>b.textContent.includes('Tile '+i))"));
+   assert.ok(await js(s,"document.querySelector('.tile-group h2').textContent.includes('Shared by every level')"));
+   await js(s,"document.querySelector('[data-tile=23]').click()");
+   assert.equal(await js(s,"document.getElementById('tile-number').value"),'23');
+   assert.ok(await js(s,"document.getElementById('tile-uses').textContent.includes('Level 2, tile 23')"));
+   await js(s,"document.querySelector('[data-tile=23]').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}))");
+   assert.equal(await js(s,"document.getElementById('tile-number').value"),'24');
+   await js(s,"document.getElementById('tile-number').value='7';document.getElementById('tile-number').dispatchEvent(new Event('change'))");
+   assert.ok(await js(s,"document.querySelector('[data-tile=7]').getAttribute('aria-pressed')==='true'"));
+  }
+  if(page==='terrain'||page==='dialogue')assert.ok(await js(s,"![...document.querySelectorAll('body *')].some(e=>/bridge/i.test(e.textContent+' '+e.id+' '+e.getAttribute('aria-label')))"));
   await sleep(250);
   const check=async(code,label)=>assert.ok(await js(s,code),`${page} ${width}: ${label}`);
   await check('document.documentElement.scrollWidth<=innerWidth','no page horizontal overflow');
