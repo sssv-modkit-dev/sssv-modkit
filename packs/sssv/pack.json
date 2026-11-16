@@ -114,6 +114,14 @@
   {
    "src": "../../src/web/patches.json",
    "dest": "patches.json"
+  },
+  {
+   "src": "../../src/web/classicplus.js",
+   "dest": "classicplus.js"
+  },
+  {
+   "src": "../../src/web/classicplus.json",
+   "dest": "classicplus.json"
   }
  ],
  "build_hook": "build_hook.py",

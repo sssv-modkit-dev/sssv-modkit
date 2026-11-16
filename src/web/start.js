@@ -1,7 +1,11 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id),base=['load','path','patches'],depth=['models','textures','levels','dialogue'];
 let saved;try{saved=JSON.parse(sessionStorage.getItem('guided-path')||'null');}catch{}
-let state={step:'load',path:'patch',demo:false,...saved},source=null,manifest=[],result=null,busy=false;
+let state={step:'load',path:'patch',demo:false,patches:[],...saved},source=null,manifest=[],result=null,busy=false,cpData=null;
+if(!Array.isArray(state.patches))state.patches=[];
+const chosen=()=>state.patches.filter(id=>manifest.some(p=>p.id===id&&p.status==='available'));
+const REQUIRES={'health-energy':'minimap','objectives-hud':'minimap'};
+async function classicPlus(){if(!cpData)cpData=await fetch('classicplus.json').then(r=>{if(!r.ok)throw Error('Could not load the patch data. Reload this page.');return r.json();});return cpData;}
 const steps=()=>[...base,...(state.path==='depth'?depth:[]),'review'];
 const remember=()=>sessionStorage.setItem('guided-path',JSON.stringify(state));
 const same=(record)=>record&&record.hash===source?.hash?record:null;
@@ -10,11 +14,12 @@ async function review(){
  const [model,level,story,tiles]=await inputs(),list=$('review-list');list.replaceChildren();
  const add=text=>{const li=document.createElement('li');li.textContent=text;list.append(li);};
  add(source&&!state.demo?'Source: '+source.name:'No ROM: preview only');
- add('Patches: none available yet. Coming-soon options will not be included.');
+ const picks=chosen().length?ClassicPlus.resolve(await classicPlus(),chosen()):[],names=picks.map(id=>manifest.find(p=>p.id===id)?.name||id);add(picks.length?'Patches: '+names.join(', '):'Patches: none selected');
+ if(picks.length&&ClassicPlus.needsPak(await classicPlus(),picks))add('Needs the Expansion Pak (8 MB). Turn it on in your emulator or console.');
  const n=model?.config?.animals?.length||0,l=Object.keys(level?.project?.edits?.levels||{}).length,t=Object.keys(tiles?.sheets||{}).length;
  add(`Model changes: ${n} config${n===1?'':'s'}`);add(`Level changes: ${l} stage${l===1?'':'s'}`);add(`Painted tilesets: ${t}`);add(story?'Dialogue session saved':'Dialogue: unchanged');
- const edits=n||l||t||story;
- $('build-note').textContent=state.demo||!source?'Building is disabled. Go Back to load your own US 1.0 ROM.':!source.verified?'Building needs the unmodified US 1.0 ROM. Go Back and choose that source.':!edits?(state.path==='patch'?'Patch only excludes saved editor changes. No patches are available yet, so this build is an unchanged copy of your ROM.':'No edits or patches selected. Build creates an unchanged copy of your ROM.'):'All saved editor changes listed above are included, including changes made outside this path.';
+ const edits=n||l||t||story||picks.length;
+ $('build-note').textContent=state.demo||!source?'Building is disabled. Go Back to load your own US 1.0 ROM.':!source.verified?'Building needs the unmodified US 1.0 ROM. Go Back and choose that source.':!edits?(state.path==='patch'?'Patch only excludes saved editor changes. No patches are selected, so this build is an unchanged copy of your ROM.':'No edits or patches selected. Build creates an unchanged copy of your ROM.'):state.path==='patch'?'The selected patches are applied to your ROM.':'All saved editor changes listed above are included, including changes made outside this path, then the selected patches.';
  $('guide-build').disabled=!source?.verified||state.demo||busy;
 }
 async function render(){
@@ -37,6 +42,9 @@ async function build(){
  $('build-status').textContent='Building your saved changes…';
  if(parts||Object.keys(edits?.levels||{}).length){const built=await SSSVBuilder.build({rom:new Blob([bytes]),parts:parts||undefined,level:edits&&Object.keys(edits.levels).length?EditsExport.toBuilderDiff(edits):undefined},{onProgress:p=>{$('build-status').textContent=p.detail||p.stage;}});bytes=await built.rom.arrayBuffer();}
  if(story||Object.keys(tiles?.sheets||{}).length){const project=new StoryROM.Project(bytes);bytes=project.build(story?.data||project.data,Object.values(tiles?.sheets||{}));}
+ if(chosen().length){const data=await classicPlus(),picks=ClassicPlus.resolve(data,chosen()),wanted=ClassicPlus.art(data,picks);let pictures={};
+  if(wanted.length){$('build-status').textContent='Drawing patch pictures from your ROM…';pictures=await SSSVBuilder.art(new Blob([source.buffer]),wanted,{onProgress:p=>{$('build-status').textContent=p.detail||'Drawing patch pictures from your ROM…';}});}
+  $('build-status').textContent='Applying patches…';bytes=ClassicPlus.apply(new Uint8Array(source.buffer),new Uint8Array(bytes),data,picks,pictures).buffer;}
  const rom=new Blob([bytes]),ips=new Blob([StoryROM.ips(new Uint8Array(source.buffer),new Uint8Array(bytes))]);
  await ROMSession.write('guided-build',{hash:source.hash,rom,name:'guided-build.z64'});result={rom,ips};
  $('guide-play').hidden=false;$('download-rom').disabled=$('download-ips').disabled=false;$('build-status').textContent='Build ready. Download it or open Play to try this build.';
@@ -44,7 +52,7 @@ async function build(){
 }
 document.addEventListener('DOMContentLoaded',async()=>{try{
  source=await ROMSession.get();manifest=await fetch('patches.json').then(r=>{if(!r.ok)throw Error('Could not load patch options. Reload this page.');return r.json();});
- for(const category of ['bugfix','qol']){const title=document.createElement('h3');title.textContent=category==='bugfix'?'Bugfixes':'Quality of life';$('patch-list').append(title);for(const item of manifest.filter(p=>p.category===category)){const label=document.createElement('label');label.className='patch unavailable';const check=document.createElement('input');check.type='checkbox';check.disabled=true;const span=document.createElement('span'),name=document.createElement('strong'),desc=document.createElement('small');name.textContent=item.name+' · '+(item.status==='coming-soon'?'Coming soon':'Not included in this build');desc.textContent=item.description;span.append(name,desc);label.append(check,span);$('patch-list').append(label);}}
+ for(const category of ['bugfix','qol']){const title=document.createElement('h3');title.textContent=category==='bugfix'?'Bugfixes':'Quality of life';$('patch-list').append(title);for(const item of manifest.filter(p=>p.category===category)){const ready=item.status==='available',label=document.createElement('label');label.className='patch'+(ready?'':' unavailable');const check=document.createElement('input');check.type='checkbox';check.disabled=!ready;check.value=item.id;check.checked=ready&&state.patches.includes(item.id);check.onchange=()=>{let next=check.checked?[...new Set([...state.patches,item.id])]:state.patches.filter(id=>id!==item.id);if(check.checked&&REQUIRES[item.id])next=[...new Set([...next,REQUIRES[item.id]])];if(!check.checked)next=next.filter(id=>REQUIRES[id]!==item.id);state.patches=next;for(const box of document.querySelectorAll('#patch-list input'))box.checked=state.patches.includes(box.value);remember();};const span=document.createElement('span'),name=document.createElement('strong'),desc=document.createElement('small');name.textContent=ready?item.name:item.name+' · '+(item.status==='coming-soon'?'Coming soon':'Not included in this build');desc.textContent=item.description;span.append(name,desc);label.append(check,span);$('patch-list').append(label);}}
  $('rom').addEventListener('change',async()=>{source=await ROMSession.get();state.demo=false;render().catch(fail);});
  $('without-rom').onclick=()=>{state.demo=true;advance(1);};$('guide-next').onclick=()=>advance(1);$('guide-back').onclick=()=>advance(-1);$('guide-skip').onclick=()=>advance(1);
  for(const radio of document.querySelectorAll('input[name=path]'))radio.onchange=()=>{state.path=radio.value;render().catch(fail);};

@@ -34,6 +34,8 @@ def main():
         ['node', '--check', 'src/web/builder-worker.js'],
         ['node', '--check', 'src/web/builder-core.js'],
         ['node', 'tests/test_pyodide_build.js'],
+        ['node', '--check', 'src/web/classicplus.js'],
+        ['node', 'tests/test_classicplus.js'],
         ['node', '--check', 'src/release_banner.js'],
         ['node', 'tests/test_release_banner.js'],
         [sys.executable, 'tests/test_release_banner.py'],

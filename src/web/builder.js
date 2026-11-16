@@ -29,6 +29,8 @@
       pending.delete(message.id);
       if (message.type === 'indexed') {
         job.resolve(message.table);
+      } else if (message.type === 'drawn') {
+        job.resolve(message.pictures);
       } else if (message.type === 'done') {
         job.resolve({ rom: new root.Blob([message.rom], { type: 'application/octet-stream' }),
           ips: new root.Blob([message.ips], { type: 'application/octet-stream' }), romSha1: message.romSha1,
@@ -78,5 +80,14 @@
     });
   }
 
-  root.SSSVBuilder = { build, deriveTable, terminate: () => fail('Build cancelled'), workerUrl: null };
+  // Pictures for Classic+ patches drawn from the user's ROM in the worker: names -> {name: Uint8Array}.
+  async function art(rom, names, hooks) {
+    const buffer = await asBuffer(rom), id = nextId++, target = ensureWorker();
+    return new Promise((resolve, reject) => {
+      pending.set(id, { resolve, reject, onProgress: hooks && hooks.onProgress });
+      target.postMessage({ type: 'art', id, rom: buffer, names }, [buffer]);
+    });
+  }
+
+  root.SSSVBuilder = { build, deriveTable, art, terminate: () => fail('Build cancelled'), workerUrl: null };
 })(typeof window !== 'undefined' ? window : this);

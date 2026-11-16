@@ -8,7 +8,7 @@
   const PYODIDE_URL = 'vendor/pyodide/';
   // Every module web_build.py imports, directly or indirectly. src/build_viewer.py copies these to dist/py/.
   const PY_MODULES = ['romio.py', 'level_rnc.py', 'level_rnc_pack.py', 'build_levels.py', 'make_animal_mods.py',
-    'animal_table.py', 'animal_rom.py', 'web_build.py'];
+    'animal_table.py', 'animal_rom.py', 'minimap.py', 'web_build.py'];
   const PY_DIR = '/sssv';
 
   // loadPyodide: the Pyodide loader (CDN global or the npm package). readSource(name) -> text of src/<name>.
@@ -70,7 +70,18 @@
     finally { runtime.py.globals.delete('_sssv_index_input'); input.destroy(); }
   }
 
-  const api = { PYODIDE_VERSION, PYODIDE_URL, PY_MODULES, createRuntime, runBuild, deriveTable, pythonMessage };
+  // Patch pictures drawn from the user's ROM (e.g. 'minimap'); -> {name: Uint8Array}. Nothing is bundled.
+  function drawArt(runtime, source, names, onProgress) {
+    const rom = ArrayBuffer.isView(source) ? new Uint8Array(source.buffer, source.byteOffset, source.byteLength) : new Uint8Array(source);
+    let result;
+    try { result = runtime.entry.art_js(rom, JSON.stringify(names), onProgress ? (stage, detail) => onProgress(String(stage), String(detail)) : undefined); }
+    catch (error) { throw new Error(pythonMessage(error)); }
+    const out = {};
+    try { for (const name of names) out[name] = copyBytes(result.get(name)); } finally { result.destroy(); }
+    return out;
+  }
+
+  const api = { PYODIDE_VERSION, PYODIDE_URL, PY_MODULES, createRuntime, runBuild, deriveTable, drawArt, pythonMessage };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.SSSVBuilderCore = api;
 })(typeof self !== 'undefined' ? self : this);

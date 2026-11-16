@@ -13,6 +13,7 @@ import animal_rom
 import animal_table
 import build_levels as levels
 import make_animal_mods as animals
+import minimap
 import romio
 
 
@@ -89,6 +90,31 @@ def _build(rom, level, parts, table, relocate, new_animals, strict, step):
     step('ips', 'Writing and checking the IPS patch')
     ips = levels.patch(stock, edited)
     return {'rom': edited, 'ips': ips, 'rom_sha1': romio.sha1(edited), 'source_sha1': romio.sha1(stock), 'log': log}
+
+
+ART = {'minimap': lambda rom, step: minimap.minimaps(rom, lambda i, n: step('art', f'Drawing minimap {i} of {n}'))}
+
+
+def art(rom, names, progress=None):
+    """Pictures for the Classic+ patches, drawn from the given (unmodified US 1.0) ROM: {name: bytes}."""
+    step = progress or (lambda stage, detail: None)
+    rom = levels.normalize_rom(bytes(rom))
+    if romio.sha1(rom) != romio.US10_SHA1:
+        raise ValueError('Patch pictures are drawn from the unmodified US 1.0 ROM')
+    unknown = [n for n in names if n not in ART]
+    if unknown:
+        raise ValueError('These patch pictures cannot be drawn yet: ' + ', '.join(unknown))
+    return {n: ART[n](rom, step) for n in names}
+
+
+def art_js(rom, names, progress):
+    """Pyodide adapter for art(): rom a JS Uint8Array, names a JSON list."""
+    rom = rom.to_bytes() if hasattr(rom, 'to_bytes') else bytes(rom)
+    progress = None if progress is None or type(progress).__name__ == 'JsNull' else progress
+    try:
+        return art(rom, json.loads(names), (lambda stage, detail: progress(stage, detail)) if progress else None)
+    except SystemExit as error:
+        raise ValueError(str(error.code)) from None
 
 
 def build_js(rom, level, parts, options, progress):
