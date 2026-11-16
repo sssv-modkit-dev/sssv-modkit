@@ -20,4 +20,10 @@ assert.equal(R.bind({parts:pose.parts}),null);
 const k3=[[0,10,20],[20,30,40],[40,0,0],[20,0,0],[0,0,0],[-20,0,0],[-40,0,0],[-20,0,0]];
 const J3=R.quadJoints({body:{hl:300,hw:150,lift:900},legs:{seg:3,front:{len:[400,300,200]},rear:{len:[400,300,200]},tables:{walk:[k3,k3]},offs:{walk:[0,0,0,0]}}},32,'walk');
 assert.deepEqual([J3[7],J3[8],J3[9]].map(v=>v.map(Math.round)),[[-150,300-((400*88)>>8),900-((400*241)>>8)],[-150,300-((400*88)>>8)-((300*128)>>8),900-((400*241)>>8)-((300*222)>>8)],[-150,300-((400*88)>>8)-((300*128)>>8)-((200*165)>>8),900-((400*241)>>8)-((300*222)>>8)-((200*196)>>8)]]);
-console.log('Rig player: bind, rest frame, leg swing and three-bone legs passed.');
+// bird: wings glide near level, the flap stroke reaches 170 deg (down) at step 4, toes curl only when walking
+const bird={body:{kind:'bird',L:312,h:812},head:[562,375,1],wings:[1125,125],tail:750,legs:{p1:812,p2:250,p3:312,p4:312}};
+const sn=d=>Math.round(Math.sin(d*Math.PI/180)*256),cs=d=>Math.round(Math.cos(d*Math.PI/180)*256);
+const fl=R.joints(bird,28,'flap');assert.deepEqual(fl[22],[(1125*sn(170))>>8,0,812+((1125*cs(170))>>8)]);assert.equal(fl[24][0],-fl[22][0]);
+assert.ok(R.joints(bird,0,'walk')[22][2]===812,'glide starts level');
+assert.ok(R.joints(bird,32,'walk')[8][2]<-100&&R.joints(bird,64,'flap')[8][2]===0,'toes curl only when walking');
+console.log('Rig player: bind, rest frame, leg swing, three-bone legs and bird wings passed.');
