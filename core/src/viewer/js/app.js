@@ -136,7 +136,7 @@ const selectedParts=new Set();
 function selectPart(sym,add=false){if(!add)selectedParts.clear();if(sym){if(add&&selectedParts.has(sym))selectedParts.delete(sym);else selectedParts.add(sym)}selectedSym=selectedParts.has(sym)?sym:[...selectedParts].at(-1)||null;}
 function selectionSymbols(){return selectedParts.size?[...selectedParts]:selectedSym?[selectedSym]:[]}
 let pickTris=[],hoverSym=null,returnMode=null,partNames={},partOffsets={},labelOffsets={},selectedSym=null,moveButton="alt",showGrid=false,showGround=true,showLabels=false,backgroundOverride=null;let partColors={},wordEdits={},paletteScoped=false,deformAxis="y";let mesh={},dv=null,cur=null,name='',bases={},parsed=[],map={},sel=0,variant='',all=false,sheet=false,SH={},useVC=true,yaw=HOME_VIEW[0],pit=HOME_VIEW[1],roll=0,dist=1,ctr=[0,0,0],nv=0,dirty=false,gallery=false,galleryData=[],galleryLayout=[],worldLabels=[];
-let sceneBounds=null,sceneRadius=1;
+let sceneBounds=null,stageBounds=null,sceneRadius=1;
 const cv=$('cv'),gl=cv.getContext('webgl',{alpha:true});
 if(!gl){$('demo-status').textContent='WebGL is unavailable. Enable hardware acceleration or try another browser.';throw new Error('WebGL unavailable')}
 function sh(t,s){const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);return x}
@@ -153,24 +153,31 @@ gl.bindAttribLocation(gpg,0,'p');gl.linkProgram(gpg);
 const gbuf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,gbuf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,0,1,-1,0,1,1,0,-1,-1,0,1,1,0,-1,1,0]),gl.STATIC_DRAW);gl.bindBuffer(gl.ARRAY_BUFFER,buf);
 const gloc={M:gl.getUniformLocation(gpg,'M'),G:gl.getUniformLocation(gpg,'G')};
 // Drawn after the model without depth writes, so the model hides it from above and it tints the model from below.
-function drawGround(PV){const [mn,mx]=sceneBounds,rad=Math.max(mx[0]-mn[0],mx[2]-mn[2])*.62+(mx[1]-mn[1])*.12;
+function drawGround(PV){const [mn,mx]=stageBounds||sceneBounds,rad=Math.max(mx[0]-mn[0],mx[2]-mn[2])*.62+(mx[1]-mn[1])*.12;
 gl.useProgram(gpg);gl.bindBuffer(gl.ARRAY_BUFFER,gbuf);gl.disableVertexAttribArray(1);gl.disableVertexAttribArray(2);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);
 gl.uniformMatrix4fv(gloc.M,false,PV);gl.uniform4f(gloc.G,(mn[0]+mx[0])/2,mn[1],(mn[2]+mx[2])/2,rad);
 gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);gl.drawArrays(gl.TRIANGLES,0,6);gl.depthMask(true);gl.disable(gl.BLEND);
 gl.useProgram(pg);gl.bindBuffer(gl.ARRAY_BUFFER,buf);for(let i=0;i<3;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,36,i*12)}}
 const gridProgram=gl.createProgram();
-gl.attachShader(gridProgram,sh(gl.VERTEX_SHADER,'attribute vec3 p;uniform mat4 M;void main(){gl_Position=M*vec4(p,1.);}'));
-gl.attachShader(gridProgram,sh(gl.FRAGMENT_SHADER,'precision mediump float;void main(){gl_FragColor=vec4(.48,.53,.65,.22);}'));
+gl.attachShader(gridProgram,sh(gl.VERTEX_SHADER,'attribute vec4 p;uniform mat4 M;varying float k;void main(){k=p.w;gl_Position=M*vec4(p.xyz,1.);}'));
+gl.attachShader(gridProgram,sh(gl.FRAGMENT_SHADER,'precision mediump float;varying float k;void main(){gl_FragColor=k<.5?vec4(.48,.53,.65,.24):k<1.5?vec4(.6,.68,.85,.45):k<2.5?vec4(.95,.36,.36,.75):k<3.5?vec4(.38,.55,1.,.75):vec4(.48,.53,.65,.12);}'));
 gl.bindAttribLocation(gridProgram,0,'p');gl.linkProgram(gridProgram);const gridBuffer=gl.createBuffer(),gridMatrix=gl.getUniformLocation(gridProgram,'M');
 /* Reference room: a closed gridded box around the model, sized like a skybox (several model spans) so the orbit camera sits inside it. */
-function referenceRoomLines(lo,hi,extent=4){const span=Math.max(1,...hi.map((v,k)=>v-lo[k])),cx=(lo[0]+hi[0])/2,cz=(lo[2]+hi[2])/2,half=span*.75*extent,y0=lo[1]-span*.04,y1=y0+2*half,x0=cx-half,x1=cx+half,z0=cz-half,z1=cz+half,lines=[],n=12;
- for(let i=0;i<=n;i++){const t=i/n,x=x0+(x1-x0)*t,z=z0+(z1-z0)*t,y=y0+(y1-y0)*t;
-  for(const yy of [y0,y1])lines.push(x,yy,z0,x,yy,z1,x0,yy,z,x1,yy,z);
-  for(const zz of [z0,z1])lines.push(x,y0,zz,x,y1,zz,x0,y,zz,x1,y,zz);
-  for(const xx of [x0,x1])lines.push(xx,y0,z,xx,y1,z,xx,y,z0,xx,y,z1);}
- return lines}
-function drawReferenceGrid(V){if(!sceneBounds||gallery)return;const lines=referenceRoomLines(...sceneBounds);let far=0;for(let i=0;i<lines.length;i+=3)far=Math.max(far,Math.hypot(lines[i]-ctr[0],lines[i+1]-ctr[1],lines[i+2]-ctr[2]));const PV=mul(pr(cv.clientWidth/Math.max(1,cv.clientHeight),Math.max(sceneRadius/10000,1e-3),dist+far*1.05),V);gl.disable(gl.DEPTH_TEST);
- gl.useProgram(gridProgram);gl.bindBuffer(gl.ARRAY_BUFFER,gridBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lines),gl.DYNAMIC_DRAW);gl.disableVertexAttribArray(1);gl.disableVertexAttribArray(2);gl.vertexAttribPointer(0,3,gl.FLOAT,false,12,0);gl.uniformMatrix4fv(gridMatrix,false,PV);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);gl.drawArrays(gl.LINES,0,lines.length/3);gl.depthMask(true);gl.disable(gl.BLEND);gl.enable(gl.DEPTH_TEST);
+// Reference room (holodeck / training-room style): a closed cube gridded on every face with fixed square cells,
+// snapped to 1-2-5 steps from the at-rest model size, floor at the model's feet. On the floor every 5th line is
+// brighter and the lines through the origin are the X (red) and Z (blue) axes; walls and ceiling are fainter.
+// Each vertex is x,y,z,kind (0 floor, 1 floor major, 2 X axis, 3 Z axis, 4 wall/ceiling).
+function referenceRoomLines(lo,hi,n=10){const span=Math.max(1e-6,...hi.map((v,k)=>v-lo[k])),cell=gridCell(span),cx=Math.round((lo[0]+hi[0])/2/cell)*cell,cz=Math.round((lo[2]+hi[2])/2/cell)*cell,
+ half=n*cell,x0=cx-half,x1=cx+half,z0=cz-half,z1=cz+half,y0=lo[1],y1=y0+2*half,L=[],seg=(a,b,k)=>L.push(...a,k,...b,k);
+ for(let i=0;i<=2*n;i++){const x=x0+i*cell,z=z0+i*cell,y=y0+i*cell,fl=i%5?0:1;
+  seg([x,y0,z0],[x,y0,z1],Math.abs(x)<cell/2?3:fl);seg([x0,y0,z],[x1,y0,z],Math.abs(z)<cell/2?2:fl);   // floor
+  seg([x,y1,z0],[x,y1,z1],4);seg([x0,y1,z],[x1,y1,z],4);                                             // ceiling
+  for(const zz of [z0,z1]){seg([x,y0,zz],[x,y1,zz],4);seg([x0,y,zz],[x1,y,zz],4)}                       // front/back walls
+  for(const xx of [x0,x1]){seg([xx,y0,z],[xx,y1,z],4);seg([xx,y,z0],[xx,y,z1],4)}}                      // side walls
+ return L}
+function gridCell(span){const raw=Math.max(span,1e-6)/4,e=10**Math.floor(Math.log10(raw)),m=raw/e;return e*(m<1.5?1:m<3.5?2:m<7.5?5:10)}
+function drawReferenceGrid(V){const B=stageBounds||sceneBounds;if(!B||gallery)return;const lines=referenceRoomLines(...B);let far=0;for(let i=0;i<lines.length;i+=4)far=Math.max(far,Math.hypot(lines[i]-ctr[0],lines[i+1]-ctr[1],lines[i+2]-ctr[2]));const PV=mul(pr(cv.clientWidth/Math.max(1,cv.clientHeight),Math.max(sceneRadius/10000,1e-3),dist+far*1.05),V);gl.disable(gl.DEPTH_TEST);
+ gl.useProgram(gridProgram);gl.bindBuffer(gl.ARRAY_BUFFER,gridBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lines),gl.DYNAMIC_DRAW);gl.disableVertexAttribArray(1);gl.disableVertexAttribArray(2);gl.vertexAttribPointer(0,4,gl.FLOAT,false,16,0);gl.uniformMatrix4fv(gridMatrix,false,PV);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.depthMask(false);gl.drawArrays(gl.LINES,0,lines.length/4);gl.depthMask(true);gl.disable(gl.BLEND);gl.enable(gl.DEPTH_TEST);
  gl.useProgram(pg);gl.bindBuffer(gl.ARRAY_BUFFER,buf);for(let i=0;i<3;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,36,i*12)}
 }
 const mul=(a,b)=>{const r=Array(16).fill(0);for(let i=0;i<4;i++)for(let j=0;j<4;j++)for(let k=0;k<4;k++)r[j*4+i]+=a[k*4+i]*b[j*4+k];return r};
@@ -258,7 +265,7 @@ const visibleParts=()=>parsed.filter(
 const shown=()=>all||sheet
   ?visibleParts()
   :[parsed[sel]].filter(P=>P&&visibleParts().includes(P));
-let pose=null,assembled=false,animParts=null;
+let pose=null,assembled=false;var animParts=null;  // var: rebuild() reads it before this line runs
 const poseOk=()=>!!pose&&(pose.animal||'dog')===name&&(!variant||parsed.filter(p=>p.sections.includes(variant)).every(p=>pose.parts.some(pp=>pp.dl===p.sym)));
 const poseIn=Object.assign(document.createElement('input'),{type:'file',accept:'.json',hidden:true});document.body.appendChild(poseIn);
 poseIn.onchange=async()=>{const f=poseIn.files[0];poseIn.value='';if(!f)return;try{const j=JSON.parse(await f.text());if(!Array.isArray(j.parts))throw 0;pose=j;assembled=true;all=false;sheet=false;ui();rebuild(true);info()}catch(_){alert('Not a pose file from skeleton_preview.py')}};
@@ -277,7 +284,8 @@ let n=[(b[1]-a[1])*(c[2]-a[2])-(b[2]-a[2])*(c[1]-a[1]),(b[2]-a[2])*(c[0]-a[0])-(
 const l=Math.hypot(...n)||1;n=n.map(x=>x/l);if(!gallery&&selectedParts.has(P.sym))col.splice(0,3,...col.map((v,k)=>v*.25+[.08,.8,1][k]*.75));else if(!gallery&&hoverSym===P.sym)col.splice(0,3,...col.map(v=>Math.min(1,v*.55+.45)));const vcol=t.c<0&&!partColors[P.sym]?.['808080FF']&&!map['808080FF']&&useVC&&hoverSym!==P.sym&&!selectedParts.has(P.sym)&&selectedSym!==P.sym&&Array.isArray(t0.v[0].c);for(const [i,v] of t.v.entries()){d.push(...v,...(vcol?t0.v[ord[i]].c:col),...n);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],v[k]);mx[k]=Math.max(mx[k],v[k]);anchor.mn[k]=Math.min(anchor.mn[k],v[k]);anchor.mx[k]=Math.max(anchor.mx[k],v[k])}}}}
 worldLabels=[...anchors.values()].filter(a=>Number.isFinite(a.mn[0])).map(a=>({...a,point:a.mn.map((v,k)=>(v+a.mx[k])/2)}));
 nv=d.length/9;gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(d),gl.STATIC_DRAW);
-sceneBounds=nv?[mn,mx]:null;if(nv)sceneRadius=Math.max(1,Math.hypot(...mx.map((v,k)=>(v-mn[k])/2)));if(fit)frameCamera();need();updateFloatingLabels()}
+sceneBounds=nv?[mn,mx]:null;if(!nv)stageBounds=null;else if(!animParts||!stageBounds)stageBounds=[mn.slice(),mx.slice()];  // grid and ground stay put while an animation plays
+if(nv)sceneRadius=Math.max(1,Math.hypot(...mx.map((v,k)=>(v-mn[k])/2)));if(fit)frameCamera();need();updateFloatingLabels()}
 function ui(){updateModelStates();if(typeof animSync==='function')animSync();window.ModelTextureTools?.refresh?.();const L=$('parts');L.innerHTML='';if(gallery){$('animal-field').style.display='none';$('variant-field').style.display='none';$('edit-side').classList.add('gallery-hidden');$('source-panel').style.display='none';$('gallery-action').style.margin='8px 0';$('parts-panel').style.display='none';$('palette-panel').style.display='none';$('vc').parentElement.parentElement.style.display='none';$('info').style.display='none';$('mesh').style.display='none';$('actions').style.display='none';return}else{$('animal-field').style.display='';$('variant-field').style.display='';$('edit-side').classList.remove('gallery-hidden');$('source-panel').style.display='';$('parts-panel').style.display='';$('palette-panel').style.display='';$('vc').parentElement.parentElement.style.display='';$('info').style.display='';$('mesh').style.display='';$('actions').style.display='flex'}
 const mk=(t,on,f)=>{const r=document.createElement('button');r.type='button';r.className='row'+(on?' on':'');r.setAttribute('aria-pressed',String(on));r.innerHTML='<span>'+t+'</span>';r.onclick=f;L.appendChild(r)};
 
