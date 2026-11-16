@@ -55,7 +55,7 @@ try{
  await run("key('x')");assert.equal(await run("$('colour').value"),'#000000');
  // Help and editor-specific routing on every built page.
  for(const name of ['model-editor','level-editor','dialogue','terrain']){
-  const t=await open(c,`http://127.0.0.1:8769/${name}.html`);await until(c,t,"document.readyState==='complete'");
+  const t=await open(c,`http://127.0.0.1:8769/${name}.html`);await until(c,t,"document.readyState==='complete'");await until(c,t,"Array.from(document.querySelectorAll('summary')).some(e=>e.textContent==='Keyboard shortcuts (?)')");
   await evaluate(c,t,"window.key=(key,options={})=>document.body.dispatchEvent(new KeyboardEvent('keydown',{key,bubbles:true,cancelable:true,...options}));key('?');");
   assert.equal(await evaluate(c,t,"Array.from(document.querySelectorAll('summary')).some(e=>e.textContent==='Keyboard shortcuts (?)'&&e.parentElement.open)"),true);
   if(name==='dialogue'){
