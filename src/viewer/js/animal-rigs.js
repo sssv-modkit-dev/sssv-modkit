@@ -6,7 +6,7 @@
 const OVL=a=>a-0x80294E50+0x6A6500;   // overlay A: RAM -> ROM (US 1.0)
 const RIGS={
  // bear: draw 0x80323680
- bear:{modes:['walk','run'],body:{kind:'biped',h:1296},legs:{len:1556,side:25},neck:[129,778,0,20],parts:[[1,2],[1,20],[2,15],[2,18,1],[7,8],[10,11,1],[1,20],[1,20]],setpose:[0x803A5EA0,0x803A5EB0,0x803A5EC0,0x803A5F24,0x803A5F5C]},
+ bear:{modes:['walk','run'],body:{kind:'biped',h:1296},legs:{len:1556,side:25},neck:[129,778,0,20],parts:[[1,2],[1,20],[2,15],[2,18,1],[7,8],[10,11,1],[1,20],[1,20]],setpose:[0x803A5EA0,0x803A5EB0,0x803A5EC0,0x803A5F24,0x803A5F5C],actions:{lift:{chain:[0x803A5ED8,0x803A5EE0,0x803A5EE8],tabs:[0x803A5F94,0x803A5FB0,0x803A5FCC,0x803A5FE8],steps:[[8,-1,0,0,32],[16,3,0,32,0],[16,-1,3,32,32],[20,3,1,0,32],[10,0,1,32,0],[10,-1,0,32,0]]}}},
  // camel: draw 0x8036d700
  camel:{body:{hl:312,hw:195,lift:1523},legs:{seg:3,front:{len:[703,625,312],bounce:117,bend:1},rear:{len:[703,625,312],bounce:117,bend:-1},tables:{walk:[0x803B4A20,0x803B4A94],run:[0x803B4A50,0x803B4AC4]},offs:{walk:[40,168,0,128],run:[0,128,0,128]}},neck:[1171,468,5],parts:[[19,20],[19,20],[1,19],[2,1],[2,1],[3,7],[5,13],[7,8],[13,14],[8,9],[14,15],[4,10,1],[6,16,1],[10,11,1],[16,17,1],[11,12,1],[17,18,1],[19,20],[19,20]],setpose:[0x803B4B08,0x803B4B20,0x803B4B38,0x803B4B64,0x803B4BC4]},
  // dog: draw 0x802ed108
@@ -38,13 +38,18 @@ function readSetPoses(dv,[par,chi,len,...angs]){const P=OVL(par),C=OVL(chi),L=OV
  ['ko','hit'].forEach((k,n)=>{const A=OVL(angs[n]),root=[0,2,4].map(b=>dv.getInt16(A+b));
   const ang=bones.map((_,i)=>[dv.getInt16(A+6+4*i),dv.getInt16(A+8+4*i)]);if(ang.every(([a,b])=>a>=-360&&a<=360&&b>=-360&&b<=360))out[k]={root,bones:bones.map((b,i)=>[...b,...ang[i]])}});
  return Object.keys(out).length?out:null}
+// Actions (0x802DB7C4 chains, no root): same parent/child/len layout; each table is one (a,b) pair per bone.
+function readAction(dv,act){const sp=readSetPoses(dv,[...act.chain,act.tabs[0],act.tabs[0]]);if(!sp)return null;const bones=sp.ko.bones.map(b=>b.slice(0,3));
+ const tabs=act.tabs.map(t=>{const A=OVL(t);return bones.map((_,i)=>[dv.getInt16(A+4*i),dv.getInt16(A+2+4*i)])});
+ if(tabs.some(t=>t.some(([a,b])=>a<-360||a>360||b<-360||b>360)))return null;return {bones,tabs,steps:act.steps}}
 function attach(poses,rom){const dv=new DataView(rom);let n=0;
  for(const [name,base] of Object.entries(RIGS)){const pose=poses[name];if(!pose||pose.parts.length!==base.parts.length)continue;
-  const sp=base.setpose&&readSetPoses(dv,base.setpose),rig=sp?{...base,setposes:sp}:base;
+  const sp=base.setpose&&readSetPoses(dv,base.setpose),acts={};for(const [k,a] of Object.entries(base.actions||{})){const r=readAction(dv,a);if(r)acts[k]=r}
+  let rig=sp?{...base,setposes:sp}:base;rig={...rig,actions:Object.keys(acts).length?acts:undefined};
   if(!rig.legs.tables){pose.anim=rig;n++;continue}   // two-legged rigs: no tables, all constants
   const tables={};for(const [mode,addrs] of Object.entries(rig.legs.tables)){const t=addrs.map(a=>readKeys(dv,a));if(t.every(Boolean))tables[mode]=t}
   if(!Object.keys(tables).length)continue;
   pose.anim={...rig,legs:{...rig.legs,tables}};n++}
  return n}
-root.SSSVAnimalRigs={RIGS,attach,readKeys,readSetPoses};
+root.SSSVAnimalRigs={RIGS,attach,readKeys,readSetPoses,readAction};
 })(typeof window==='undefined'?globalThis:window);

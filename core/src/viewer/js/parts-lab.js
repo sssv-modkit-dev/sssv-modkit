@@ -149,13 +149,13 @@ if(window.ModelEditorHistory){
 // Optional pack persistence saves only the edit project, not source geometry.
 if(window.ModelEditorHost){window.ModelEditorHost.captureSession=captureModelHistory;window.ModelEditorHost.restoreSession=restoreModelHistory;window.ModelEditorHost.buildConfig=allGameConfigs;window.ModelEditorHost.getProject=demoProject;window.ModelEditorHost.applyProject=applyModelProject;window.ModelEditorHost.expandSourceAnimals=()=>{if(demoMode)return;modelCategory='Animals';buildDemoPicker();};}
 addEventListener('model-source-ready',()=>{if(!demoMode){modelCategory='Animals';buildDemoPicker();}});
-// Walk/Run/Flap and set-pose (Hit, Knocked out) playback (RigPlayer, rig-player.js): only for assembled animals whose pack attached pose.anim.
+// Walk/Run/Flap, set-pose (Hit, Knocked out) and action (Lift & throw) playback (RigPlayer, rig-player.js): only for assembled animals whose pack attached pose.anim.
 var animBind=null,animMode="",animPhase=0,animTimer=0;
 function animStop(){animMode='';clearInterval(animTimer);animTimer=0;animParts=null;animBind=null}
 function animSync(){const ok=assembled&&!gallery&&poseOk()&&!!pose?.anim;if(animMode&&(!ok||animBind?.pose!==pose))animStop();
- for(const m of ['walk','run','flap','hit','ko']){const b=$('anim-'+m);if(!b)continue;b.hidden=!ok||!(pose.anim.modes||Object.keys(pose.anim.legs?.tables||{})).concat(Object.keys(pose.anim.setposes||{})).includes(m);b.setAttribute('aria-pressed',String(animMode===m));b.classList.toggle('on',animMode===m)}}
+ for(const m of ['walk','run','flap','hit','ko','lift']){const b=$('anim-'+m);if(!b)continue;b.hidden=!ok||!(pose.anim.modes||Object.keys(pose.anim.legs?.tables||{})).concat(Object.keys(pose.anim.setposes||{}),Object.keys(pose.anim.actions||{})).includes(m);b.setAttribute('aria-pressed',String(animMode===m));b.classList.toggle('on',animMode===m)}}
 function animStart(m){if(animMode===m){animStop();ui();rebuild(false);return}
- const bound=window.RigPlayer?.bind(pose);if(!bound)return;animStop();animBind={...bound,pose};animMode=m;animPhase=m==='ko'||m==='hit'?0:bound.rest.ph;
+ const bound=window.RigPlayer?.bind(pose);if(!bound)return;animStop();animBind={...bound,pose};animMode=m;animPhase=m==='ko'||m==='hit'||m==='lift'?0:bound.rest.ph;
  animTimer=setInterval(()=>{if(!animBind||animBind.pose!==pose||!assembled){animStop();ui();rebuild(false);return}
-  animPhase=m==='ko'?Math.min(255,animPhase+8):(animPhase+({run:8,flap:12,hit:8}[m]||5))&255;animParts=animBind.frame(animPhase,m);rebuild(false)},40);ui()}
-for(const m of ['walk','run','flap','hit','ko'])if($('anim-'+m))$('anim-'+m).onclick=()=>animStart(m);
+  animPhase=m==='ko'?Math.min(255,animPhase+8):(animPhase+({run:8,flap:12,hit:8,lift:3}[m]||5))&255;animParts=animBind.frame(animPhase,m);rebuild(false)},40);ui()}
+for(const m of ['walk','run','flap','hit','ko','lift'])if($('anim-'+m))$('anim-'+m).onclick=()=>animStart(m);
