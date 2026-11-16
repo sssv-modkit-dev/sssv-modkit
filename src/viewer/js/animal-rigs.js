@@ -23,6 +23,10 @@ const RIGS={
  kangaroo:{modes:['walk','run'],body:{kind:'hopper',h:731},legs:{x:487,up:650,step:975},parts:[[3,7],[4,10,1],[3,7],[4,10,1],[19,20],[1,2],[5,13],[13,14],[6,16,1],[16,17,1],[19,20],[19,20]],neck:[487,650,8]},
  // lion: draw 0x802f1730
  lion:{body:{hl:450,hw:600,lift:990},legs:{seg:3,front:{len:[525,675,0],bounce:210,bend:1},rear:{len:[525,675,0],bounce:210,bend:-1},tables:{walk:[0x803A50D0,0x803A5144],run:[0x803A5100,0x803A5174]},offs:{walk:[0,128,0,128],run:[100,128,0,30]}},neck:[15,900,4],parts:[[20,1],[20,1],[1,2],[3,7],[5,13],[4,10,1],[6,16,1],[7,8],[13,14],[10,11,1],[16,17,1],[1,20],[1,20]]},
+ // seagull: draw 0x80380920
+ seagull:{modes:['walk','flap'],body:{kind:'bird',L:312,h:812},head:[562,375,1],wings:[1125,125],tail:750,legs:{p1:812,p2:250,p3:312,p4:312},parts:[[1,2],[19,20],[2,26],[0,22],[0,24,1],[3,13],[3,7],[3,8],[3,9],[4,14],[4,10],[4,11],[4,12],[3,5],[4,27],[19,20],[19,20]]},
+ // vulture: draw 0x8036c0b0
+ vulture:{modes:['walk','flap'],body:{kind:'bird',L:250,h:650},head:[1200,500,1],wings:[900,100],tail:600,legs:{p1:650,p2:200,p3:250,p4:250},parts:[[1,2],[19,20],[1,19],[2,26],[0,22],[0,24,1],[3,13],[3,7],[3,8],[3,9],[4,14],[4,10],[4,11],[4,12],[19,20],[19,20]]},
 };
 function readKeys(dv,ram){const o=OVL(ram),out=[];if(o<0||o+48>dv.byteLength)return null;
  for(let i=0;i<8;i++){const k=[0,2,4].map(b=>dv.getInt16(o+6*i+b));if(k.some(a=>a<-180||a>180))return null;out.push(k)}return out}
