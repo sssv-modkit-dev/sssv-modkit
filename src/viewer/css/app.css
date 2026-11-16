@@ -196,3 +196,10 @@ a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,selec
  body.left-collapsed.right-collapsed{grid-template-columns:36px 6px minmax(0,1fr) 6px 36px}
  #mesh .mesh-hint{white-space:normal}
 }
+
+/* Animation timeline: floats at the bottom of the viewport while an animation is loaded */
+.anim-timeline{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);z-index:3;display:flex;align-items:center;gap:6px;width:min(560px,calc(100% - 24px));padding:6px 10px;background:var(--card);border:1px solid var(--ac);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+.anim-timeline[hidden]{display:none}
+.anim-timeline button{min-width:34px;padding:4px 6px;font-size:15px;line-height:1}
+.anim-timeline input[type=range]{flex:1;min-width:60px;accent-color:var(--ac)}
+.anim-timeline #anim-frame{font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
