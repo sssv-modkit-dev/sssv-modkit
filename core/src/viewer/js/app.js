@@ -258,12 +258,12 @@ const visibleParts=()=>parsed.filter(
 const shown=()=>all||sheet
   ?visibleParts()
   :[parsed[sel]].filter(P=>P&&visibleParts().includes(P));
-let pose=null,assembled=false;
+let pose=null,assembled=false,animParts=null;
 const poseOk=()=>!!pose&&(pose.animal||'dog')===name&&(!variant||parsed.filter(p=>p.sections.includes(variant)).every(p=>pose.parts.some(pp=>pp.dl===p.sym)));
 const poseIn=Object.assign(document.createElement('input'),{type:'file',accept:'.json',hidden:true});document.body.appendChild(poseIn);
 poseIn.onchange=async()=>{const f=poseIn.files[0];poseIn.value='';if(!f)return;try{const j=JSON.parse(await f.text());if(!Array.isArray(j.parts))throw 0;pose=j;assembled=true;all=false;sheet=false;ui();rebuild(true);info()}catch(_){alert('Not a pose file from skeleton_preview.py')}};
 const asmXf=pp=>{const r=pp.rows,t=pp.T;return w=>{const g=[0,1,2].map(k=>w[0]*r[0][k]+w[1]*r[1][k]+w[2]*r[2][k]+t[k]);return[g[0],g[2],-g[1]]}};
-function asmSources(){return pose.parts.flatMap(pp=>{const P=parsed.find(q=>q.sym===pp.dl);return P&&(!variant||!P.sections.length||P.sections.includes(variant))?[{P,offset:[0,0,0],local:[0,0,0],xf:asmXf(pp),flip:((pp.mirror&1)^((pp.mirror>>1)&1))===1}]:[]})}
+function asmSources(){return (animParts||pose.parts).flatMap(pp=>{const P=parsed.find(q=>q.sym===pp.dl);return P&&(!variant||!P.sections.length||P.sections.includes(variant))?[{P,offset:[0,0,0],local:[0,0,0],xf:asmXf(pp),flip:((pp.mirror&1)^((pp.mirror>>1)&1))===1}]:[]})}
 function variantSheetSources(parts,sections){
  const groups=sections.map(section=>{const items=parts.filter(P=>!P.sections.length||P.sections.includes(section)),layout=sheetLayout(items),points=items.flatMap(P=>P.tris.flatMap(t=>t.v.map(v=>v.map((x,k)=>x+layout[P.sym][k])))),bounds=points.length?bboxOf(points):[[0,0,0],[1,1,1]];return {items,layout,bounds}});
  const gap=Math.max(1,...groups.map(g=>g.bounds[1][0]-g.bounds[0][0]))*.15;let x=0;return groups.flatMap(g=>{const offset=[x-g.bounds[0][0],0,0];x+=g.bounds[1][0]-g.bounds[0][0]+gap;return g.items.map(P=>({P,offset,local:g.layout[P.sym]}))});
@@ -278,7 +278,7 @@ const l=Math.hypot(...n)||1;n=n.map(x=>x/l);if(!gallery&&selectedParts.has(P.sym
 worldLabels=[...anchors.values()].filter(a=>Number.isFinite(a.mn[0])).map(a=>({...a,point:a.mn.map((v,k)=>(v+a.mx[k])/2)}));
 nv=d.length/9;gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(d),gl.STATIC_DRAW);
 sceneBounds=nv?[mn,mx]:null;if(nv)sceneRadius=Math.max(1,Math.hypot(...mx.map((v,k)=>(v-mn[k])/2)));if(fit)frameCamera();need();updateFloatingLabels()}
-function ui(){updateModelStates();window.ModelTextureTools?.refresh?.();const L=$('parts');L.innerHTML='';if(gallery){$('animal-field').style.display='none';$('variant-field').style.display='none';$('edit-side').classList.add('gallery-hidden');$('source-panel').style.display='none';$('gallery-action').style.margin='8px 0';$('parts-panel').style.display='none';$('palette-panel').style.display='none';$('vc').parentElement.parentElement.style.display='none';$('info').style.display='none';$('mesh').style.display='none';$('actions').style.display='none';return}else{$('animal-field').style.display='';$('variant-field').style.display='';$('edit-side').classList.remove('gallery-hidden');$('source-panel').style.display='';$('parts-panel').style.display='';$('palette-panel').style.display='';$('vc').parentElement.parentElement.style.display='';$('info').style.display='';$('mesh').style.display='';$('actions').style.display='flex'}
+function ui(){updateModelStates();if(typeof animSync==='function')animSync();window.ModelTextureTools?.refresh?.();const L=$('parts');L.innerHTML='';if(gallery){$('animal-field').style.display='none';$('variant-field').style.display='none';$('edit-side').classList.add('gallery-hidden');$('source-panel').style.display='none';$('gallery-action').style.margin='8px 0';$('parts-panel').style.display='none';$('palette-panel').style.display='none';$('vc').parentElement.parentElement.style.display='none';$('info').style.display='none';$('mesh').style.display='none';$('actions').style.display='none';return}else{$('animal-field').style.display='';$('variant-field').style.display='';$('edit-side').classList.remove('gallery-hidden');$('source-panel').style.display='';$('parts-panel').style.display='';$('palette-panel').style.display='';$('vc').parentElement.parentElement.style.display='';$('info').style.display='';$('mesh').style.display='';$('actions').style.display='flex'}
 const mk=(t,on,f)=>{const r=document.createElement('button');r.type='button';r.className='row'+(on?' on':'');r.setAttribute('aria-pressed',String(on));r.innerHTML='<span>'+t+'</span>';r.onclick=f;L.appendChild(r)};
 
 cur.p.forEach((p,i)=>{

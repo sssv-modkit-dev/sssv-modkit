@@ -74,6 +74,7 @@ async function loadROM(ab,filename,restored=false){
     if(window.SSSVAnimalPoses){
       const captured=await window.SSSVAnimalPoses.load(Object.keys(partsTable).filter(n=>window.SSSVAnimalPoses.names().includes(n)));
       Object.assign(BUNDLED_POSES,captured.poses,propPoses(partsTable));
+      try{window.SSSVAnimalRigs?.attach(BUNDLED_POSES,ab)}catch(err){console.warn('Walk/run rigs unavailable: '+err.message)}
       for(const [name,error] of Object.entries(captured.errors))console.warn('Skipped '+name+' pose: '+error);
     }
     currentSourceHash=hash;currentSourceBytes=ab;

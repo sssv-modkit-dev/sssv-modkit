@@ -51,6 +51,7 @@ def main():
         [sys.executable, 'tests/test_part_colors.py'],
         ['node', '--check', 'src/viewer/js/parts-table.js'],
         ['node', '--check', 'src/viewer/js/model-source-rom.js'],
+        ['node', '--check', 'src/viewer/js/animal-rigs.js'],
         [sys.executable, 'tests/test_builder.py'],
         [sys.executable, 'tests/make_build_fixtures.py'],
         [sys.executable, 'tests/test_demo_bundle.py'],

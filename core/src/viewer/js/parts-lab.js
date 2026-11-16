@@ -149,3 +149,13 @@ if(window.ModelEditorHistory){
 // Optional pack persistence saves only the edit project, not source geometry.
 if(window.ModelEditorHost){window.ModelEditorHost.captureSession=captureModelHistory;window.ModelEditorHost.restoreSession=restoreModelHistory;window.ModelEditorHost.buildConfig=allGameConfigs;window.ModelEditorHost.getProject=demoProject;window.ModelEditorHost.applyProject=applyModelProject;window.ModelEditorHost.expandSourceAnimals=()=>{if(demoMode)return;modelCategory='Animals';buildDemoPicker();};}
 addEventListener('model-source-ready',()=>{if(!demoMode){modelCategory='Animals';buildDemoPicker();}});
+// Walk/Run playback (RigPlayer, rig-player.js): only for assembled animals whose pack attached pose.anim.
+var animBind=null,animMode="",animPhase=0,animTimer=0;
+function animStop(){animMode='';clearInterval(animTimer);animTimer=0;animParts=null;animBind=null}
+function animSync(){const ok=assembled&&!gallery&&poseOk()&&!!pose?.anim;if(animMode&&(!ok||animBind?.pose!==pose))animStop();
+ for(const m of ['walk','run']){const b=$('anim-'+m);if(!b)continue;b.hidden=!ok||!pose.anim.legs?.tables?.[m];b.setAttribute('aria-pressed',String(animMode===m));b.classList.toggle('on',animMode===m)}}
+function animStart(m){if(animMode===m){animStop();ui();rebuild(false);return}
+ const bound=window.RigPlayer?.bind(pose);if(!bound)return;animStop();animBind={...bound,pose};animMode=m;animPhase=bound.rest.ph;
+ animTimer=setInterval(()=>{if(!animBind||animBind.pose!==pose||!assembled){animStop();ui();rebuild(false);return}
+  animPhase=(animPhase+(m==='run'?8:5))&255;animParts=animBind.frame(animPhase,m);rebuild(false)},40);ui()}
+for(const m of ['walk','run'])if($('anim-'+m))$('anim-'+m).onclick=()=>animStart(m);
