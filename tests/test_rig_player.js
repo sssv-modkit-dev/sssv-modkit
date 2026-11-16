@@ -32,4 +32,8 @@ const Z=R.setPoseJoints(sp,0,B);assert.deepEqual([Z[0],Z[1],Z[19]],[[0,0,400],[0
 const P=R.setPoseJoints(sp,32,B),ta=(600*sn(27))>>8;
 assert.deepEqual(P[1],[0,390,190]);assert.ok(Math.abs(P[19][0]-((sn(56)*ta)>>8))<=1&&Math.abs(P[19][1]-(390+((cs(56)*ta)>>8)))<=1&&Math.abs(P[19][2]-(190+((600*cs(27))>>8)))<=1);
 assert.deepEqual([0,32,100,200,255].map(p=>R.setPoseWeight('hit',p)),[0,32,32,28,1]);assert.equal(R.setPoseWeight('ko',255),32);
-console.log('Rig player: bind, rest frame, leg swing, three-bone legs, bird wings and set poses passed.');
+// actions: chain steps lay the base table, then blend the next; the root stays where the skeleton put it
+const act={bones:[[0,1,100]],tabs:[[[0,0]],[[90,90]]],steps:[[10,-1,0,0,32],[10,0,1,0,32]]},AB=[[0,0,500],[0,100,500]];
+assert.deepEqual(R.actionJoints(act,0,AB),AB);assert.deepEqual(R.actionJoints(act,128,AB)[1],[0,0,600]);
+const end=R.actionJoints(act,255,AB)[1];assert.ok(end[0]>90&&Math.abs(end[2]-500)<20,'second step swings the bone level');
+console.log('Rig player: bind, rest frame, leg swing, three-bone legs, bird wings, set poses and actions passed.');

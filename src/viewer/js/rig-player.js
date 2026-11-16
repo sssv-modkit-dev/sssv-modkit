@@ -105,15 +105,21 @@ function inv(M){const [[a,b,c],[d,e,f],[g,h,i]]=M,A=e*i-f*h,B=f*g-d*i,C=d*h-e*g,
 // the pose direction len*(sin a sin b, sin a cos b, cos a), weight t/32 (slerp weights, table 0x803A2D90).
 // ko = knocked out (held), hit = hit reaction (0x802DBB80: in over 2 frames, hold, out; 14 frames in all).
 function setPoseWeight(mode,phase){const u=(phase&255)>>1;if(mode==='ko')return Math.min(32,phase>>2);return u<=16?2*u:u<=96?32:128-u}
-function setPoseJoints(sp,t,B){const J=B.map(v=>v&&v.slice()),f=t/32;J[0]=[0,1,2].map(k=>(B[0][k]*(32-t)+sp.root[k]*t)>>5);
+function setPoseJoints(sp,t,B){const J=B.map(v=>v&&v.slice()),f=t/32;if(sp.root)J[0]=[0,1,2].map(k=>(B[0][k]*(32-t)+sp.root[k]*t)>>5);
  for(const [p,c,l,a,b] of sp.bones){if(!J[p])continue;const ta=(l*sin(a))>>8,tg=[(sin(b)*ta)>>8,(cos(b)*ta)>>8,(l*cos(a))>>8];
   const cur=B[c]&&B[p]?B[c].map((v,k)=>v-B[p][k]):tg,lc=Math.hypot(...cur)||1,lt=Math.hypot(...tg)||1;
   let w=Math.acos(Math.max(-1,Math.min(1,cur.reduce((s,v,k)=>s+v*tg[k],0)/(lc*lt))));w=Math.min(w,179*RAD);
   const sw=Math.sin(w),wa=sw<1e-6?f:Math.sin(f*w)/sw,wb=sw<1e-6?1-f:Math.sin((1-f)*w)/sw;
   J[c]=J[p].map((v,k)=>v+Math.trunc(wa*tg[k]+wb*cur[k]))}
  return J}
-function rigFrames(rig,phase,mode,rest){const sp=rig.setposes&&rig.setposes[mode],
- J=sp&&rest?setPoseJoints(sp,setPoseWeight(mode,phase),joints(rig,rest.ph,rest.mode)):joints(rig,phase,mode),f=rig.parts.map(p=>p&&partMatrix(J,p[0],p[1],p[2]||0,p[3]));f.J=J;return f}
+// Actions (bear lift & throw): chains without a root (0x802DB7C4) applied in steps [frames, base, table, w0, w1];
+// a step first lays the base table fully (weight 32), then blends the table in with a weight from w0 to w1.
+function actionJoints(act,phase,B){const total=act.steps.reduce((s,x)=>s+x[0],0);let fr=Math.floor((phase&255)*total/256);
+ for(const [n,base,tab,w0,w1] of act.steps){if(fr>=n){fr-=n;continue}const t=Math.round(w0+(w1-w0)*fr/n),ch=i=>({bones:act.bones.map((b,k)=>[...b,...act.tabs[i][k]])});
+  let J=base>=0?setPoseJoints(ch(base),32,B):B;return tab>=0?setPoseJoints(ch(tab),t,J):J}
+ return B}
+function rigFrames(rig,phase,mode,rest){const sp=rig.setposes&&rig.setposes[mode],act=rig.actions&&rig.actions[mode],
+ J=(sp||act)&&rest?(act?actionJoints(act,phase,joints(rig,rest.ph,rest.mode)):setPoseJoints(sp,setPoseWeight(mode,phase),joints(rig,rest.ph,rest.mode))):joints(rig,phase,mode),f=rig.parts.map(p=>p&&partMatrix(J,p[0],p[1],p[2]||0,p[3]));f.J=J;return f}
 // Bind the rig to a captured pose. Parts are rebuilt from the game skeleton itself (joints stay connected);
 // the capture supplies only the view frame (rotation from a body bone, scale and offset fitted on the part
 // centres) and each part's size (its captured row lengths).
@@ -135,5 +141,5 @@ function bind(pose){
  return {modes,rest:best,setposes:Object.keys(rig.setposes||{}),frame(phase,mode){const w=rigFrames(rig,phase&255,mode,best);return pose.parts.map((pp,i)=>{if(w[i])return {...pp,...place(w[i],i)};
   const j=anchor[i],a=w.J[j],b=J0[j];if(!a||!b)return pp;const d=vm(a.map((v,k)=>(v-b[k])/8),Rot).map(v=>v*best.s);return {...pp,T:pp.T.map((v,k)=>v+d[k])}})}};
 }
-root.RigPlayer={keyAngle,quadJoints,bipedJoints,joints,setPoseJoints,setPoseWeight,partMatrix,bind};
+root.RigPlayer={keyAngle,quadJoints,bipedJoints,joints,setPoseJoints,setPoseWeight,actionJoints,partMatrix,bind};
 })(typeof window==='undefined'?globalThis:window);
