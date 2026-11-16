@@ -109,8 +109,10 @@ async function dialogue() {
     preview(text ?? ''); $('encoding').textContent = '';
     $('holds').replaceChildren();
     const records = Number(bank) < 31 ? data.levels[String(Number(bank)+1)] || [] : [];
-    for (const r of records.filter(r => r.op === 'message' && String(r.text) === line)) timingInput($('holds'), r, 'hold_seconds', `Step ${r.i}: shown for, seconds`);
-    if (!$('holds').children.length) $('holds').textContent = 'No decoded message timing for this line.';
+    const uses = records.filter(r => r.op === 'message' && String(r.text) === line);
+    for (const [n, r] of uses.entries()) { const row = timingInput($('holds'), r, 'hold_seconds', uses.length > 1 ? `Time on screen, showing ${n + 1} of ${uses.length} (seconds)` : 'Time on screen (seconds)'); row.title = `Set by step ${r.i} of the level script`; }
+    if (uses.length) { const hint = document.createElement('p'); hint.className = 'mut'; hint.textContent = uses.length > 1 ? 'The level shows this line more than once; each showing has its own time.' : 'How long the level keeps this line on screen before moving on.'; $('holds').append(hint); }
+    if (!$('holds').children.length) $('holds').textContent = 'This line has no on-screen time in the level script (it is shown somewhere else, such as a menu or the pause screen).';
   }
   function listLines(preferred = line) {
     $('lines').replaceChildren(); $('lines-list').replaceChildren();
