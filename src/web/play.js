@@ -25,8 +25,20 @@ async function startGame(blob, name) {
   // Never phone home: no ads, no netplay (EmulatorJS leaves it off unless debug flags are set), no update check
   // (EmulatorJS only runs it on localhost, and the page CSP blocks it), no localization or other extra downloads.
   window.EJS_AdUrl = '';
+  // Classic+ code lives in Expansion Pak RAM: keep it on by default for both cores.
+  window.EJS_defaultOptions = { 'mupen64plus-ForceDisableExtraMem': 'False', 'parallel-n64-disable_expmem': 'enabled' };
   window.EJS_threads = false; // GitHub Pages does not supply COOP/COEP headers.
-  window.EJS_ready = () => { status.textContent = 'Emulator ready. Press Start Game in the player.'; };
+  window.EJS_ready = () => {
+    // EmulatorJS writes audio_latency = 64 (ms) into retroarch.cfg; N64 cores without threads crackle at that, so
+    // ask for a bigger buffer. Runs before Start Game, which is when the config file is written.
+    const GM = window.EJS_GameManager;
+    if (GM && GM.prototype.getRetroArchCfg && !GM.prototype.sssvAudio) {
+      const cfg = GM.prototype.getRetroArchCfg;
+      GM.prototype.getRetroArchCfg = function () { return cfg.call(this).replace(/^audio_latency = \d+$/m, 'audio_latency = 160'); };
+      GM.prototype.sssvAudio = true;
+    }
+    status.textContent = 'Emulator ready. Press Start Game in the player.';
+  };
   window.EJS_onGameStart = () => { status.textContent = 'Running. Use the player menu for controls and saves.'; };
   const loader = document.createElement('script');
   loader.src = window.EJS_pathtodata + 'loader.js';
