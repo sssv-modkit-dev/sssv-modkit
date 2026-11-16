@@ -16,5 +16,5 @@ for(const [name,rig] of Object.entries(RIGS)){
  assert.ok(f.every(x=>x.rows.flat().concat(x.T).every(Number.isFinite)),name+': finite frame');
  n++;
 }
-assert.ok(n>=8);
+assert.ok(n>=9);
 console.log('Animal rigs: '+n+' rigs match their captured poses and play.');

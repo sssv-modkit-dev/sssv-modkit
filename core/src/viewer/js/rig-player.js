@@ -58,7 +58,17 @@ function apeJoints(rig,phase,mode){
   const lift=Math.min(Math.max(-K[2],0),0x800);K[2]+=lift;J[hp][2]+=lift;F[2]+=lift+Math.min(Math.max(-F[2]-lift,0),0x800);J[kn]=K;J[kn+1]=F});
  neck(rig,J,phase);return J;
 }
-const joints=(rig,phase,mode)=>rig.body.kind==='biped'?bipedJoints(rig,phase,mode):rig.body.kind==='ape'?apeJoints(rig,phase,mode):quadJoints(rig,phase,mode);
+// Hopper (boxing kangaroo, 0x802BA614): body bounces h*sin(half phase) (run x2); legs (0x802C3C64 ->
+// 0x802C3F58): hip beside the pelvis, knee below it, foot a step forward and drops half the bounce.
+function hopperJoints(rig,phase,mode){
+ const {h}=rig.body,{x,up,step}=rig.legs,ph=phase&255,J=[],s=raw(ph>>1)>>7,bob=mode==='run'?(h*s)>>7:(h*s)>>8;
+ J[2]=[0,0,bob];J[0]=[0,0,bob+h];J[1]=[0,0,bob+2*h];
+ [[5,13,x],[6,16,-x]].forEach(([hp,kn,dx])=>{let g=-bob;if(g<0)g=g>>1;g=Math.max(-step,Math.min(step,g));
+  J[hp]=[dx,0,bob+up];J[kn]=[dx,-(step>>2),bob];J[kn+1]=[dx,-(step>>2)+step,bob+g]});
+ neck(rig,J,phase);return J;
+}
+const KINDS={biped:bipedJoints,ape:apeJoints,hopper:hopperJoints};
+const joints=(rig,phase,mode)=>(KINDS[rig.body.kind]||quadJoints)(rig,phase,mode);
 // Part matrix (main 0x80126388): X along the bone, Y level and perpendicular, Z completes; origin = midpoint/8.
 // keep (draw arg 9): pick the perpendicular so it never flips while the bone sways through vertical.
 function partMatrix(J,a,b,mirror,keep){
