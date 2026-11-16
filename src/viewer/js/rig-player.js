@@ -60,9 +60,11 @@ function apeJoints(rig,phase,mode){
 }
 const joints=(rig,phase,mode)=>rig.body.kind==='biped'?bipedJoints(rig,phase,mode):rig.body.kind==='ape'?apeJoints(rig,phase,mode):quadJoints(rig,phase,mode);
 // Part matrix (main 0x80126388): X along the bone, Y level and perpendicular, Z completes; origin = midpoint/8.
-function partMatrix(J,a,b,mirror){
+// keep (draw arg 9): pick the perpendicular so it never flips while the bone sways through vertical.
+function partMatrix(J,a,b,mirror,keep){
  const A=J[a],B=J[b];if(!A||!B)return null;const d=B.map((v,k)=>v-A[k]),[dx,dy,dz]=d;let p,q;if(!dx&&!dy&&!dz)return null;
- if(!dx&&!dy){p=[1,0,0];q=[0,-1,0]}else{p=dy>=0?[dy,-dx,0]:[-dy,dx,0];q=[-p[1]*dz,dz*p[0],dx*p[1]-dy*p[0]]}
+ if(!dx&&!dy){if(keep){p=[0,1,0];q=[1,0,0]}else{p=[1,0,0];q=[0,-1,0]}}
+ else{p=keep?(dx>0?[-dy,dx,0]:[dy,-dx,0]):(dy>=0?[dy,-dx,0]:[-dy,dx,0]);q=[-p[1]*dz,dz*p[0],dx*p[1]-dy*p[0]]}
  const n=v=>{const l=Math.hypot(...v)||1;return v.map(x=>x/l)};let r=[n(d),n(p),n(q)];
  if(mirror&1)r[1]=r[1].map(x=>-x);if(mirror&2)r[2]=r[2].map(x=>-x);
  return {R:r,T:A.map((v,k)=>(v+B[k])/16)};
@@ -71,7 +73,7 @@ const mul=(A,B)=>A.map(r=>[0,1,2].map(k=>r[0]*B[0][k]+r[1]*B[1][k]+r[2]*B[2][k])
 const vm=(v,B)=>[0,1,2].map(k=>v[0]*B[0][k]+v[1]*B[1][k]+v[2]*B[2][k]);
 function inv(M){const [[a,b,c],[d,e,f],[g,h,i]]=M,A=e*i-f*h,B=f*g-d*i,C=d*h-e*g,det=a*A+b*B+c*C;if(Math.abs(det)<1e-12)return null;
  return [[A,c*h-b*i,b*f-c*e],[B,a*i-c*g,c*d-a*f],[C,b*g-a*h,a*e-b*d]].map(r=>r.map(x=>x/det))}
-function rigFrames(rig,phase,mode){const J=joints(rig,phase,mode),f=rig.parts.map(p=>p&&partMatrix(J,p[0],p[1],p[2]||0));f.J=J;return f}
+function rigFrames(rig,phase,mode){const J=joints(rig,phase,mode),f=rig.parts.map(p=>p&&partMatrix(J,p[0],p[1],p[2]||0,p[3]));f.J=J;return f}
 // Bind the rig to a captured pose. Parts are rebuilt from the game skeleton itself (joints stay connected);
 // the capture supplies only the view frame (rotation from a body bone, scale and offset fitted on the part
 // centres) and each part's size (its captured row lengths).
