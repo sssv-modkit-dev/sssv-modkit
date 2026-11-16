@@ -129,7 +129,7 @@ function danceJoints(rig,phase){const d=rig.actions.dance,src=rig.actions[d.chai
  const J=joints(rig,(ph*4)&255,'run'),hop=Math.round(Math.sin(f*Math.PI)*(d.hop||0)),sway=Math.round(Math.sin(ph/64*2*Math.PI)*(d.sway||0));
  for(const v of J)if(v){v[0]+=sway;v[2]+=hop}
  const pump=Math.round(Math.sin(f*2*Math.PI)*14),[s1,a1,s2,a2]=d.arms,cross=d.cross||35,ang={};
- ang[s1]=lasso?[50,90]:null;ang[a1]=lasso?[20,Math.floor(ph*360/64)%360]:[100+pump,360-cross];ang[a2]=[100+pump,cross];
+ ang[s1]=lasso?[90,90]:null;ang[a1]=lasso?[20,Math.floor(ph*360/64)%360]:[100+pump,360-cross];ang[a2]=[100+pump,cross];
  if(d.head!=null)ang[d.head]=[80+pump,0];
  if(!src)return J;const rest=src.tabs[d.rest||0];
  return setPoseJoints({bones:src.bones.map((b,k)=>[...b,...(ang[b[1]]||rest[k])])},32,J)}
