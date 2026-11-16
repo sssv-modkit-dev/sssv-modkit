@@ -79,6 +79,8 @@ function birdJoints(rig,phase,mode){
  const [w1,w2]=rig.wings,[a,b]=mode==='flap'?flapAngles(Math.floor(ph*37/256)):[90+(raw(ph)>>11),90+(raw(ph)>>11)];
  J[22]=[(w1*sin(a))>>8,0,h+((w1*cos(a))>>8)];J[23]=[J[22][0]+((w2*sin(b))>>8),0,J[22][2]+((w2*cos(b))>>8)];J[24]=[-J[22][0],0,J[22][2]];J[25]=[-J[23][0],0,J[23][2]];
  J[26]=[0,-L-((rig.tail*cos(20))>>8),h+((rig.tail*sin(20))>>8)];
+ // perching birds (parrot, feet 0x802C4448): one foot point under the body, nothing walks
+ if(rig.legs.p2===undefined){J[5]=[0,0,h-rig.legs.p1];return J}
  const {p1,p2,p3,p4}=rig.legs,walk=mode==='walk',u=(ph*4)&255,curl=v=>v<65||v>191?0:(((raw((v*2+64)&255)>>7)+256)*p4)>>10;
  const sw=walk?((raw(u)>>7)*p4)>>8:0,la=walk?curl(u):0,lc=walk?curl((u+128)&255):0,z=h-p1,s=(p4*11)>>4;
  J[5]=[0,sw,z];J[27]=[0,-sw,z];J[3]=[-p2,sw,z];J[4]=[p2,-sw,z];J[13]=[-p2,sw-p3,z];J[14]=[p2,-sw-p3,z];
@@ -119,8 +121,21 @@ function actionJoints(act,phase,B){const total=act.steps.reduce((s,x)=>s+x[0],0)
  for(const [n,base,tab,w0,w1,osc] of act.steps){if(fr>=n){fr-=n;continue}const t=osc?Math.min(32,17+(raw((fr&15)*16)>>11)):Math.round(w0+(w1-w0)*fr/n),ch=i=>({bones:act.bones.map((b,k)=>[...b,...act.tabs[i][k]])});
   let J=base>=0?setPoseJoints(ch(base),32,B):B;return tab>=0?setPoseJoints(ch(tab),t,J):J}
  return B}
-function rigFrames(rig,phase,mode,rest){const sp=rig.setposes&&rig.setposes[mode],act=rig.actions&&rig.actions[mode],
- J=(sp||act)&&rest?(act?actionJoints(act,phase,joints(rig,rest.ph,rest.mode)):setPoseJoints(sp,setPoseWeight(mode,phase),joints(rig,rest.ph,rest.mode))):joints(rig,phase,mode),f=rig.parts.map(p=>p&&partMatrix(J,p[0],p[1],p[2]||0,p[3]));f.J=J;return f}
+// Dance (a fan extra, not a game animation): 8 beats a loop (32 phase steps a beat). Body and legs are the rig's own
+// run cycle at 4x rate plus a hop each beat and a side sway; arms reuse an action chain (parent/child/len, rest angles
+// from one of its tables). Beats 0-3 horse ride: forearms crossed in front, pumping like reins; beats 4-7 lasso: the
+// first arm raised and circling overhead (one turn every 2 beats) while the other keeps the reins.
+function danceJoints(rig,phase){const d=rig.actions.dance,src=rig.actions[d.chain],ph=phase&255,f=(ph&31)/32,lasso=ph>=128;
+ const J=joints(rig,(ph*4)&255,'run'),hop=Math.round(Math.sin(f*Math.PI)*(d.hop||0)),sway=Math.round(Math.sin(ph/64*2*Math.PI)*(d.sway||0));
+ for(const v of J)if(v){v[0]+=sway;v[2]+=hop}
+ const pump=Math.round(Math.sin(f*2*Math.PI)*14),[s1,a1,s2,a2]=d.arms,cross=d.cross||35,ang={};
+ ang[s1]=lasso?[90,90]:null;ang[a1]=lasso?[20,Math.floor(ph*360/64)%360]:[100+pump,360-cross];ang[a2]=[100+pump,cross];
+ if(d.head!=null)ang[d.head]=[80+pump,0];
+ if(!src)return J;const rest=src.tabs[d.rest||0];
+ return setPoseJoints({bones:src.bones.map((b,k)=>[...b,...(ang[b[1]]||rest[k])])},32,J)}
+function rigFrames(rig,phase,mode,rest){const sp=rig.setposes&&rig.setposes[mode],act=rig.actions&&rig.actions[mode];
+ if(act&&act.chain&&typeof act.chain==='string'){const J=danceJoints(rig,phase),f=rig.parts.map(p=>p&&partMatrix(J,p[0],p[1],p[2]||0,p[3]));f.J=J;return f}
+ const J=(sp||act)&&rest?(act?actionJoints(act,phase,joints(rig,rest.ph,rest.mode)):setPoseJoints(sp,setPoseWeight(mode,phase),joints(rig,rest.ph,rest.mode))):joints(rig,phase,mode),f=rig.parts.map(p=>p&&partMatrix(J,p[0],p[1],p[2]||0,p[3]));f.J=J;return f}
 // Bind the rig to a captured pose. Parts are rebuilt from the game skeleton itself (joints stay connected);
 // the capture supplies only the view frame (rotation from a body bone, scale and offset fitted on the part
 // centres) and each part's size (its captured row lengths).
@@ -142,5 +157,5 @@ function bind(pose){
  return {modes,rest:best,setposes:Object.keys(rig.setposes||{}),frame(phase,mode){const w=rigFrames(rig,phase&255,mode,best);return pose.parts.map((pp,i)=>{if(w[i])return {...pp,...place(w[i],i)};
   const j=anchor[i],a=w.J[j],b=J0[j];if(!a||!b)return pp;const d=vm(a.map((v,k)=>(v-b[k])/8),Rot).map(v=>v*best.s);return {...pp,T:pp.T.map((v,k)=>v+d[k])}})}};
 }
-root.RigPlayer={keyAngle,quadJoints,bipedJoints,joints,setPoseJoints,setPoseWeight,actionJoints,partMatrix,bind};
+root.RigPlayer={keyAngle,quadJoints,bipedJoints,joints,setPoseJoints,setPoseWeight,actionJoints,danceJoints,partMatrix,bind};
 })(typeof window==='undefined'?globalThis:window);

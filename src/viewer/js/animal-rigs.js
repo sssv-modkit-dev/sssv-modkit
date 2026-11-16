@@ -6,7 +6,7 @@
 const OVL=a=>a-0x80294E50+0x6A6500;   // overlay A: RAM -> ROM (US 1.0)
 const RIGS={
  // bear: draw 0x80323680
- bear:{modes:['walk','run'],body:{kind:'biped',h:1296},legs:{len:1556,side:25},neck:[129,778,0,20],parts:[[1,2],[1,20],[2,15],[2,18,1],[7,8],[10,11,1],[1,20],[1,20]],setpose:[0x803A5EA0,0x803A5EB0,0x803A5EC0,0x803A5F24,0x803A5F5C],actions:{lift:{chain:[0x803A5ED8,0x803A5EE0,0x803A5EE8],tabs:[0x803A5F94,0x803A5FB0,0x803A5FCC,0x803A5FE8],steps:[[8,-1,0,0,32],[16,3,0,32,0],[16,-1,3,32,32],[20,3,1,0,32],[10,0,1,32,0],[10,-1,0,32,0]]}}},
+ bear:{modes:['walk','run'],body:{kind:'biped',h:1296},legs:{len:1556,side:25},neck:[129,778,0,20],parts:[[1,2],[1,20],[2,15],[2,18,1],[7,8],[10,11,1],[1,20],[1,20]],setpose:[0x803A5EA0,0x803A5EB0,0x803A5EC0,0x803A5F24,0x803A5F5C],actions:{lift:{chain:[0x803A5ED8,0x803A5EE0,0x803A5EE8],tabs:[0x803A5F94,0x803A5FB0,0x803A5FCC,0x803A5FE8],steps:[[8,-1,0,0,32],[16,3,0,32,0],[16,-1,3,32,32],[20,3,1,0,32],[10,0,1,32,0],[10,-1,0,32,0]]},dance:{chain:'lift',rest:3,arms:[7,8,10,11],head:20,hop:300,sway:250}}},
  // camel: draw 0x8036d700
  camel:{body:{hl:312,hw:195,lift:1523},legs:{seg:3,front:{len:[703,625,312],bounce:117,bend:1},rear:{len:[703,625,312],bounce:117,bend:-1},tables:{walk:[0x803B4A20,0x803B4A94],run:[0x803B4A50,0x803B4AC4]},offs:{walk:[40,168,0,128],run:[0,128,0,128]}},neck:[1171,468,5],parts:[[19,20],[19,20],[1,19],[2,1],[2,1],[3,7],[5,13],[7,8],[13,14],[8,9],[14,15],[4,10,1],[6,16,1],[10,11,1],[16,17,1],[11,12,1],[17,18,1],[19,20],[19,20]],setpose:[0x803B4B08,0x803B4B20,0x803B4B38,0x803B4B64,0x803B4BC4]},
  // dog: draw 0x802ed108
@@ -23,6 +23,8 @@ const RIGS={
  kangaroo:{modes:['walk','run'],body:{kind:'hopper',h:731},legs:{x:487,up:650,step:975},parts:[[3,7],[4,10,1],[3,7],[4,10,1],[19,20],[1,2],[5,13],[13,14],[6,16,1],[16,17,1],[19,20],[19,20]],neck:[487,650,8],setpose:[0x803B4C30,0x803B4C40,0x803B4C50,0x803B4C70,0x803B4CB4]},
  // lion: draw 0x802f1730
  lion:{body:{hl:450,hw:600,lift:990},legs:{seg:3,front:{len:[525,675,0],bounce:210,bend:1},rear:{len:[525,675,0],bounce:210,bend:-1},tables:{walk:[0x803A50D0,0x803A5144],run:[0x803A5100,0x803A5174]},offs:{walk:[0,128,0,128],run:[100,128,0,30]}},neck:[15,900,4],parts:[[20,1],[20,1],[1,2],[3,7],[5,13],[4,10,1],[6,16,1],[7,8],[13,14],[10,11,1],[16,17,1],[1,20],[1,20]],setpose:[0x803A51B8,0x803A51CC,0x803A51E0,0x803A5204,0x803A5250]},
+ // parrot: draw 0x80313790
+ parrot:{modes:['flap'],body:{kind:'bird',L:234,h:609},head:[468,468,0],wings:[375,562],tail:562,legs:{p1:609},parts:[[1,2],[1,19],[1,19],[1,19],[2,26],[2,26],[0,22],[22,23],[0,24,1],[24,25,1]],setpose:[0x803A56B0,0x803A56BC,0x803A56C8,0x803A56D8,0x803A5700]},
  // seagull: draw 0x80380920
  seagull:{modes:['walk','flap'],body:{kind:'bird',L:312,h:812},head:[562,375,1],wings:[1125,125],tail:750,legs:{p1:812,p2:250,p3:312,p4:312},parts:[[1,2],[19,20],[2,26],[0,22],[0,24,1],[3,13],[3,7],[3,8],[3,9],[4,14],[4,10],[4,11],[4,12],[3,5],[4,27],[19,20],[19,20]],setpose:[0x803B5770,0x803B5784,0x803B5798,0x803B57BC,0x803B580C]},
  // vulture: draw 0x8036c0b0
@@ -44,7 +46,7 @@ function readAction(dv,act){const sp=readSetPoses(dv,[...act.chain,act.tabs[0],a
  if(tabs.some(t=>t.some(([a,b])=>a<-360||a>360||b<-360||b>360)))return null;return {bones,tabs,steps:act.steps}}
 function attach(poses,rom){const dv=new DataView(rom);let n=0;
  for(const [name,base] of Object.entries(RIGS)){const pose=poses[name];if(!pose||pose.parts.length!==base.parts.length)continue;
-  const sp=base.setpose&&readSetPoses(dv,base.setpose),acts={};for(const [k,a] of Object.entries(base.actions||{})){const r=readAction(dv,a);if(r)acts[k]=r}
+  const sp=base.setpose&&readSetPoses(dv,base.setpose),acts={};for(const [k,a] of Object.entries(base.actions||{})){const r=typeof a.chain==='string'?a:readAction(dv,a);if(r)acts[k]=r}
   let rig=sp?{...base,setposes:sp}:base;rig={...rig,actions:Object.keys(acts).length?acts:undefined};
   if(!rig.legs.tables){pose.anim=rig;n++;continue}   // two-legged rigs: no tables, all constants
   const tables={};for(const [mode,addrs] of Object.entries(rig.legs.tables)){const t=addrs.map(a=>readKeys(dv,a));if(t.every(Boolean))tables[mode]=t}

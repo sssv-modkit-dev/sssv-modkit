@@ -30,7 +30,7 @@ for name, model in animals['models'].items():
 assert (DEMO / 'animals.json').stat().st_size < 120_000
 # Assembly poses: per-part transforms only ({animal, parts:[{dl, rows, T, mirror}]}, the viewer's pose import format).
 poses = sorted(p.name for p in (DEMO / 'poses').glob('*.json'))
-assert len(poses) == 25 and all(n + '.json' in poses for n in animals['models']), poses
+assert len(poses) == 26 and all(n + '.json' in poses for n in animals['models']), poses
 for path in (DEMO / 'poses').glob('*.json'):
     pose, name = json.loads(path.read_text()), path.stem
     symbols = {p['s'] for p in animals['models'][name]['p']} if name in animals['models'] else None
