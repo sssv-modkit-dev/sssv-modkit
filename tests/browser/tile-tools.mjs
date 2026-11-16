@@ -1,11 +1,12 @@
-﻿// ROM-free real canvas tests for tile tools and shared keyboard routing.
+// ROM-free real canvas tests for tile tools and shared keyboard routing.
 import {spawn,execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import assert from 'node:assert/strict';
 import {launch,open,evaluate,until,sleep,findChrome} from './cdp.mjs';
 if(!findChrome()){console.log('SKIP tile tools: Chrome unavailable');process.exit(0);}
-const site=path.resolve('.scratch/T059/site');
+const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'tile-tools-')),site=path.join(tmp,'site');
 execFileSync('python',['src/build_site.py','--pack','packs/sample','--out',site,'--no-vendor']);
 const server=spawn('python',['-m','http.server','8769','--bind','127.0.0.1','--directory',site],{stdio:'ignore',windowsHide:true});
 await sleep(500);const c=await launch(9349);
@@ -49,7 +50,7 @@ try{
  await c.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]},s);await sleep(100);
  assert.equal(await run('pixel(4,4)'),'101,67,33');
  await run("document.querySelector('.tile-tools').scrollIntoView({block:'start'});");
- const shot=await c.send('Page.captureScreenshot',{format:'png'},s);fs.writeFileSync('.scratch/T059/tile-tools-360.png',Buffer.from(shot.data,'base64'));
+ const shot=await c.send('Page.captureScreenshot',{format:'png'},s);fs.writeFileSync(path.join(tmp,'tile-tools-360.png'),Buffer.from(shot.data,'base64'));
  await run("key('b');const size=document.querySelector('.tile-tools select');size.value='3';size.onchange();$('colour').value='#ff00ff';stroke(10,10);");
  assert.equal(await run('pixel(9,9)'),'255,0,255');assert.equal(await run('pixel(11,11)'),'255,0,255');assert.equal(await run('pixel(12,12)'),'0,0,0');
  await run("key('x')");assert.equal(await run("$('colour').value"),'#000000');
