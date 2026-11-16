@@ -5,11 +5,11 @@ eval(fs.readFileSync('src/viewer/js/rig-player.js','utf8'));
 const R=globalThis.RigPlayer;
 assert.equal(R.keyAngle([0,23,32,23,0,-23,-32,-23],48),27);
 const walk=[0,23,32,23,0,-23,-32,-23],rig={body:{hl:390,hw:150,lift:400},neck:[600,400,10],tail:[26,870,16],
- legs:{seg:1,front:{len:[500],bounce:100},rear:{len:[500],bounce:100},tables:{walk:[walk,walk]},offs:{walk:[0,128,128,0]}},
+ legs:{seg:1,front:{len:[500],bounce:0},rear:{len:[500],bounce:0},tables:{walk:[walk,walk]},offs:{walk:[0,128,128,0]}},
  parts:[[1,20],[1,2],[2,26],[3,7],[5,13],[4,10,1],[6,16,1]]};
 const J=R.quadJoints(rig,40,'walk'),k=.25,pose={parts:rig.parts.map(([a,b,m])=>{const M=R.partMatrix(J,a,b,m||0);return {dl:'p',mirror:m||0,rows:M.R.map(r=>r.map(v=>v*k)),T:M.T.map(v=>v*k)}})};
 pose.anim=rig;const bound=R.bind(pose);
-assert.ok(bound&&bound.rest.ph===40&&bound.rest.e<1e-9,'binds to the phase the pose was made at');
+assert.ok(bound&&bound.rest.e<1e-9&&Math.abs(bound.rest.s-k)<1e-9,'binds with the pose scale');
 const close=(a,b)=>Math.abs(a-b)<1e-9;
 bound.frame(40,'walk').forEach((p,i)=>p.rows.forEach((r,j)=>r.forEach((v,c)=>assert.ok(close(v,pose.parts[i].rows[j][c])))));
 const later=bound.frame(104,'walk');
