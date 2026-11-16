@@ -129,7 +129,7 @@ try{
   }else{
    await check("!document.getElementById('mobile-dock')",'desktop unchanged');
    await check("!document.getElementById('mobile-desktop-tip')",'no desktop tip on desktop');
-   if(page==='model-editor')await check("getComputedStyle(document.body).display==='grid'&&document.getElementById('view-settings').parentElement.id==='side'",'desktop model columns and tools');
+   if(page==='model-editor')await check("getComputedStyle(document.body).display==='grid'&&document.getElementById('view-settings').parentElement.id!=='side'&&getComputedStyle(document.getElementById('view-settings')).position==='absolute'",'desktop model columns and floating viewport panel');
    if(page==='level-editor')await check("document.getElementById('project-panel').parentElement.id==='level-right'&&getComputedStyle(document.getElementById('objects-panel')).position==='fixed'",'desktop anchored tree and rail');
   }
   await js(s,'localStorage.clear()');

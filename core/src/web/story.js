@@ -90,7 +90,15 @@ async function dialogue() {
     const row = document.createElement('label'), input = document.createElement('input');
     row.textContent = label; input.type = 'number'; input.min = '0'; input.max = '32511'; input.step = '1'; input.value = record[field];
     input.oninput = () => { record[field] = input.value === '' ? null : Number(input.value); changed(); };
-    row.append(input); parent.append(row);
+    row.append(input);
+    if (field === 'frames') { const out = document.createElement('output'); out.className = 'mut'; const show = () => { const f = Number(input.value) || 0; out.textContent = ` ≈ ${(f / 30).toFixed(f < 300 ? 1 : 0)} s`; }; input.addEventListener('input', show); show(); row.append(out); }
+    parent.append(row); return row;
+  }
+  const snip = (t, n = 40) => { t = String(t || '').replace(/@[A-Z]{2}/g, '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
+  function nearMessages(records, i) {
+    let before = null, after = null;
+    for (const r of records) if (r.op === 'message') { if (r.i < i) before = r; else if (r.i > i && !after) after = r; }
+    return { before, after };
   }
   function showLine() {
     line = $('lines').value;
@@ -101,7 +109,7 @@ async function dialogue() {
     preview(text ?? ''); $('encoding').textContent = '';
     $('holds').replaceChildren();
     const records = Number(bank) < 31 ? data.levels[String(Number(bank)+1)] || [] : [];
-    for (const r of records.filter(r => r.op === 'message' && String(r.text) === line)) timingInput($('holds'), r, 'hold_seconds', `Record ${r.i} / hold seconds`);
+    for (const r of records.filter(r => r.op === 'message' && String(r.text) === line)) timingInput($('holds'), r, 'hold_seconds', `Step ${r.i}: shown for, seconds`);
     if (!$('holds').children.length) $('holds').textContent = 'No decoded message timing for this line.';
   }
   function listLines(preferred = line) {
@@ -118,11 +126,17 @@ async function dialogue() {
   }
   function listWaits() {
     $('waits').replaceChildren();
-    const query=$('wait-search').value.trim().toLowerCase(),records=(Number(bank)<31?data.levels[String(Number(bank)+1)]||[]:[]).filter(r=>r.op==='wait'&&`${r.i} ${r.frames}`.includes(query));
+    const all=Number(bank)<31?data.levels[String(Number(bank)+1)]||[]:[],says=r=>r?snip(data.banks[bank].strings[r.text]??r.says):'';
+    const ctx=r=>{const m=nearMessages(all,r.i);return {m,text:`${says(m.before)} ${says(m.after)}`.toLowerCase()}};
+    const records=all.filter(r=>r.op==='wait'&&`${r.i} ${r.frames} ${ctx(r).text}`.includes(query));
     for(let n=0;n<records.length;n+=10){
-      const group=document.createElement('details'),title=document.createElement('summary'),batch=records.slice(n,n+10);
-      title.textContent=`Records ${batch[0].i}–${batch.at(-1).i} (${batch.length})`;group.open=!!query;group.append(title);
-      for(const r of batch)timingInput(group,r,'frames',`Record ${r.i} / frames (30/s)`);$('waits').append(group);
+      const group=document.createElement('details'),title=document.createElement('summary'),batch=records.slice(n,n+10),first=nearMessages(all,batch[0].i);
+      const near=says(first.after||first.before);
+      title.textContent=`Script steps ${batch[0].i}–${batch.at(-1).i} (${batch.length} waits)${near?` · near “${near}”`:''}`;group.open=!!query;group.append(title);
+      for(const r of batch){const {m}=ctx(r),row=timingInput(group,r,'frames',`Step ${r.i}: pause, frames `);
+        const hint=document.createElement('small');hint.className='mut';hint.style.display='block';
+        hint.textContent=(m.before?`after “${says(m.before)}”`:'before any message')+(m.after?` · before “${says(m.after)}”`:'');row.append(hint);}
+      $('waits').append(group);
     }
     if(!records.length)$('waits').textContent='No matching wait records.';
   }
