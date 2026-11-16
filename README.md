@@ -26,19 +26,11 @@
 | Explore sample models | [Model Editor](https://sssv-modkit-dev.github.io/sssv-modkit/model-editor.html) | Bundled samples work without a ROM. |
 | Edit a stage | [Level Editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) · [Guide](docs/guides/LEVEL-EDITOR.md) | Select your own supported ROM. Edit terrain in Textures & Tilesets; verify edited builds in game. |
 | Play in the browser | [Browser Play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html) | Experimental; compatibility and performance need more testing. Select your own uncompressed ROM or patched build. |
-| Build an animal patch | [Getting started](docs/guides/CLI-BUILDS.md) | Requires your own unmodified US 1.0 ROM and Python. |
+| Build a patched ROM | [Guided build](https://sssv-modkit-dev.github.io/sssv-modkit/start.html) · [Guide](docs/guides/GUIDED-BUILD.md) | Runs in your browser with your own US 1.0 ROM; combines model, level, texture, dialogue and Classic+ changes. |
 
-## Build an animal patch
+## Command line (optional)
 
-From the repository root, generate a local animal table from your own US 1.0 ROM. Dry-run the example config and review the report before building:
-
-```sh
-python src/animal_table.py --from-rom --out src/animal_table
-python src/make_animal_mods.py configs/bear.json --out build --name bear --dry-run
-python src/make_animal_mods.py configs/bear.json --out build --name bear
-```
-
-The builder writes an IPS patch and, by default, a patched ROM under `build/`. It checks ROM identity and expected bytes, refuses conflicting edits, repairs the header checksum, and verifies the IPS round trip. These safeguards do not establish that a change looks or plays correctly in game. See the [ROM setup](rom/README.md) and [config guide](docs/guides/CONFIGS.md).
+The browser guided build covers the same animal, level and texture edits. If you prefer scripts, the Python builders produce byte-identical output; see [Command-line builds](docs/guides/CLI-BUILDS.md) and the [config guide](docs/guides/CONFIGS.md).
 
 ## Features and current limits
 
