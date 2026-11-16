@@ -12,6 +12,9 @@ async function startGame(blob, name) {
   const magic = Array.from(new Uint8Array(await blob.slice(0, 4).arrayBuffer())).map(b => b.toString(16).padStart(2, '0')).join('');
   if (!['80371240', '37804012', '40123780'].includes(magic)) throw new Error('Unrecognized N64 header. Unzip the ROM first; .z64, .v64 and .n64 byte orders are supported.');
   if (!document.createElement('canvas').getContext('webgl2')) throw new Error('WebGL 2 is unavailable. Try a browser with hardware acceleration enabled.');
+  // Classic+ widescreen writes lui a3,0x3FAB (aspect 1.336) at ROM 0x6AB0D0; that picture is meant to be stretched to 16:9.
+  const wideBytes = blob.size > 0x6AB0D4 ? Array.from(new Uint8Array(await blob.slice(0x6AB0D0, 0x6AB0D4).arrayBuffer())).map(b => b.toString(16).padStart(2, '0')).join('') : '';
+  const wide = { '80371240': '3c073fab', '37804012': '073cab3f', '40123780': 'ab3f073c' }[magic] === wideBytes;
   started = true;
   romUrl = URL.createObjectURL(blob);
   window.EJS_player = '#game';
@@ -27,6 +30,7 @@ async function startGame(blob, name) {
   window.EJS_AdUrl = '';
   // Classic+ code lives in Expansion Pak RAM: keep it on by default for both cores.
   window.EJS_defaultOptions = { 'mupen64plus-ForceDisableExtraMem': 'False', 'parallel-n64-disable_expmem': 'enabled' };
+  if (wide) Object.assign(window.EJS_defaultOptions, { 'mupen64plus-aspect': '16:9', 'parallel-n64-aspectratiohint': 'widescreen' });
   window.EJS_threads = false; // GitHub Pages does not supply COOP/COEP headers.
   window.EJS_ready = () => {
     // EmulatorJS writes audio_latency = 64 (ms) into retroarch.cfg; N64 cores without threads crackle at that, so

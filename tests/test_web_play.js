@@ -64,5 +64,15 @@ async function run(bytes, size = 16*1024*1024, opener) {
   r = await run([0,0,0,0]);
   assert.equal(r.context.window.opener, undefined);
   assert.equal(typeof (await run([0x80,0x37,0x12,0x40])).elements.reset.addEventListener, 'function');
+  // Classic+ widescreen ROM (lui a3,0x3FAB at 0x6AB0D0) -> 16:9 stretch for both cores; Expansion Pak always pinned on
+  const wideRom = (w) => ({size: 12*1024*1024, slice: (a) => ({arrayBuffer: async () => Uint8Array.from(a === 0x6AB0D0 ? w : rom).buffer})});
+  r = await run([0,0,0,0]);
+  await r.context.window.SSSVPlay.startGame(wideRom([0x3c,0x07,0x3f,0xab]), 'wide.z64');
+  assert.equal(r.context.window.EJS_defaultOptions['mupen64plus-aspect'], '16:9');
+  assert.equal(r.context.window.EJS_defaultOptions['parallel-n64-aspectratiohint'], 'widescreen');
+  assert.equal(r.context.window.EJS_defaultOptions['mupen64plus-ForceDisableExtraMem'], 'False');
+  r = await run([0,0,0,0]);
+  await r.context.window.SSSVPlay.startGame(wideRom([0x44,0x07,0x00,0x00]), 'stock.z64');
+  assert.equal(r.context.window.EJS_defaultOptions['mupen64plus-aspect'], undefined);
   console.log('ROM validation, three byte orders, blob handoff, loader failure, startGame, postMessage validation and ready handshake passed.');
 })();
