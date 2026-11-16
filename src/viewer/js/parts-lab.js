@@ -153,7 +153,7 @@ addEventListener('model-source-ready',()=>{if(!demoMode){modelCategory='Animals'
 var animBind=null,animMode="",animPhase=0,animTimer=0;
 function animStop(){animMode='';clearInterval(animTimer);animTimer=0;animParts=null;animBind=null}
 function animSync(){const ok=assembled&&!gallery&&poseOk()&&!!pose?.anim;if(animMode&&(!ok||animBind?.pose!==pose))animStop();
- for(const m of ['walk','run']){const b=$('anim-'+m);if(!b)continue;b.hidden=!ok||!pose.anim.legs?.tables?.[m];b.setAttribute('aria-pressed',String(animMode===m));b.classList.toggle('on',animMode===m)}}
+ for(const m of ['walk','run']){const b=$('anim-'+m);if(!b)continue;b.hidden=!ok||!(pose.anim.modes||Object.keys(pose.anim.legs?.tables||{})).includes(m);b.setAttribute('aria-pressed',String(animMode===m));b.classList.toggle('on',animMode===m)}}
 function animStart(m){if(animMode===m){animStop();ui();rebuild(false);return}
  const bound=window.RigPlayer?.bind(pose);if(!bound)return;animStop();animBind={...bound,pose};animMode=m;animPhase=bound.rest.ph;
  animTimer=setInterval(()=>{if(!animBind||animBind.pose!==pose||!assembled){animStop();ui();rebuild(false);return}
