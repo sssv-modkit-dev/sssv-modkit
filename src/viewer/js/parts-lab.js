@@ -149,17 +149,17 @@ if(window.ModelEditorHistory){
 // Optional pack persistence saves only the edit project, not source geometry.
 if(window.ModelEditorHost){window.ModelEditorHost.captureSession=captureModelHistory;window.ModelEditorHost.restoreSession=restoreModelHistory;window.ModelEditorHost.buildConfig=allGameConfigs;window.ModelEditorHost.getProject=demoProject;window.ModelEditorHost.applyProject=applyModelProject;window.ModelEditorHost.expandSourceAnimals=()=>{if(demoMode)return;modelCategory='Animals';buildDemoPicker();};}
 addEventListener('model-source-ready',()=>{if(!demoMode){modelCategory='Animals';buildDemoPicker();}});
-// Walk/Run/Flap, set-pose (Hit, Knocked out) and action (Lift & throw, Chest beat, Dance) playback (RigPlayer, rig-player.js): only for assembled animals whose pack attached pose.anim.
+// Walk/Run/Flap, set-pose (Hit, Knocked out) and action (Lift & throw, Chest beat) and dance (Dance, Spin, Thriller; moves are data in rig-player.js) playback (RigPlayer, rig-player.js): only for assembled animals whose pack attached pose.anim.
 var animBind=null,animMode="",animPhase=0,animTimer=0,animPaused=false;
 // Loop and queue: animQueue lists the modes to play in turn (one full cycle each), animQi is the one playing, animTravel
 // counts the phase steps played of it. Loop off: playback stops on the last frame of the last entry (animDone).
 var animLoop=true,animQueue=[],animQi=0,animTravel=0,animDone=false,animAddMode=false,animBusy='';
-var ANIM_MODES=['walk','run','flap','hit','ko','lift','beat','dance'],ANIM_STEP={run:8,flap:12,hit:8,ko:8,lift:3,beat:3,dance:3};
+var ANIM_MODES=['walk','run','flap','hit','ko','lift','beat','dance','spin','thriller'],ANIM_STEP={run:8,flap:12,hit:8,ko:8,lift:3,beat:3,dance:3,spin:3,thriller:3};
 var animStep=m=>ANIM_STEP[m]||5,animLen=m=>window.RigPlayer?.loopLen?.(m)||256,animFrames=m=>Math.ceil(animLen(m)/animStep(m));
 var animStartPhase=m=>m==='walk'||m==='run'||m==='flap'?(animBind?.rest.ph||0):0,animLabel=m=>$('anim-'+m)?.textContent||m;
 function animStop(){animMode='';clearInterval(animTimer);animTimer=0;animParts=null;animBind=null;animPaused=false;animQueue=[];animQi=0;animTravel=0;animDone=false;animBar()}
 function animSync(){const ok=assembled&&!gallery&&poseOk()&&!!pose?.anim;if(animMode&&(!ok||animBind?.pose!==pose))animStop();
- for(const m of ['walk','run','flap','hit','ko','lift','beat','dance']){const b=$('anim-'+m);if(!b)continue;b.hidden=!ok||!(pose.anim.modes||Object.keys(pose.anim.legs?.tables||{})).concat(Object.keys(pose.anim.setposes||{}),Object.keys(pose.anim.actions||{})).includes(m);b.setAttribute('aria-pressed',String(animMode===m));b.classList.toggle('on',animMode===m);b.classList.toggle('queued',!!animQueue?.includes(m))}
+ for(const m of ['walk','run','flap','hit','ko','lift','beat','dance','spin','thriller']){const b=$('anim-'+m);if(!b)continue;b.hidden=!ok||!(pose.anim.modes||Object.keys(pose.anim.legs?.tables||{})).concat(Object.keys(pose.anim.setposes||{}),Object.keys(pose.anim.actions||{}),pose.anim.actions?.dance?['spin','thriller']:[]).includes(m);b.setAttribute('aria-pressed',String(animMode===m));b.classList.toggle('on',animMode===m);b.classList.toggle('queued',!!animQueue?.includes(m))}
  animBar()}
 // (animSync runs from ui() before the vars above are assigned: keep the literal mode list and the ?. on animQueue.)
 // Timeline bar (shown while an animation is loaded): play/pause, one frame back/forward, loop, queue, scrub slider.

@@ -14,6 +14,7 @@ COMMANDS = [
     ['node', 'tests/test_level_palette.js'],
     ['node', 'tests/test_camera.js'],
     ['node', 'tests/test_rig_player.js'],
+    ['node', 'tests/test_dance_bench.js'],
     ['node', 'tests/test_deform_parity.js'],
     ['node', 'tests/test_parts_lab.js'],
     ['node', 'tests/test_model_source.js'],

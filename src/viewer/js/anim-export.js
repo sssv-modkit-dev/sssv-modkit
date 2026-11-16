@@ -1,6 +1,7 @@
 // Animation export (GIF and WebM with transparency) for the animation bar. The encoders are pure functions on RGBA frames;
 // the capture/UI half only runs in the browser and reuses the viewer's own draw() so what is exported is what is on screen
-// (current camera, no ground patch, grid or labels, transparent background).
+// (current camera angle, no ground patch, grid or labels, transparent background). The camera is re-framed for the export so
+// that every frame fits: an arm raised mid-animation is not cut off at the edge.
 (function(root){
 'use strict';
 // --- GIF89a: one global palette, index 0 = transparent (alpha < 128), LZW, looping, 1-bit transparency only ---
@@ -57,7 +58,28 @@ function encodeGif(frames,w,h,delayCs){
   }
   out.push(0x3B);return Uint8Array.from(out);
 }
-root.AnimExport={encodeGif,buildPalette,lzw};
+// Smallest box holding every [min,max] box in the list (entries may be null).
+function unionBounds(list){let lo=null,hi=null;for(const b of list){if(!b)continue;lo=lo?lo.map((v,k)=>Math.min(v,b[0][k])):b[0].slice();hi=hi?hi.map((v,k)=>Math.max(v,b[1][k])):b[1].slice()}return lo?[lo,hi]:null}
+// --- MP4 (H.264, one video track): the frames come from the browser's own encoder; this only writes the container ---
+// samples: [{data:Uint8Array (length-prefixed NAL units), key:boolean}], avcC: the encoder's decoder description.
+function muxMp4({w,h,fps,samples,avcC}){
+  const cat=parts=>{let n=0;for(const x of parts)n+=x.length;const o=new Uint8Array(n);let at=0;for(const x of parts){o.set(x,at);at+=x.length}return o};
+  const u32=(...v)=>{const o=new Uint8Array(v.length*4);v.forEach((x,i)=>new DataView(o.buffer).setUint32(i*4,x>>>0));return o},u16=(...v)=>{const o=new Uint8Array(v.length*2);v.forEach((x,i)=>new DataView(o.buffer).setUint16(i*2,x));return o};
+  const str=t=>Uint8Array.from(t,c=>c.charCodeAt(0)),zero=n=>new Uint8Array(n),box=(type,...kids)=>{const body=cat(kids);return cat([u32(body.length+8),str(type),body])};
+  const scale=fps*512,delta=512,dur=samples.length*delta,matrix=u32(0x10000,0,0,0,0x10000,0,0,0,0x40000000),keys=samples.map((x,i)=>x.key?i+1:0).filter(Boolean);
+  const moov=off=>box('moov',
+    box('mvhd',u32(0,0,0,scale,dur,0x10000),u16(0x100,0),zero(8),matrix,zero(24),u32(2)),
+    box('trak',
+      box('tkhd',u32(3,0,0,1,0,dur),zero(8),u16(0,0,0,0),matrix,u32(w<<16,h<<16)),
+      box('mdia',box('mdhd',u32(0,0,0,scale,dur),u16(0x55C4,0)),box('hdlr',u32(0,0),str('vide'),zero(12),str('VideoHandler'),zero(1)),
+        box('minf',box('vmhd',u32(1),zero(8)),box('dinf',box('dref',u32(0,1),box('url ',u32(1)))),
+          box('stbl',box('stsd',u32(0,1),box('avc1',zero(6),u16(1,0,0),zero(12),u16(w,h),u32(0x480000,0x480000,0),u16(1),zero(32),u16(0x18,0xFFFF),box('avcC',avcC))),
+            box('stts',u32(0,1,samples.length,delta)),box('stss',u32(0,keys.length,...keys)),box('stsc',u32(0,1,1,samples.length,1)),
+            box('stsz',u32(0,0,samples.length,...samples.map(x=>x.data.length))),box('stco',u32(0,1,off)))))));
+  const ftyp=box('ftyp',str('isom'),u32(0x200),str('isomiso2avc1mp41')),head=ftyp.length+moov(0).length+8;
+  return cat([ftyp,moov(head),box('mdat',...samples.map(x=>x.data))]);
+}
+root.AnimExport={encodeGif,buildPalette,lzw,unionBounds,muxMp4};
 if(typeof document==='undefined'||!document.getElementById('anim-gif'))return;
 
 // --- browser half ---
@@ -69,11 +91,12 @@ function save(blob,name){const a=document.createElement('a'),u=URL.createObjectU
 // canvas and returns the canvas; n frames (one pass of the queue, see animSequence), w by h pixels.
 async function withFrames(fn){
   if(!animMode||!animBind||busy)return;busy=true;
-  const saved={mode:animMode,phase:animPhase,paused:animPaused,ground:showGround,grid:showGrid,labels:showLabels},seq=animSequence(),n=seq.length,name=[...new Set(seq.map(f=>f.m))].join('-'),
+  const saved={mode:animMode,phase:animPhase,paused:animPaused,ground:showGround,grid:showGrid,labels:showLabels,ctr,dist},seq=animSequence(),n=seq.length,name=[...new Set(seq.map(f=>f.m))].join('-'),
     cw=cv.clientWidth*devicePixelRatio,ch=cv.clientHeight*devicePixelRatio,k=Math.min(1,MAXSIDE/Math.max(cw,ch)),w=Math.max(2,Math.round(cw*k)&~1),h=Math.max(2,Math.round(ch*k)&~1);
   animPaused=true;showGround=false;showGrid=false;showLabels=false;
+  try{const B=unionBounds(seq.map(f=>{animMode=f.m;animPhase=f.ph;animShow();return sceneBounds}));if(B){const f=cameraFit(B[0],B[1],cameraRotation(),w/h);ctr=f.center;dist=f.distance*1.04}}catch(e){ctr=saved.ctr;dist=saved.dist}
   try{return await fn({n,w,h,name,frame(i){animMode=seq[i].m;animPhase=seq[i].ph;animShow();draw([w,h]);return cv}})}
-  finally{animBusy='';const live=!!animBind;if(live)animMode=saved.mode;animPhase=saved.phase;animPaused=saved.paused;showGround=saved.ground;showGrid=saved.grid;showLabels=saved.labels;busy=false;if(live)animShow();need();animBar()}
+  finally{animBusy='';const live=!!animBind;if(live)animMode=saved.mode;animPhase=saved.phase;animPaused=saved.paused;ctr=saved.ctr;dist=saved.dist;showGround=saved.ground;showGrid=saved.grid;showLabels=saved.labels;busy=false;if(live)animShow();need();animBar()}
 }
 async function exportGif(){
   await withFrames(async({n,w,h,name,frame})=>{
@@ -94,6 +117,25 @@ async function exportWebm(){
     rec.stop();await done;save(new Blob(chunks,{type:'video/webm'}),`${name}.webm`);
   });
 }
+// MP4 has no transparency: frames are laid over the page's backdrop colour. Every frame gets an exact timestamp, so the file
+// plays at the right speed in any player (the WebM above is recorded live and many players show only its first frame).
+async function exportMp4(){
+  if(!window.VideoEncoder){status('MP4 not supported here');return}
+  await withFrames(async({n,w,h,name,frame})=>{
+    const cfg={codec:'avc1.42E01F',width:w,height:h,bitrate:3e6,framerate:FPS,avc:{format:'avc'}};
+    if(!(await VideoEncoder.isConfigSupported(cfg)).supported){status('MP4 not supported here');return}
+    const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d'),samples=[];let avcC=null,err=null;
+    const bg=[cv,cv.parentElement,document.body].map(e=>e&&getComputedStyle(e).backgroundColor).find(v=>v&&!/rgba(.*, 0)|transparent/.test(v))||'#14181f';
+    const enc=new VideoEncoder({output(chunk,meta){const d=new Uint8Array(chunk.byteLength);chunk.copyTo(d);samples.push({data:d,key:chunk.type==='key'});const desc=meta?.decoderConfig?.description;if(desc&&!avcC)avcC=new Uint8Array(desc.buffer||desc,desc.byteOffset||0,desc.byteLength)},error(e){err=e}});
+    enc.configure(cfg);
+    for(let i=0;i<n&&!err;i++){status(`MP4 ${i+1}/${n}`);frame(i);x.fillStyle=bg;x.fillRect(0,0,w,h);x.drawImage(cv,0,0);
+      const vf=new VideoFrame(c,{timestamp:Math.round(i*1e6/FPS),duration:Math.round(1e6/FPS)});enc.encode(vf,{keyFrame:i%50===0});vf.close();
+      if(enc.encodeQueueSize>4||i%8===7)await new Promise(r=>setTimeout(r))}
+    await enc.flush();enc.close();if(err)throw err;if(!avcC||samples.length!==n)throw new Error('encoder returned '+samples.length+' of '+n+' frames');
+    save(new Blob([muxMp4({w,h,fps:FPS,samples,avcC})],{type:'video/mp4'}),`${name}.mp4`);
+  });
+}
+if(document.getElementById('anim-mp4')){document.getElementById('anim-mp4').onclick=()=>exportMp4().catch(e=>{busy=false;status('MP4 failed: '+e.message)});root.AnimExport.exportMp4=exportMp4}
 document.getElementById('anim-gif').onclick=()=>exportGif().catch(e=>{busy=false;status('GIF failed: '+e.message)});
 document.getElementById('anim-webm').onclick=()=>exportWebm().catch(e=>{busy=false;status('WebM failed: '+e.message)});
 root.AnimExport.exportGif=exportGif;root.AnimExport.exportWebm=exportWebm;

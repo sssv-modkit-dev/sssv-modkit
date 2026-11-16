@@ -41,10 +41,18 @@ const osc={...act,steps:[[16,-1,1,0,0,1]]},ws=[0,64,128,192].map(p=>R.actionJoin
 const drig={body:{kind:'biped',h:1296},legs:{len:1556,side:25},parts:[[7,8],[10,11]],actions:{lift:{bones:[[0,1,1296],[1,7,1037],[1,10,1037],[7,8,2334],[10,11,2334]],tabs:[[[0,0],[94,86],[90,254],[112,346],[122,22]]]},dance:{chain:'lift',arms:[7,8,10,11],hop:300,sway:250}}};
 const dz=p=>R.danceJoints(drig,p)[8][2]-R.danceJoints(drig,p)[7][2];assert.ok(Math.abs(dz(16))<1200&&dz(160)>2000,'dance: reins in front, then lasso arm overhead');
 assert.notDeepEqual(R.danceJoints(drig,160)[8],R.danceJoints(drig,176)[8],'lasso circles');
-assert.equal(R.DANCE_LEN,384);assert.equal(R.loopLen('dance'),384);assert.equal(R.loopLen('walk'),256);
-assert.deepEqual(R.danceJoints(drig,384+16),R.danceJoints(drig,16),'dance loops after 12 beats');
-assert.deepEqual(R.danceJoints(drig,-368),R.danceJoints(drig,16),'negative phase wraps');
-const sh=R.danceJoints(drig,288);assert.notDeepEqual(sh,R.danceJoints(drig,160),'shuffle differs from lasso');
-assert.ok(Math.abs(R.danceJoints(drig,288)[8][2]-R.danceJoints(drig,288)[7][2])<1200,'shuffle: no arm raised overhead');
-assert.notDeepEqual(R.danceJoints(drig,288),R.danceJoints(drig,304),'shuffle moves');
-console.log('Rig player: dance, bind, rest frame, leg swing, three-bone legs, bird wings, set poses and actions passed.');
+assert.equal(R.DANCE_LEN,1024);assert.equal(R.loopLen('dance'),1024);assert.equal(R.loopLen('walk'),256);assert.equal(R.loopLen('spin'),128);assert.equal(R.loopLen('thriller'),256);
+assert.deepEqual(R.danceJoints(drig,1024+16),R.danceJoints(drig,16),'dance loops after 32 beats');
+assert.deepEqual(R.danceJoints(drig,-1008),R.danceJoints(drig,16),'negative phase wraps');
+const hx=(p,m)=>{const J=R.danceJoints(drig,p,m);return [J[8][0]-J[1][0],J[11][0]-J[1][0],J[8][2]-J[7][2],J[11][2]-J[10][2]]};
+{const [a,b]=hx(16,'thriller'),[c,e]=hx(80,'thriller');assert.ok(a>500&&b>500&&c<-500&&e<-500,'thriller: both hands to one side, then the other')}
+{const up=hx(384+8),dn=hx(384+40);assert.ok(up[2]>1000&&dn[2]<-500&&Math.abs(up[3]-dn[3])<200,'point: one arm up then down, the other still')}
+{const a=R.danceJoints(drig,256+12),b=R.danceJoints(drig,256+62),g=hx(256+30);assert.ok(b[1][0]-a[1][0]>500&&g[2]<0&&g[3]<0,'shuffle: body glides across, arms stay low')}
+{const p=R.dancePuffs(drig,256+40,'dance'),q=R.dancePuffs(drig,160,'dance');assert.ok(p.length>=3&&p.every(x=>x.r>0&&x.p.every(Number.isFinite))&&q.length===0,'dust: puffs during the shuffle only')}
+{const w=hx(512+16);assert.ok(w[2]>1000&&w[3]>1000,'wave: both arms overhead')}
+assert.ok(Math.abs(R.danceJoints(drig,32,'spin').yaw-180)<1e-6&&Math.abs(R.danceJoints(drig,100,'spin').yaw%360)<1e-6,'spin: half a turn after one beat, facing front again for the pose');
+{const f=R.rigFrames(drig,32,'spin'),g=R.rigFrames(drig,0,'spin');assert.ok(f[0].T[0]*g[0].T[0]<0,'spin turns the part frames with the body')}
+for(const m of Object.keys(R.MOVES))for(let p=0;p<R.loopLen(m);p+=3)for(const v of R.danceJoints(drig,p,m))if(v)assert.ok(v.every(Number.isFinite),m+' joints finite');
+{const pr={body:{kind:'puppet',J:{0:[0,0,2000],1:[0,0,3000],2:[0,0,1000],15:[-300,0,0],18:[300,0,0]},bob:40,lift:200,stride:100},legs:{},parts:[[2,1],[2,15],[2,18]]},a=R.joints(pr,64,'walk'),b=R.joints(pr,192,'walk');
+ assert.ok(a[15][2]>150&&a[18][2]===0&&b[18][2]>150&&b[15][2]===0,'puppet: feet lift in turn');assert.equal(R.joints(pr,32,'walk')[1][2],3020,'puppet: body bobs')}
+console.log('Rig player: dance moves, bind, rest frame, leg swing, three-bone legs, bird wings, set poses and actions passed.');
