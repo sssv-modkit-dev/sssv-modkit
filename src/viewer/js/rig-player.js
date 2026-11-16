@@ -8,6 +8,9 @@ const RAD=Math.PI/180,sin=d=>Math.round(Math.sin(d*RAD)*256),cos=d=>Math.round(M
 const key=(tab,ph,c=0)=>{const k=ph>>5,f=ph&31,a=tab[k],b=tab[(k+1)&7],x=v=>Array.isArray(v)?v[c]:v;return Math.trunc((x(b)*f+(32-f)*x(a))/32)};
 function keyAngle(tab,ph){return key(tab,ph)}
 const LEGS=[[3,7],[4,10],[5,13],[6,16]];
+function ik(a,b,l1,l2,h,bend){if(h<1)return [90,-90];const x=-((l2*sin(b)+l1*sin(a))>>8),D=Math.max(Math.trunc(Math.hypot(x,h)),Math.abs(l1-l2),1),
+ ac=v=>Math.round(Math.acos(Math.max(-1,Math.min(1,v)))/RAD),f=Math.round(Math.asin(Math.max(-1,Math.min(1,x/D)))/RAD),
+ a1=ac((l1*l1+D*D-l2*l2)/(2*l1*D)),a2=ac((l2*l2+D*D-l1*l1)/(2*l2*D));return bend>0?[-f-a1,-f+a2]:[-f+a1,-f-a2]}
 function quadJoints(rig,phase,mode){
  const {hl,hw,lift}=rig.body,J=[],L=rig.legs,tabs=L.tables[mode],offs=(L.offs&&L.offs[mode])||[0,0x80,0x80,0];
  J[3]=[-hw,hl,lift];J[4]=[hw,hl,lift];J[5]=[-hw,-hl,lift];J[6]=[hw,-hl,lift];J[0]=[0,0,lift];
@@ -15,8 +18,13 @@ function quadJoints(rig,phase,mode){
   if(b)J[hip][2]+=b-(((256-cos(deg(ph)))*b)>>9);                          // body bobs with each stride
   const len=side.len||[L.len],tab=tabs&&tabs[i<2?0:1],a=tab?key(tab,ph,0):0;let [x,y,z]=J[hip];
   if((L.seg||1)===1){J[j]=[x,y-((len[0]*sin(a))>>8),z-((len[0]*cos(a))>>8)];return}
-  const k=tab?key(tab,ph,1):0,c=Math.max(tab?key(tab,ph,2):0,k);
-  [[a,len[0]],[k,len[1]],[c,len[2]]].forEach(([ang,l],n)=>{y-=(l*sin(ang))>>8;z-=(l*cos(ang))>>8;J[j+n]=[x,y,z]});
+  // Ground contact (0x802BE1A0/0x802BEAB0, flat ground at 0): a leg that would reach below the ground
+  // keeps the hip up and bends hip+knee with two-bone IK (front 0x802BC350, rear 0x802BC628).
+  let hipA=a,k=tab?key(tab,ph,1):0;const c0=tab?key(tab,ph,2):0,s=b?(((256-cos(deg(ph)))*b)>>9):0,
+   d=((len[2]*cos(c0)+len[0]*cos(hipA)+len[1]*cos(k))>>8)-J[hip][2];
+  if(d>-3*s){if(d>s){J[hip][2]+=s;[hipA,k]=ik(hipA,k,len[0],len[1],J[hip][2]-((len[2]*cos(c0))>>8),side.bend||-1)}else J[hip][2]+=Math.trunc((d+3*s)/4)}
+  z=J[hip][2];const c=Math.max(c0,k);
+  [[hipA,len[0]],[k,len[1]],[c,len[2]]].forEach(([ang,l],n)=>{y-=(l*sin(ang))>>8;z-=(l*cos(ang))>>8;J[j+n]=[x,y,z]});
  });
  J[1]=J[3].map((v,k)=>(v+J[4][k])>>1);J[2]=J[5].map((v,k)=>(v+J[6][k])>>1);
  if(rig.neck){const [l1,l2,m]=rig.neck;let na=Math.max(1,20+Math.trunc(sin(deg(phase))/10));
