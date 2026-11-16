@@ -13,10 +13,10 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PRESETS = {
-    'blue': ('Ceruleanish Ear Bear', '#8dc4ed'),
-    'orange': ('Amberish Ear Bear', '#efb16b'),
-    'green': ('Jadeish Ear Bear', '#91cbb1'),
-    'purple': ('Cadet Fox', '#a77bff'),
+    'blue': ('Bear', '#8dc4ed'),
+    'orange': ('Bear', '#efb16b'),
+    'green': ('Bear', '#91cbb1'),
+    'purple': ('Fox', '#a77bff'),
 }
 # Optional per-palette backgrounds (default: the navy #111b29 theme). purple = Dracula (#282a36 / #6272a4 / #44475a).
 THEMES = {
@@ -80,7 +80,7 @@ def make_page(options, style):
         theme['head'] = head  # two-tone: bold body, light accent part
     accent = getattr(options, 'accent', None) or theme.pop('accent', None) or PRESETS[options.palette][1]
     settings = json.dumps({
-        'name': options.name or PRESETS[options.palette][0],
+        'name': options.name or head.replace('_', ' ').title(),
         'version': options.version, 'accent': accent,
         'style': ALIASES.get(style, style), 'recolor': options.recolor, **theme,
     }, ensure_ascii=True).replace('<', '\\u003c')
@@ -154,7 +154,7 @@ def main():
     parser.add_argument('--browser', help='Path to Chrome, Chromium or Edge')
     options = parser.parse_args()
     output = options.out.expanduser() if options.out else ROOT / ('build/future-banners' if options.batch else 'build/release-banner.png')
-    jobs = [(palette, output / f'{palette}-bear.png') for palette in PRESETS] if options.batch else [(options.palette, output)]
+    jobs = [(palette, output / f'{palette}-{options.head}.png') for palette in PRESETS] if options.batch else [(options.palette, output)]
     try:
         for _, path in jobs:
             if path.exists():

@@ -1,6 +1,6 @@
 # SSSV Editor
 
-![SSSV Editor, "Velvet Midnight Rat" edition, v0.1.0-rc2](docs/img/banner-dark.png)
+![SSSV Editor core, “Dan Danger” edition, pre-alpha v0.5](docs/img/dan-danger-v05.png)
 
 A fan-made editor for *Space Station Silicon Valley* (1998, N64). Level and model editing runs in the browser: open a scene or a model, move and add objects, recolour and reshape parts, then save your edits as a small JSON file you can reopen later. ROM-enabled packs also support browser dialogue and ground texture editing.
 

@@ -1,6 +1,6 @@
 # Space Station Silicon Valley Modkit
 
-![SSSV Modkit, Amberish Mane Lion edition](docs/images/releases/amberish-mane-lion.png)
+![SSSV Modkit, “EVO + Heli-Rabbit Teamup” edition, pre-alpha v0.5](docs/images/releases/evo-heli-rabbit-v05.png)
 
 **Explore and edit *Space Station Silicon Valley* (Nintendo 64).** Try the browser editors, or build ROM patches from your own game files with the local tools.
 
