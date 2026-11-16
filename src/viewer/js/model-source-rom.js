@@ -60,7 +60,7 @@ function namePropModels(table){const names=window.SSSVPropNames||{},out=Object.c
   return out;}
 function propPoses(table){const out={};for(const [name,m] of Object.entries(table))if(m.prop!==undefined)out[name]={animal:name,parts:m.p.map(p=>({dl:p.s,rows:[[1,0,0],[0,1,0],[0,0,1]],T:[0,0,0],mirror:0}))};return out;}
 async function loadROM(ab,filename,restored=false){
-  saveEdits();loadingROM=true;
+  saveEdits();loadingROM=true;await window.LoadProgress?.start(['Checking your ROM']);
   try{
     ab=normaliseModelROM(ab);
     let hash=null,ok='';try{hash=[...new Uint8Array(await crypto.subtle.digest('SHA-1',ab))].map(x=>x.toString(16).padStart(2,'0')).join('');ok=hash==='e5e09205aa743a9e5043a42df72adc379c746b0b'?'SHA1 matches US 1.0.':'WARNING: not the unmodified US 1.0 ROM (a patched ROM is fine for previewing).';}catch(_){}
@@ -70,16 +70,20 @@ async function loadROM(ab,filename,restored=false){
       const raw=await window.SSSVBuilder.deriveTable(ab,{onProgress:p=>H.message(p.detail)});
       partsTable=normaliseLocalTable(raw);
     }
+    await window.LoadProgress?.step('Building props',.5);
     partsTable=namePropModels(partsTable);
     if(window.SSSVAnimalPoses){
+      await window.LoadProgress?.step('Reading animal poses',.6);
       const captured=await window.SSSVAnimalPoses.load(Object.keys(partsTable).filter(n=>window.SSSVAnimalPoses.names().includes(n)));
       Object.assign(BUNDLED_POSES,captured.poses,propPoses(partsTable));
+      await window.LoadProgress?.step('Building animal rigs',.75);
       try{window.SSSVAnimalRigs?.attach(BUNDLED_POSES,ab)}catch(err){console.warn('Walk/run rigs unavailable: '+err.message)}
       for(const [name,error] of Object.entries(captured.errors))console.warn('Skipped '+name+' pose: '+error);
     }
     currentSourceHash=hash;currentSourceBytes=ab;
+    await window.LoadProgress?.step('Opening models',.9);
     const error=H.useSource({table:partsTable,bytes:ab,label:(restored?'Restored saved ROM: ':'')+filename,note:ok});
-    if(error){H.message(error);return false}
+    if(error){window.LoadProgress?.fail(error);H.message(error);return false}
     // Seed only untouched view choices; source replacement clears old edit states.
     if(window.SSSVAnimalPoses)for(const n of window.SSSVAnimalPoses.names().concat(Object.keys(partsTable).filter(k=>partsTable[k].prop!==undefined))){
       if(!BUNDLED_POSES[n]||!partsTable[n]||!BUNDLED_POSES[n].parts.every(p=>partsTable[n].p.some(q=>q.s===p.dl)))continue;
@@ -89,8 +93,8 @@ async function loadROM(ab,filename,restored=false){
     const opened=hash&&restoreEdits(hash);H.expandSourceAnimals?.();
     if(opened)H.message('Restored remembered edits for '+filename+'. '+ok);
     if(restored)$('remember-source').checked=true;
-    $('forget-source').disabled=false;return true;
-  }finally{loadingROM=false;}
+    $('forget-source').disabled=false;window.LoadProgress?.done();return true;
+  }catch(error){window.LoadProgress?.fail(error.message);throw error;}finally{loadingROM=false;}
 }
 $('local-table').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;

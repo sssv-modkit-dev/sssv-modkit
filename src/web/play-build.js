@@ -80,18 +80,19 @@
     bar.hidden = false; bar.value = 0;
     status('Starting the builder…');
     try {
+      await window.LoadProgress?.start(['Building your changes']);
       const result = await window.SSSVBuilder.build({
         rom: state.rom, level: state.level || undefined, parts: state.parts || undefined,
         relocate: $('b-relocate').checked, newAnimals: $('b-new-animals').checked,
-      }, { onProgress: p => { bar.value = STAGES.indexOf(p.stage) + 1; if (p.detail) status(p.detail + '…'); } });
+      }, { onProgress: p => { window.LoadProgress?.step('Building your changes',Math.max(0,STAGES.indexOf(p.stage))/STAGES.length);bar.value = STAGES.indexOf(p.stage) + 1; if (p.detail) status(p.detail + '…'); } });
       bar.value = STAGES.length;
       setResult(result);
       const seconds = result.timings && result.timings.total ? ' in ' + (result.timings.total / 1000).toFixed(1) + ' s' : '';
       status('Built' + seconds + '. Patched ROM SHA1 ' + result.romSha1 + '. Starting the emulator below; you can also download the IPS or ROM.');
       state.played = (await window.SSSVPlay.startGame(result.rom, 'patched.z64')) !== false;
-      scrollToScreen();
+      window.LoadProgress?.done();scrollToScreen();
     } catch (error) {
-      bar.hidden = true;
+      window.LoadProgress?.fail(explain(error && error.message));bar.hidden = true;
       status(explain(error && error.message));
     } finally {
       state.busy = false; update();

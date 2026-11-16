@@ -5,6 +5,7 @@ import shutil, subprocess, sys
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMANDS = [
+    ['node', 'tests/test_load_progress.js'],
     ['node', 'tests/test_story_rom.js'],
     ['node', 'tests/test_story_state.js'],
     ['node', 'tests/test_texture_tiles.js'],

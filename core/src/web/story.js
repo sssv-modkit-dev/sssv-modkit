@@ -41,7 +41,7 @@ function enabled() {
 async function action(fn) {
   if (busy) return;
   busy = true; enabled();
-  try { await fn(); } catch (error) { status(error.message); }
+  try { await fn(); } catch (error) { window.LoadProgress?.fail(error.message);status(error.message); }
   finally { busy = false; enabled(); }
 }
 function option(select, value, label) { const o = document.createElement('option'); o.value = value; o.textContent = label; select.append(o); }
@@ -293,8 +293,10 @@ window.EditorROMBeforeReplace=()=>!dirty||confirm('Discard current edits and loa
 $('rom').onchange = () => action(async () => {
   if (!window.ROMSession && !window.EditorROMBeforeReplace()) return;
   const file = $('rom').files[0]; if (!file) return;
+  await window.LoadProgress?.start(['Checking your ROM']);
   const source=await window.ROMSession?.get();
   status('Reading dialogue banks and terrain metadata...');await new Promise(resolve=>setTimeout(resolve,0));
+  await window.LoadProgress?.step('Reading dialogue and tilesets',.35);
   let next;try{next = new StoryROM.Project(new Uint8Array(await file.arrayBuffer()));}catch{throw Error('This ROM could not be read. Choose your unmodified SSSV US 1.0 ROM and try again.');}
   const saved=source?await ROMSession.read('story'):null,tiles=source?await ROMSession.read('terrain'):null;
   if(saved&&saved.hash===source?.hash){StoryROM.validate(next.original,saved.data);next.data=saved.data;}
@@ -305,7 +307,9 @@ $('rom').onchange = () => action(async () => {
   $('ips').disabled = true;
   $('save').textContent = document.body.dataset.page === 'dialogue' ? 'Download edits JSON' : 'Download sheet PNG';
   $('build').textContent = 'Save & build ROM';
+  await window.LoadProgress?.step(document.body.dataset.page==='dialogue'?'Opening dialogue':'Building tilesets',.75);
   await start();
+  window.LoadProgress?.done();
 });
 $('ips').onclick = () => action(() => exportROM(true));
 for(const link of document.querySelectorAll('.global-nav>a'))link.addEventListener('click',async event=>{if(!project||event.ctrlKey||event.metaKey||event.shiftKey)return;event.preventDefault();await persistSession();if(!sessionSaved)return;location.href=link.href;});

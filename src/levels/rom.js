@@ -65,7 +65,7 @@ const LevelRom = (() => {
     if(block!==24)throw Error('Incomplete ground polygon blocks.');
     return {pos,col,uv,sl,wat};
   }
-  function models(rom){const v=view(rom),MODEL={},TBL=[];
+  async function models(rom){const v=view(rom),MODEL={},TBL=[];
     function walk(address,depth=0,state={gm:0}){let p=0x398D0+(address&0xffffff),vertices=new Array(32),tris=[];
       for(let commands=0;commands<20000;commands++){if(p+8>rom.length)throw Error('Model list out of bounds.');const a=v.getUint32(p),b=v.getUint32(p+4),op=a>>>24;p+=8;
         if(op===0xB8)break;
@@ -76,7 +76,7 @@ const LevelRom = (() => {
         else if(op===0xB6)state.gm&=~b;else if(op===0xB7)state.gm|=b;
       }return tris;
     }
-    for(let type=0;type<247;type++){const p=0x7B9BD8+type*0x9C;TBL.push([rom[p+0x15],v.getInt16(p+0x1C),v.getInt16(p+0x72),v.getInt16(p+0x74),v.getInt16(p+0x7A)]);
+    for(let type=0;type<247;type++){if(type%12===0)await new Promise(resolve=>setTimeout(resolve,0));const p=0x7B9BD8+type*0x9C;TBL.push([rom[p+0x15],v.getInt16(p+0x1C),v.getInt16(p+0x72),v.getInt16(p+0x74),v.getInt16(p+0x7A)]);
       const address=v.getUint32(p+4);if(address>>>24!==1)continue;const triangles=walk(address),positions=[],colors=[];if(!triangles.length)continue;
       for(const point of triangles){positions.push(...point.slice(0,3));let c=point.slice(3,6);if(point[6]){const n=c.map(a=>(a>127?a-256:a)/127),shade=Math.floor(255*(.35+.65*Math.max(0,n[0]*.35+n[1]*.45+n[2]*.82)));c=[shade,shade,shade];}colors.push(...c);}
       MODEL[type]={p:encoded(positions,Int16Array),c:encoded(colors,Uint8Array),n:positions.length/3,zmin:Math.min(...positions.filter((_,i)=>i%3===2))};
@@ -92,8 +92,9 @@ const LevelRom = (() => {
   async function decode(input,progress=()=>{}){const rom=normalize(input),sha=hex(new Uint8Array(await crypto.subtle.digest('SHA-1',rom)));
     // Patched ROMs retain their own identity; structural decoders validate the layout.
     const titles=typeof StoryROM!=='undefined'?new StoryROM.Project(rom).data.banks:{};
-    const {MODEL,TBL}=models(rom),LEVELS=[],EDITOR_STOCK={},ATLAS={};
-    for(let id=1;id<=36;id++){progress(`Decoding level ${id} of 36…`);await new Promise(resolve=>setTimeout(resolve,0));const ch=chunks(rom,id),h=ch[12],m=terrain(ch[10],h),zone=h[0x21],sub=h[0x53],key=`${zone}_${sub}`;
+    await globalThis.LoadProgress?.step('Building props',.2);
+    const {MODEL,TBL}=await models(rom),LEVELS=[],EDITOR_STOCK={},ATLAS={};
+    for(let id=1;id<=36;id++){await globalThis.LoadProgress?.step(`Reading level ${id} of 36`,.25+id/36*.4);progress(`Decoding level ${id} of 36…`);await new Promise(resolve=>setTimeout(resolve,0));const ch=chunks(rom,id),h=ch[12],m=terrain(ch[10],h),zone=h[0x21],sub=h[0x53],key=`${zone}_${sub}`;
       if(!ATLAS[key])ATLAS[key]=atlas(rom,zone,sub);
       EDITOR_STOCK[id]={props:records(ch[0],22),animals:records(ch[1],16)};
       const xs=m.pos.filter((_,i)=>i%3===0),ys=m.pos.filter((_,i)=>i%3===1),zs=m.pos.filter((_,i)=>i%3===2),bounds=a=>a.length?[Math.min(...a),Math.max(...a)]:[0,0],xb=bounds(xs),yb=bounds(ys),zb=bounds(zs);
