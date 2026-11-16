@@ -1,7 +1,7 @@
 /* Keep editing sections discoverable while reserving the canvas for the model. */
 (()=>{
  const side=document.getElementById('side'),right=document.getElementById('edit-side');
- for(const id of ['model-state-bar','view-settings','camera-tools'])side.append(document.getElementById(id));
+ for(const id of ['model-state-bar','camera-tools'])side.append(document.getElementById(id));
  const tabs=document.createElement('div');tabs.id='workbench-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Workbench sections');
  const sections=[['shape','Shape'],['colour','Colour & pixels'],['files','Import & save']];
  const panel=document.createElement('div');panel.id='workbench-content';panel.setAttribute('role','tabpanel');
