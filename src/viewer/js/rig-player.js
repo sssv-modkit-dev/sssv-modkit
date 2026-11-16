@@ -46,7 +46,19 @@ function bipedJoints(rig,phase,mode){
 function neck(rig,J,phase){if(!rig.neck)return;const [l1,l2,m,div=10]=rig.neck;let na=Math.max(1,20+Math.trunc(sin(deg(phase))/div));
  if(m>=3&&m<=5)na=((na-20)>>1)+20;else if(m>=6&&m<=8)na=0;
  J[19]=[J[1][0],J[1][1]+((l1*sin(na))>>8),J[1][2]+((l1*cos(na))>>8)];J[20]=[J[1][0],J[19][1]+l2,J[19][2]]}
-const joints=(rig,phase,mode)=>rig.body.kind==='biped'?bipedJoints(rig,phase,mode):quadJoints(rig,phase,mode);
+// Knuckle-walker (gorilla, 0x802B9D20): body hops, shoulders and hips counter-twist; legs (0x802C2D98 ->
+// 0x802C3188) hip->knee swings +-22.5 deg (run 45), foot points forward; a knee below ground lifts the leg.
+const raw=ph=>Math.round(Math.sin((ph&255)/256*2*Math.PI)*32767);
+function apeJoints(rig,phase,mode){
+ const {h,hip,sw,hw}=rig.body,k=mode==='run'?6:4,ph=phase&255,J=[],c16=raw(ph+64)>>11;
+ const z2=(3*hip>>2)+((k*h*(256-(raw(ph*2+64)>>7)))>>13),x1=(k*h*c16)>>8,t=(c16*k*sw)>>9,u=(c16*k*hip)>>8;
+ J[2]=[0,0,z2];J[0]=[0,0,z2+h];J[1]=[x1,0,z2+2*h];J[3]=[x1-sw,-t,J[1][2]+t];J[4]=[x1+sw,t,J[1][2]-t];J[5]=[-hw,0,z2+u];J[6]=[hw,0,z2-u];
+ const [l1,l2]=rig.legs.len;[[5,13,0],[6,16,128]].forEach(([hp,kn,off])=>{const a=(mode==='run'?raw(ph+off)>>10:raw(ph+off)>>11)&255,sa=raw(a)>>7,ca=raw(a+64)>>7;
+  const K=[J[hp][0],J[hp][1]+((sa*l1)>>8),J[hp][2]-((ca*l1)>>8)],F=[K[0],K[1]+((ca*l2)>>8),K[2]+((sa*l2)>>8)];
+  const lift=Math.min(Math.max(-K[2],0),0x800);K[2]+=lift;J[hp][2]+=lift;F[2]+=lift+Math.min(Math.max(-F[2]-lift,0),0x800);J[kn]=K;J[kn+1]=F});
+ neck(rig,J,phase);return J;
+}
+const joints=(rig,phase,mode)=>rig.body.kind==='biped'?bipedJoints(rig,phase,mode):rig.body.kind==='ape'?apeJoints(rig,phase,mode):quadJoints(rig,phase,mode);
 // Part matrix (main 0x80126388): X along the bone, Y level and perpendicular, Z completes; origin = midpoint/8.
 function partMatrix(J,a,b,mirror){
  const A=J[a],B=J[b];if(!A||!B)return null;const d=B.map((v,k)=>v-A[k]),[dx,dy,dz]=d;let p,q;if(!dx&&!dy&&!dz)return null;
