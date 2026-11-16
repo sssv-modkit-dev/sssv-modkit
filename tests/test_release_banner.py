@@ -46,6 +46,12 @@ class BannerTests(unittest.TestCase):
         self.assertIn('ReleaseBanner.draw', page)
         self.assertNotIn('src="release_banner.js"', page)
 
+    def test_default_edition_follows_animal_not_palette(self):
+        for animal in ('bear', 'fox', 'dog'):
+            for palette in banner.PRESETS:
+                page = banner.make_page(self.options(name='', head=animal, palette=palette), 'english')
+                self.assertIn('"name": "' + animal.title() + '"', page)
+
     def test_existing_output_rejected_before_browser_launch(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / 'existing.png'

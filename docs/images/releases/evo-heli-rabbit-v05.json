@@ -1,0 +1,26 @@
+{
+  "format": "version-banner-generator-v1",
+  "project": "SSSV MODKIT",
+  "name": "EVO + Heli-Rabbit Teamup",
+  "version": "PRE-ALPHA v0.5",
+  "palette": "orange",
+  "accent": "#efb16b",
+  "quoteStyle": "english",
+  "caption": "“EVO + Heli-Rabbit Teamup” edition",
+  "width": 1500,
+  "height": 500,
+  "image": "evo_cutscene.png",
+  "imageSha256": "35a57f183c9596a5317edaf6187d9674c586ce01e7310a9618b81a43aea64bb5",
+  "images": [
+    {
+      "image": "evo_cutscene.png",
+      "sha256": "35a57f183c9596a5317edaf6187d9674c586ce01e7310a9618b81a43aea64bb5"
+    },
+    {
+      "image": "rabbit.png",
+      "sha256": "84e920e480d03564f8f2c40405fb19a2b0a25bd0b3e4719a77639aa07c591d75"
+    }
+  ],
+  "titleFont": "system-ui",
+  "titleStyle": "semibold italic"
+}

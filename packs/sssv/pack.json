@@ -125,6 +125,14 @@
   {
    "src": "../../src/web/classicplus.json",
    "dest": "classicplus.json"
+  },
+  {
+   "src": "../../src/web/home.css",
+   "dest": "home.css"
+  },
+  {
+   "src": "../../src/web/home.js",
+   "dest": "home.js"
   }
  ],
  "build_hook": "build_hook.py",

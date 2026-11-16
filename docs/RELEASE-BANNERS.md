@@ -1,15 +1,31 @@
 # Release banners
 
-The README shows **Amberish Mane Lion** (pre-alpha v0.01):
-`docs/images/releases/amberish-mane-lion.png`, a 1500 x 500 banner with amber accents on midnight blue and a captured lion head facing the title. The eyes use the local ROM's CI4 texture, rendered as texel geometry. Only the final documentation banner is included here.
+The README now shows **“EVO + Heli-Rabbit Teamup” edition, pre-alpha v0.5**:
+`docs/images/releases/evo-heli-rabbit-v05.png` (1500 x 500, amber on midnight blue).
+The shared core has its own **“Dan Danger” edition, pre-alpha v0.5** banner.
+These are documentation version labels; no tag or public release is created by generating them.
 
-Made with the separately maintained [Version Banner Generator](https://github.com/sssv-modkit-dev/version-banner-generator), run without changes:
+Made with the separately maintained [Version Banner Generator](https://github.com/sssv-modkit-dev/version-banner-generator)
+Python CLI. From that checkout:
 
-```powershell
-powershell -NoProfile -File tools/make-banner.ps1 -Project 'SSSV MODKIT' -Name 'Amberish Mane Lion' -Version 'PRE-ALPHA v0.01' -Palette orange -ImagePath LION-HEAD.png -QuoteStyle english -Out amberish-mane-lion.png
+```sh
+python tools/make-banner.py --project 'SSSV MODKIT' --name 'EVO + Heli-Rabbit Teamup' --version 'PRE-ALPHA v0.5' --palette orange --quote-style english --image-path EVO.png --image-path HELI-RABBIT.png --out evo-heli-rabbit-v05.png
+python tools/make-banner.py --project 'SSSV EDITOR CORE' --name 'Dan Danger' --version 'PRE-ALPHA v0.5' --palette blue --quote-style english --image-path DAN-DANGER.png --out dan-danger-v05.png
 ```
 
-The input head and generated settings remain private. The earlier Velvet Midnight Rat light/dark pair and Auburnish Ear Bear banner remain archived. The commands below describe the older in-repo generator.
+Artwork provenance (2026-11-16): local Model Editor **Save PNG image** exports from
+the owner's US 1.0 ROM, using the bundled EVO cutscene, rabbit and Dan Danger poses.
+The rabbit pose includes the helicopter rotor. Vertex colours and the ground patch
+were disabled for neutral-material previews; inherited game materials and pose details
+are approximate, not game-accurate illustrations. Only the final banners and settings
+are included; source PNGs, geometry and ROM remain private. Rights remain with the game's
+rights holders (see NOTICE.md). Earlier banners remain archived.
+
+## In-repo composer
+
+Edition defaults use the animal name alone (for example, **“Bear” edition**).
+Custom names and matched quotation styles remain supported. Python and Bash replace
+the retired PowerShell wrapper on Windows, macOS and Linux.
 
 Generate a minimal banner from the verified local game-head branding render:
 
@@ -18,7 +34,7 @@ sh src/make_release_banner.sh --version 'EDITION SERIES'
 sh src/make_release_banner.sh --batch
 ```
 
-The first command writes `build/release-banner.png`; the batch writes three
+The first command writes `build/release-banner.png`; the batch writes four
 future concepts to `build/future-banners/`. Existing files are never overwritten.
 Use `--out` to choose another filename (or batch directory).
 
@@ -41,7 +57,7 @@ The command-line generator and interactive composer share `src/release_banner.js
 for layout, typography, quotation marks and raster recolouring. The generator
 checks that rendering completed and the PNG dimensions match before saving.
 
-Edition names are free-form ("something something animal"). The complete title
+Edition names are free-form; the defaults are simply animal names. The complete title
 is italic and accent-coloured, with matched quotation marks around the name; the version
 line below it is small and lower case. A fine bottom rule and short accent line complete the layout.
 Optional `--name`, `--version` and `--palette blue|orange|green|purple` control the title,
@@ -70,7 +86,7 @@ Owner's pick for release banners: EVO, EVO chip, polar bear, camel, elephant, an
 
 ## Publication
 
-The selected README banner is `docs/images/releases/amberish-mane-lion.png`.
+The selected README banner is `docs/images/releases/evo-heli-rabbit-v05.png`.
 Future concepts remain local in build; no version numbers or releases are implied.
 Review images under docs/PREPUBLISH.md. Game-head renders remain third-party game
 content, outside the CC0 dedication; see NOTICE.md. Never publish ROMs, extracted
