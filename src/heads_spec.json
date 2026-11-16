@@ -1,0 +1,379 @@
+{
+ "bear": {
+  "parts": [
+   849392
+  ],
+  "snout": "+x",
+  "up": "-z",
+  "yaw": 45
+ },
+ "camel": {
+  "parts": [
+   952496
+  ],
+  "snout": "+x",
+  "up": "-z",
+  "roll": 0
+ },
+ "chameleon": {
+  "parts": [
+   1025376
+  ],
+  "snout": "+x",
+  "up": "+z"
+ },
+ "desert_fox": {
+  "parts": [
+   965344
+  ],
+  "snout": "-x",
+  "up": "+z"
+ },
+ "dog": {
+  "parts": [
+   821248
+  ],
+  "snout": "-z",
+  "up": "-x",
+  "roll": -60
+ },
+ "elephant": {
+  "parts": [
+   1010544
+  ],
+  "snout": "+x",
+  "up": "-z",
+  "eyes": false
+ },
+ "evo": {
+  "parts": [
+   259872
+  ],
+  "snout": "+x",
+  "up": "+z",
+  "yaw": 22,
+  "fb": [
+   175,
+   175,
+   190
+  ]
+ },
+ "fox": {
+  "parts": [
+   837440
+  ],
+  "snout": "+x",
+  "up": "-z",
+  "remap": {
+   "dark": [
+    200,
+    70,
+    25
+   ]
+  }
+ },
+ "frog": {
+  "parts": [
+   1081312
+  ],
+  "snout": "+x",
+  "up": "+z",
+  "fb": [
+   70,
+   130,
+   60
+  ],
+  "extras": [
+   {
+    "part": 1081712,
+    "at": "top",
+    "k": -0.3,
+    "fb": [
+     240,
+     240,
+     240
+    ]
+   }
+  ]
+ },
+ "gorilla": {
+  "parts": [
+   1004816
+  ],
+  "snout": "+x",
+  "up": "+z"
+ },
+ "hippo": {
+  "parts": [
+   1029440
+  ],
+  "snout": "-x",
+  "up": "+z"
+ },
+ "husky": {
+  "parts": [
+   926752
+  ],
+  "snout": "+x",
+  "up": "-z"
+ },
+ "hyena": {
+  "parts": [
+   1016352
+  ],
+  "snout": "+x",
+  "up": "-z",
+  "remap": {
+   "dark": [
+    120,
+    100,
+    75
+   ]
+  }
+ },
+ "lion": {
+  "parts": [
+   989792
+  ],
+  "snout": "-x",
+  "up": "+z",
+  "yaw": 30
+ },
+ "mouse": {
+  "parts": [
+   840832
+  ],
+  "snout": "+x",
+  "up": "+z",
+  "thin": 0.1
+ },
+ "parrot": {
+  "parts": [
+   992816
+  ],
+  "snout": "+x",
+  "up": "+z",
+  "extras": [
+   {
+    "part": 993104,
+    "at": "front",
+    "k": 0.3
+   }
+  ]
+ },
+ "penguin": {
+  "parts": [
+   910800
+  ],
+  "snout": "+x",
+  "up": "+z",
+  "fb": [
+   45,
+   50,
+   70
+  ],
+  "extras": [
+   {
+    "part": 911520,
+    "at": "front",
+    "k": 0.3
+   }
+  ]
+ },
+ "polar_bear": {
+  "parts": [
+   919568
+  ],
+  "snout": "+x",
+  "up": "-z"
+ },
+ "rat": {
+  "parts": [
+   846512
+  ],
+  "snout": "+x",
+  "up": "-z",
+  "remap": {
+   "dark": [
+    110,
+    95,
+    85
+   ]
+  },
+  "thin": 0.04
+ },
+ "scorpion": {
+  "src": "scorpion",
+  "parts": [
+   970960
+  ],
+  "snout": "+x",
+  "up": "+z",
+  "pitch": 50,
+  "yaw": 35,
+  "fb": [
+   140,
+   110,
+   70
+  ],
+  "extras": [
+   {
+    "part": 971552,
+    "at": "abs",
+    "shift": [
+     45,
+     48,
+     0
+    ]
+   },
+   {
+    "part": 971552,
+    "at": "abs",
+    "shift": [
+     45,
+     -48,
+     0
+    ],
+    "mirror": "y"
+   },
+   {
+    "part": 971312,
+    "at": "abs",
+    "shift": [
+     -85,
+     0,
+     25
+    ]
+   }
+  ]
+ },
+ "seagull": {
+  "parts": [
+   914752
+  ],
+  "snout": "+x",
+  "up": "-z"
+ },
+ "sheep": {
+  "parts": [
+   829376
+  ],
+  "snout": "+x",
+  "up": "+z",
+  "extras": [
+   {
+    "part": 831712,
+    "at": "front",
+    "k": -0.6,
+    "fb": [
+     60,
+     55,
+     55
+    ]
+   }
+  ],
+  "inherit_eyes": [
+   833552
+  ]
+ },
+ "tortoise": {
+  "parts": [
+   1000480
+  ],
+  "snout": "+x",
+  "up": "+z"
+ },
+ "vulture": {
+  "parts": [
+   947792
+  ],
+  "snout": "+x",
+  "up": "+z"
+ },
+ "walrus": {
+  "parts": [
+   930832
+  ],
+  "snout": "+x",
+  "up": "+z",
+  "remap": {
+   "all": [
+    150,
+    100,
+    70
+   ]
+  },
+  "extras": [
+   {
+    "part": 931984,
+    "at": "front",
+    "k": 0.0,
+    "shift": [
+     0,
+     0,
+     -15
+    ]
+   }
+  ]
+ },
+ "evo_chip": {
+  "src": "evo_microchip",
+  "parts": [
+   255584
+  ],
+  "snout": "+x",
+  "up": "+z",
+  "yaw": 35,
+  "pitch": 22,
+  "fb": [
+   70,
+   75,
+   95
+  ],
+  "remap": {
+   "dark": [
+    70,
+    75,
+    95
+   ]
+  },
+  "extras": [
+   {
+    "part": 255376,
+    "at": "abs",
+    "shift": [
+     -55,
+     -22,
+     -35
+    ]
+   },
+   {
+    "part": 255376,
+    "at": "abs",
+    "shift": [
+     55,
+     -22,
+     -35
+    ]
+   },
+   {
+    "part": 255376,
+    "at": "abs",
+    "shift": [
+     -55,
+     22,
+     -35
+    ]
+   },
+   {
+    "part": 255376,
+    "at": "abs",
+    "shift": [
+     55,
+     22,
+     -35
+    ]
+   }
+  ]
+ }
+}
