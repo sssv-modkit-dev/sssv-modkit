@@ -32,11 +32,43 @@ def _document(value, what):
     return value
 
 
-def derive_table(rom):
-    """animal_table.py --from-rom in memory; returned in the shape animal_table.json has after a JSON round trip."""
+# Characters drawn outside the animal draw code (New Game cutscene). Only segment addresses are listed here; the
+# geometry is read from the given ROM. Located by matching the cutscene's display lists against the ROM.
+EXTRA_MODELS = {
+    'dan_danger': (0xC7A30, [0x04012400, 0x0400BBC0, 0x0400BF20, 0x0400CD48, 0x04010710,
+                             0x04010A70, 0x04011868, 0x0400DFA0, 0x0400E750, 0x0400E920]),
+    'evo_cutscene': (0xC7A30, [0x0400FE60, 0x0400EB60, 0x0400ED28, 0x0400F0A0, 0x0400F1E0,
+                               0x0400F398, 0x0400F700, 0x040104C0, 0x0400EA20, 0x04010080]),
+}
+
+
+def extra_models(rom):
+    """Table entries for EXTRA_MODELS; a model whose lists do not all parse to G_ENDDL in this ROM is left out."""
+    out = {}
+    for name, (base, dls) in EXTRA_MODELS.items():
+        bases, parts = {4: base}, []
+        for v in dls:
+            d = animal_table.parse_dl(base + (v & 0xFFFFFF), bases)
+            if not d['ended']:
+                break
+            d.update({'symbol': 'D_%08X_%X' % (v, base + (v & 0xFFFFFF)), 'seg': 4, 'rom': base + (v & 0xFFFFFF),
+                      'joint_calls': [], 'sections': []})
+            parts.append(d)
+        else:
+            out[name] = {'file': None, 'seg_bases': {4: hex(base)}, 'parts': parts, 'variants': [], 'sections': [],
+                         'draw_funcs': [], 'extra': True,
+                         'palette': sorted({c['rgba'] for p in parts for c in p['primcolors']})}
+    return out
+
+
+def derive_table(rom, extras=False):
+    """animal_table.py --from-rom in memory; returned in the shape animal_table.json has after a JSON round trip.
+    extras=True adds the EXTRA_MODELS characters (Model Editor only; builds never need them)."""
     animal_table.ROM = rom
     try:
         result = animal_rom.build_from_rom(rom, animal_table.parse_dl)
+        if extras:
+            result.update(extra_models(rom))
     finally:
         animal_table.ROM = b''
     return json.loads(json.dumps(result))

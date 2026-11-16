@@ -65,7 +65,7 @@ async function loadROM(ab,filename,restored=false){
       partsTable=normaliseLocalTable(raw);
     }
     if(window.SSSVAnimalPoses){
-      const captured=await window.SSSVAnimalPoses.load(Object.keys(partsTable).filter(n=>window.SSSVAnimalPoses.species.some(([,name])=>name===n)));
+      const captured=await window.SSSVAnimalPoses.load(Object.keys(partsTable).filter(n=>window.SSSVAnimalPoses.names().includes(n)));
       Object.assign(BUNDLED_POSES,captured.poses);
       for(const [name,error] of Object.entries(captured.errors))console.warn('Skipped '+name+' pose: '+error);
     }
@@ -73,7 +73,7 @@ async function loadROM(ab,filename,restored=false){
     const error=H.useSource({table:partsTable,bytes:ab,label:(restored?'Restored saved ROM: ':'')+filename,note:ok});
     if(error){H.message(error);return false}
     // Seed only untouched view choices; source replacement clears old edit states.
-    if(window.SSSVAnimalPoses)for(const [,n] of window.SSSVAnimalPoses.species){
+    if(window.SSSVAnimalPoses)for(const n of window.SSSVAnimalPoses.names()){
       if(!BUNDLED_POSES[n]||!partsTable[n]||!BUNDLED_POSES[n].parts.every(p=>partsTable[n].p.some(q=>q.s===p.dl)))continue;
       const key='src:'+n,state=modelEdits.get(key);
       if(state.exploded===undefined)modelEdits.put(key,{...state,exploded:false});

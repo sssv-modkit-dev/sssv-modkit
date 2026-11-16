@@ -65,7 +65,7 @@
     try {
       runtime.py.globals.set('_sssv_index_input', input);
       return JSON.parse(runtime.py.runPython(
-        "import json as _sssv_json\nfrom web_build import derive_table as _sssv_derive\nfrom build_levels import normalize_rom as _sssv_normalize\n_sssv_json.dumps(_sssv_derive(_sssv_normalize(bytes(_sssv_index_input))))"));
+        "import json as _sssv_json\nfrom web_build import derive_table as _sssv_derive\nfrom build_levels import normalize_rom as _sssv_normalize\n_sssv_json.dumps(_sssv_derive(_sssv_normalize(bytes(_sssv_index_input)), extras=True))"));
     } catch (error) { throw new Error(pythonMessage(error)); }
     finally { runtime.py.globals.delete('_sssv_index_input'); input.destroy(); }
   }

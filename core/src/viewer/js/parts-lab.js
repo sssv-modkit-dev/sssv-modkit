@@ -43,7 +43,7 @@ function validateDemoPreset(value){
 //#LAB-PURE-END
 const modelEdits=editMemory(),headshots=new Map();
 let modelCategory='';
-function modelGroup(n){if(!BUNDLED_ANIMALS.has(n)&&Object.hasOwn(PARTS_DEMOS,n))return 'Custom';return /^prop[_-]/.test(n)?'Props':'Animals'}
+function modelGroup(n){if(!BUNDLED_ANIMALS.has(n)&&Object.hasOwn(PARTS_DEMOS,n))return 'Custom';if(window.SSSVAnimalPoses?.extras?.some(([x])=>x===n))return 'Characters';return /^prop[_-]/.test(n)?'Props':'Animals'}
 function headshot(n){
   if(headshots.has(n))return headshots.get(n);
   const P=PARTS_DEMOS[n].p.find(p=>/head/i.test(p.s))||PARTS_DEMOS[n].p[0],canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;
@@ -58,7 +58,7 @@ function buildDemoPicker(){
   const retained=window.ModelEditorHost?.availableSource?.();
   if(demoMode&&retained){const b=button('Loaded animals ('+Object.keys(retained.table).length+')',()=>{window.ModelEditorHost.restoreSource();modelCategory='Animals';buildDemoPicker()});b.id='return-to-source';b.title='Return to your loaded source without selecting its file again';}
   if(!groups.includes(modelCategory))modelCategory='';
-  if(!modelCategory){for(const group of groups){const b=button(group,()=>{modelCategory=group;buildDemoPicker()});const icon=document.createElement('span');icon.className='ph';icon.setAttribute('aria-hidden','true');icon.textContent=({'Custom':'◇','Animals':'🐾','Props':'📦'})[group]||'◇';b.prepend(icon);}return}
+  if(!modelCategory){for(const group of groups){const b=button(group,()=>{modelCategory=group;buildDemoPicker()});const icon=document.createElement('span');icon.className='ph';icon.setAttribute('aria-hidden','true');icon.textContent=({'Custom':'◇','Animals':'🐾','Characters':'👤','Props':'📦'})[group]||'◇';b.prepend(icon);}return}
   button('← Categories',()=>{modelCategory='';buildDemoPicker()});
   for(const n of models.filter(n=>modelGroup(n)===modelCategory)){const b=button(n.replaceAll('_',' '),()=>{$('an').value=n;pick(n);if(demoMode)markDemoPicker()});b.dataset.model=n;b.setAttribute('aria-pressed',String(n===name));if(modelCategory==='Custom'){const img=new Image();img.alt='';img.src=headshot(n);b.prepend(img)}}
 }

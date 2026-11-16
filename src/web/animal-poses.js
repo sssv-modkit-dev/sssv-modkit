@@ -1,6 +1,9 @@
 /* SSSV captured static poses. Geometry is always decoded from the selected ROM. */
 (function(root){
 const species=[[0,"seagull"],[6,"fox"],[22,"bear"],[31,"dog"],[33,"sheep"],[46,"camel"],[66,"cool_cod"],[51,"desert_fox"],[56,"elephant"],[54,"gorilla"],[40,"husky"],[57,"hyena"],[50,"kangaroo"],[1,"lion"],[16,"mouse"],[30,"pirana"],[38,"polar_bear"],[10,"rabbit"],[32,"rat"],[53,"scorpion"],[27,"tortoise"],[19,"vulture"],[44,"walrus"]];
+// Characters outside the animal draw code (New Game cutscene); listed under Characters in the Model Editor.
+const extras=[["dan_danger","Dan Danger"],["evo_cutscene","EVO (cutscene)"]];
+const names=()=>species.map(([,name])=>name).concat(extras.map(([name])=>name));
 async function load(names=species.map(([,name])=>name)){
  const poses={},errors={};
  await Promise.all(names.map(async name=>{try{
@@ -16,6 +19,6 @@ async function load(names=species.map(([,name])=>name)){
  }catch(error){errors[name]=error.message;}}));
  return {poses,errors};
 }
-root.SSSVAnimalPoses={species,load};
+root.SSSVAnimalPoses={species,extras,names,load};
 if(typeof module!=='undefined')module.exports=root.SSSVAnimalPoses;
 })(typeof window==='undefined'?globalThis:window);
