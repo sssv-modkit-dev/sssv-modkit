@@ -7,7 +7,7 @@ const {RIGS,attach}=globalThis.SSSVAnimalRigs;let n=0;
 for(const [name,rig] of Object.entries(RIGS)){
  const pose=JSON.parse(fs.readFileSync('src/web/demo/poses/'+name+'.json','utf8'));
  assert.equal(rig.parts.length,pose.parts.length,name+': one rig entry per captured part');
- for(const m of Object.values(rig.legs.tables))for(const a of m)assert.ok(a>=0x80294E50&&a<0x803C0420,name+': table inside overlay A');
+ for(const m of Object.values(rig.legs.tables||{}))for(const a of m)assert.ok(a>=0x80294E50&&a<0x803C0420,name+': table inside overlay A');
  // fake ROM: zero tables -> legs straight down; the rig still binds and plays
  const rom=new ArrayBuffer(0x800000),p={...pose,parts:pose.parts.map(x=>({...x}))};
  assert.equal(attach({[name]:p},rom),1,name+' attaches');
@@ -16,5 +16,5 @@ for(const [name,rig] of Object.entries(RIGS)){
  assert.ok(f.every(x=>x.rows.flat().concat(x.T).every(Number.isFinite)),name+': finite frame');
  n++;
 }
-assert.ok(n>=6);
+assert.ok(n>=7);
 console.log('Animal rigs: '+n+' rigs match their captured poses and play.');

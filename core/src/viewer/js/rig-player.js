@@ -27,12 +27,26 @@ function quadJoints(rig,phase,mode){
   [[hipA,len[0]],[k,len[1]],[c,len[2]]].forEach(([ang,l],n)=>{y-=(l*sin(ang))>>8;z-=(l*cos(ang))>>8;J[j+n]=[x,y,z]});
  });
  J[1]=J[3].map((v,k)=>(v+J[4][k])>>1);J[2]=J[5].map((v,k)=>(v+J[6][k])>>1);
- if(rig.neck){const [l1,l2,m]=rig.neck;let na=Math.max(1,20+Math.trunc(sin(deg(phase))/10));
-  if(m>=3&&m<=5)na=((na-20)>>1)+20;else if(m>=6&&m<=8)na=0;
-  J[19]=[J[1][0],J[1][1]+((l1*sin(na))>>8),J[1][2]+((l1*cos(na))>>8)];J[20]=[J[1][0],J[19][1]+l2,J[19][2]]}
+ neck(rig,J,phase);
  if(rig.tail){const [joint,len]=rig.tail,a=Math.round(Math.sin(phase/256*2*Math.PI)*16);J[joint]=[J[2][0]+((len*sin(a))>>8),J[2][1]-((len*cos(a))>>8),J[2][2]]}
  return J;
 }
+// Two-legged body (0x802B9A5C, or 0x802B975C with a shift): hips sway and bob, feet (0x802C23F8/0x802C287C)
+// sit beside the hips and lift in turn; head/neck from 0x802C652C (bob sin/20) or 0x802C4A70.
+const s256=ph=>Math.round(Math.sin(ph/256*2*Math.PI)*32767)>>7;
+function bipedJoints(rig,phase,mode){
+ const {h,shift}=rig.body,J=[],run=mode==='run',ph=phase&255;let bob,sway=(h*s256(ph))>>8;
+ if(shift!=null){bob=((h*(256-s256((ph*2+64)&255)))>>8)>>shift;sway>>=shift}
+ else{bob=run?(h*s256((ph*2+64)&255))>>10:(h*(256-s256((ph*2+64)&255)))>>10;sway>>=2}
+ const top=bob+h*2;J[2]=[shift!=null?0:sway,0,bob];J[1]=[sway,0,top];J[0]=[shift!=null?0:sway,0,shift!=null?(bob+top)>>1:bob+h];J[24]=[0,0,top];
+ const {len,side}=rig.legs;[[15,side,0],[18,-side,128]].forEach(([foot,ang,off])=>{const p=(ph+off)&255,lift=run?(s256(p)*len)>>7:(s256(p)*len)>>8;
+  const dz=Math.max(-len,Math.min(len,Math.max(-bob,lift)));J[foot]=[J[2][0]-((len*sin(ang))>>8),J[2][1]+((len*cos(ang))>>8),J[2][2]+dz]});
+ neck(rig,J,phase);return J;
+}
+function neck(rig,J,phase){if(!rig.neck)return;const [l1,l2,m,div=10]=rig.neck;let na=Math.max(1,20+Math.trunc(sin(deg(phase))/div));
+ if(m>=3&&m<=5)na=((na-20)>>1)+20;else if(m>=6&&m<=8)na=0;
+ J[19]=[J[1][0],J[1][1]+((l1*sin(na))>>8),J[1][2]+((l1*cos(na))>>8)];J[20]=[J[1][0],J[19][1]+l2,J[19][2]]}
+const joints=(rig,phase,mode)=>rig.body.kind==='biped'?bipedJoints(rig,phase,mode):quadJoints(rig,phase,mode);
 // Part matrix (main 0x80126388): X along the bone, Y level and perpendicular, Z completes; origin = midpoint/8.
 function partMatrix(J,a,b,mirror){
  const A=J[a],B=J[b];if(!A||!B)return null;const d=B.map((v,k)=>v-A[k]),[dx,dy,dz]=d;let p,q;if(!dx&&!dy&&!dz)return null;
@@ -45,13 +59,13 @@ const mul=(A,B)=>A.map(r=>[0,1,2].map(k=>r[0]*B[0][k]+r[1]*B[1][k]+r[2]*B[2][k])
 const vm=(v,B)=>[0,1,2].map(k=>v[0]*B[0][k]+v[1]*B[1][k]+v[2]*B[2][k]);
 function inv(M){const [[a,b,c],[d,e,f],[g,h,i]]=M,A=e*i-f*h,B=f*g-d*i,C=d*h-e*g,det=a*A+b*B+c*C;if(Math.abs(det)<1e-12)return null;
  return [[A,c*h-b*i,b*f-c*e],[B,a*i-c*g,c*d-a*f],[C,b*g-a*h,a*e-b*d]].map(r=>r.map(x=>x/det))}
-function rigFrames(rig,phase,mode){const J=quadJoints(rig,phase,mode);return rig.parts.map(p=>p&&partMatrix(J,p[0],p[1],p[2]||0))}
+function rigFrames(rig,phase,mode){const J=joints(rig,phase,mode),f=rig.parts.map(p=>p&&partMatrix(J,p[0],p[1],p[2]||0));f.J=J;return f}
 // Bind the rig to a captured pose. Parts are rebuilt from the game skeleton itself (joints stay connected);
 // the capture supplies only the view frame (rotation from a body bone, scale and offset fitted on the part
 // centres) and each part's size (its captured row lengths).
 function bind(pose){
  const rig=pose&&pose.anim;if(!rig||!rig.legs||!Array.isArray(rig.parts)||rig.parts.length!==pose.parts.length)return null;
- const modes=Object.keys(rig.legs.tables||{});if(!modes.length)return null;
+ const modes=rig.modes||Object.keys(rig.legs.tables||{});if(!modes.length)return null;
  const torso=p=>p&&p[0]<=2&&p[1]<=2,spine=p=>torso(p)&&p[0]&&p[1];let bi=rig.parts.findIndex(spine);if(bi<0)bi=rig.parts.findIndex(torso);if(bi<0)return null;
  const cap=pose.parts.map(pp=>({R:pp.rows,T:pp.T,size:pp.rows.map(r=>Math.hypot(...r))})),body0=rigFrames(rig,0,modes[0])[bi],Ri=body0&&inv(body0.R);if(!Ri)return null;
  const Rot=mul(Ri,cap[bi].R.map((r,j)=>r.map(v=>v/cap[bi].size[j])));
@@ -62,7 +76,10 @@ function bind(pose){
  let best=null;for(const mode of modes)for(let ph=0;ph<256;ph+=2){const f=fitT(rigFrames(rig,ph,mode));if(f.s>0&&(!best||f.e<best.e))best={...f,ph,mode}}
  if(!best)return null;
  const place=(m,i)=>({rows:m.R.map((r,j)=>vm(r,Rot).map(v=>v*cap[i].size[j])),T:vm(m.T,Rot).map((v,k)=>v*best.s+best.t[k])});
- return {modes,rest:best,frame(phase,mode){const w=rigFrames(rig,phase&255,mode);return pose.parts.map((pp,i)=>w[i]?{...pp,...place(w[i],i)}:pp)}};
+ // parts without both joints (arms, harness...) move with their first computed joint instead of floating
+ const J0=rigFrames(rig,best.ph,best.mode).J,anchor=rig.parts.map(p=>p?[p[0],p[1],0].find(j=>J0[j]):0);
+ return {modes,rest:best,frame(phase,mode){const w=rigFrames(rig,phase&255,mode);return pose.parts.map((pp,i)=>{if(w[i])return {...pp,...place(w[i],i)};
+  const j=anchor[i],a=w.J[j],b=J0[j];if(!a||!b)return pp;const d=vm(a.map((v,k)=>(v-b[k])/8),Rot).map(v=>v*best.s);return {...pp,T:pp.T.map((v,k)=>v+d[k])}})}};
 }
-root.RigPlayer={keyAngle,quadJoints,partMatrix,bind};
+root.RigPlayer={keyAngle,quadJoints,bipedJoints,partMatrix,bind};
 })(typeof window==='undefined'?globalThis:window);
