@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id),base=['load','path','patches'],depth=['models','textures','levels','dialogue'];
 let saved;try{saved=JSON.parse(sessionStorage.getItem('guided-path')||'null');}catch{}
-let state={step:'load',path:'patch',demo:false,patches:[],...saved},source=null,manifest=[],result=null,busy=false,cpData=null;
+let state={step:'load',path:'patch',demo:false,patches:['faster-pause','fat-bear-trophy','skip-intro'],...saved}  // owner picks: on by default for a new session,source=null,manifest=[],result=null,busy=false,cpData=null;
 {const p=new URLSearchParams(location.search).get('path');if(p==='patch'||p==='depth')state.path=p;}  // home page: Quick build / Customize step by step
 if(!Array.isArray(state.patches))state.patches=[];
 const chosen=()=>state.patches.filter(id=>manifest.some(p=>p.id===id&&p.status==='available'));
