@@ -1,0 +1,72 @@
+import {spawn,execFileSync} from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {launch,open,evaluate,until,sleep} from './cdp.mjs';
+const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'import-editor-'));
+execFileSync('python',['src/build_site.py','--pack','packs/sample','--out',tmp,'--no-vendor'],{stdio:'inherit'});
+const server=spawn('python',['-m','http.server','8781','--bind','127.0.0.1','--directory',tmp],{stdio:'ignore',windowsHide:true});
+await sleep(800);
+const c=await launch(9359);
+try{
+ const s=await open(c,'http://127.0.0.1:8781/model-editor.html');
+ await until(c,s,"typeof ModelImportWorkbench==='object'");
+ await evaluate(c,s,`(()=>{
+ const walk=[0,23,32,23,0,-23,-32,-23],rig={body:{hl:390,hw:150,lift:400},neck:[600,400,10],legs:{seg:1,front:{len:[500]},rear:{len:[500]},tables:{walk:[walk,walk]}},parts:parsed.map((p,i)=>i===0?[1,2]:i===1?[1,20]:[3,7])};
+ const J=RigPlayer.quadJoints(rig,0,'walk');
+ pose={animal:name,anim:rig,parts:parsed.map((p,i)=>{const m=RigPlayer.partMatrix(J,...rig.parts[i],0);return {dl:p.sym,rows:m.R,T:m.T}})};
+ BUNDLED_POSES[name]=pose;assembled=true;sheet=false;gallery=false;all=false;ui();rebuild(true);
+ document.getElementById('tab-files').click();document.getElementById('model-import').open=true;
+ })()`);
+ await sleep(100);
+ const obj='o cube\nv -1 -1 -1\nv 1 -1 -1\nv 1 1 -1\nv -1 1 -1\nv -1 -1 1\nv 1 -1 1\nv 1 1 1\nv -1 1 1\nf 1 2 3 4\nf 5 8 7 6\nf 1 5 6 2\nf 2 6 7 3\nf 3 7 8 4\nf 5 1 4 8';
+ await evaluate(c,s,`ModelImportWorkbench.load(ModelImport.obj(${JSON.stringify(obj)}))`);
+ // Real pointer events cover preview orbit, rather than calling its handler.
+ const pos=await evaluate(c,s,`(()=>{const c=document.getElementById('import-preview');c.scrollIntoView({behavior:'instant',block:'center'});const r=c.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+ await sleep(200);
+ await c.send('Input.dispatchMouseEvent',{type:'mousePressed',...pos,button:'left',clickCount:1},s);
+ await c.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:pos.x,y:pos.y+45,button:'left',buttons:1},s);
+ await c.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:pos.x,y:pos.y+45,button:'left',clickCount:1},s);
+ assert.notEqual((await evaluate(c,s,'ModelImportWorkbench.getView()')).pitch,0);
+ const result=await evaluate(c,s,`(async()=>{
+ const byId=id=>document.getElementById('import-'+id);
+ const old=parsed.map(p=>JSON.stringify(p.tris));
+ const tex=document.createElement('canvas');tex.width=tex.height=2;tex.getContext('2d').fillStyle='#ff0000';tex.getContext('2d').fillRect(0,0,2,2);const blob=await new Promise(r=>tex.toBlob(r));const files=new DataTransfer();files.items.add(new File([blob],'red.png',{type:'image/png'}));byId('image').files=files.files;await byId('image').onchange({target:byId('image')});
+ // Select a limb to ensure Walk actually moves the imported part.
+ const select=byId('mapping').querySelector('select');select.value=ModelImportWorkbench.getTargets().at(-1).id;select.onchange();
+ await byId('run').onclick();if(!ModelImportWorkbench.getPackage())throw Error(byId('warning').textContent);
+ byId('use').click();const index=parsed.findIndex(p=>p.imported),symbol=parsed[index].sym;
+ const swapped=JSON.stringify(parsed[index].tris)!==old[index]&&document.getElementById('parts').textContent.includes('(imported)');
+ const target=ModelImportWorkbench.getPackage().parts[0];const capture=pose.parts.findIndex(p=>p.dl===symbol);
+ const textured=parsed[index].tris.every(t=>t.v.every(v=>v.c[0]===1&&v.c[1]===0&&v.c[2]===0));
+ const local=parsed[index].tris[0].v[0],world=asmSources().find(s=>s.P.sym===symbol).xf(local),expected=target.meshes[0].positions[target.meshes[0].triangles[0][0]];
+ const inverse=world.every((v,k)=>Math.abs(v-[expected[0],expected[2],-expected[1]][k])<1e-6);
+ animStart('walk');animPaused=true;animShow();const a=asmSources().find(s=>s.P.sym===symbol).xf(local);animPhase+=64;animShow();const b=asmSources().find(s=>s.P.sym===symbol).xf(local);const moves=JSON.stringify(a)!==JSON.stringify(b);animStop();
+ const project=JSON.parse(JSON.stringify(demoProject())),saved=JSON.stringify(project.imports);
+ byId('restore').click();const restored=parsed.every((p,i)=>JSON.stringify(p.tris)===old[i]);
+ ModelEditorHistory.undo();const undo=parsed.some(p=>p.imported);ModelEditorHistory.redo();const redo=parsed.every(p=>!p.imported);
+ applyModelProject(project);const roundtrip=JSON.stringify(demoProject().imports)===saved&&parsed.some(p=>p.imported);
+ animStart('walk');animPaused=true;animShow();animStart('hit',true);const queued=animQueue.join(',')==='walk,hit';animQueue=['walk'];
+ const originalDraw=draw;let exportFrames=0;draw=size=>{if(Array.isArray(size)&&asmSources().some(s=>s.P.imported))exportFrames++;return originalDraw(size)};const anchorClick=HTMLAnchorElement.prototype.click;HTMLAnchorElement.prototype.click=function(){};
+ try{await AnimExport.exportGif();}finally{draw=originalDraw;HTMLAnchorElement.prototype.click=anchorClick;}const exported=exportFrames===animFrames('walk');animStop();rebuild(false);
+ const before=nv;selectPart(symbol);mesh[symbol]={s:[1.5,1,1],m:[10,0,0],r:[0,0,30],o:false};rebuild(false);const editable=nv===before&&selectedParts.has(symbol)&&pickTris.some(t=>t.sym===symbol);
+ byId('reset-view').click();const reset=ModelImportWorkbench.getView().pitch===0&&ModelImportWorkbench.getView().zoom===1;
+ return {swapped,inverse,moves,restored,undo,redo,roundtrip,editable,reset,textured,queued,exported,capture};
+ })()`);
+ for(const k of ['swapped','inverse','moves','restored','undo','redo','roundtrip','editable','reset','textured','queued','exported'])assert.ok(result[k],k+' '+JSON.stringify(result));
+ await c.send('Emulation.setDeviceMetricsOverride',{width:360,height:800,deviceScaleFactor:1,mobile:true},s);
+ assert.ok(await evaluate(c,s,'document.documentElement.scrollWidth<=360'),'mobile width');
+ await sleep(250);
+ await c.send('Emulation.setTouchEmulationEnabled',{enabled:true},s);
+ const touchPos=await evaluate(c,s,`(()=>{const p=document.getElementById('import-preview');p.scrollIntoView({behavior:'instant',block:'center'});const r=p.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);
+ await sleep(250);
+ const touch=(type,points)=>c.send('Input.dispatchTouchEvent',{type,touchPoints:points},s);
+ await touch('touchStart',[{...touchPos,id:1}]);await touch('touchMove',[{x:touchPos.x,y:touchPos.y+30,id:1}]);await touch('touchEnd',[]);
+ assert.notEqual((await evaluate(c,s,'ModelImportWorkbench.getView()')).pitch,0,'touch pitch');
+ await touch('touchStart',[{x:touchPos.x-20,y:touchPos.y,id:1},{x:touchPos.x+20,y:touchPos.y,id:2}]);
+ await touch('touchMove',[{x:touchPos.x-45,y:touchPos.y,id:1},{x:touchPos.x+45,y:touchPos.y,id:2}]);await touch('touchEnd',[]);
+ assert.ok((await evaluate(c,s,'ModelImportWorkbench.getView()')).zoom>1,'pinch zoom');
+ assert.deepEqual(c.errors,[]);
+ console.log('Import browser: '+JSON.stringify(result)+'; 360px has no horizontal scroll.');
+}finally{c.close();server.kill()}
