@@ -42,6 +42,11 @@ EXTRA_MODELS = {
 }
 
 
+# Cutscene body textures: plain RGBA16 32x32 in the ROM (Dan's has its odd rows word-swapped, like the zone tile banks).
+EXTRA_TEXTURES = {'dan_danger': {'format': 'rgba16', 'width': 32, 'height': 32, 'image': 0x84790, 'swap': True},
+                  'evo_cutscene': {'format': 'rgba16', 'width': 32, 'height': 32, 'image': 0x6A0E0, 'swap': False}}
+
+
 def extra_models(rom):
     """Table entries for EXTRA_MODELS; a model whose lists do not all parse to G_ENDDL in this ROM is left out."""
     out = {}
@@ -53,6 +58,8 @@ def extra_models(rom):
                 break
             d.update({'symbol': 'D_%08X_%X' % (v, base + (v & 0xFFFFFF)), 'seg': 4, 'rom': base + (v & 0xFFFFFF),
                       'joint_calls': [], 'sections': []})
+            if name in EXTRA_TEXTURES:
+                d['texture'] = dict(EXTRA_TEXTURES[name])
             parts.append(d)
         else:
             out[name] = {'file': None, 'seg_bases': {4: hex(base)}, 'parts': parts, 'variants': [], 'sections': [],

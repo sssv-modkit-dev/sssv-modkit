@@ -5,6 +5,23 @@ function descriptor(t,length){
   if(!t||t.format!=='ci4'||![16,32].includes(t.width)||t.height!==t.width||!Number.isInteger(t.image)||!Number.isInteger(t.palette)||t.image<0x1000||t.palette<0x1000||t.image%2||t.palette%2||t.image+t.width*t.height/2>length||t.palette+32>length)throw new Error('Unsupported or out-of-bounds CI4 texture.');
   return {format:'ci4',width:t.width,height:t.height,image:t.image,palette:t.palette};
 }
+// View-only RGBA16 32x32 textures (cutscene characters). 'swap' = odd rows have their 4-byte words swapped.
+function viewDescriptor(t,length){
+  if(t&&t.format==='rgba16'){
+    if(t.width!==32||t.height!==32||!Number.isInteger(t.image)||t.image<0x1000||t.image%2||t.image+2048>length)throw new Error('Unsupported or out-of-bounds RGBA16 texture.');
+    return {format:'rgba16',width:32,height:32,image:t.image,swap:!!t.swap};
+  }
+  return descriptor(t,length);
+}
+function decodeRgba16(bytes,t){
+  const palette=[],lookup=new Map(),indices=[];
+  for(let y=0;y<32;y++)for(let x=0;x<32;x++){
+    const xs=t.swap&&(y&1)?x^2:x,at=t.image+(y*32+xs)*2,word=bytes[at]*256+bytes[at+1];
+    let k=lookup.get(word);if(k===undefined){k=palette.length;lookup.set(word,k);palette.push([Math.round((word>>11&31)*255/31),Math.round((word>>6&31)*255/31),Math.round((word>>1&31)*255/31),word&1?255:0]);}
+    indices.push(k);
+  }
+  return {indices,palette};
+}
 function decode(bytes,t){
   t=descriptor(t,bytes.length);const indices=[],palette=[];
   for(let i=0;i<t.width*t.height;i++)indices.push((bytes[t.image+(i>>1)]>>(i%2?0:4))&15);
@@ -22,8 +39,9 @@ function patches(original,changed){
 }
 // Clip each original body triangle in UV space to texel cells (s10.5 UVs).
 // Interpolated positions stay on that triangle; wrapping also handles negative UVs.
+const CELL_BUDGET=30000;
 function bodyGeometry(part,t,bytes){
-  const data=decode(bytes,t),cols=data.palette.map(p=>({rgba:hex(p)})),tris=[];
+  const data=t.format==='rgba16'?decodeRgba16(bytes,t):decode(bytes,t),cols=data.palette.map(p=>({rgba:hex(p)})),tris=[];
   const clip=(poly,k,edge,sign)=>{
     const out=[];for(let i=0;i<poly.length;i++){
       const a=poly[i],b=poly[(i+1)%poly.length],da=(a[k]-edge)*sign,db=(b[k]-edge)*sign;
@@ -31,6 +49,16 @@ function bodyGeometry(part,t,bytes){
       if((da>=0)!==(db>=0)){const f=da/(da-db);out.push(a.map((v,j)=>v+(b[j]-v)*f));}
     }return out;
   };
+  // Dense UV spans (cutscene characters) would explode into hundreds of thousands of cells: past a budget, sample one texel per triangle.
+  let cells=0;for(const tri of part.tris){if(!tri.v.every(v=>Array.isArray(v.uv)))continue;const us=tri.v.map(v=>v.uv[0]/32),vs=tri.v.map(v=>v.uv[1]/32);cells+=Math.max(1,Math.ceil(Math.max(...us))-Math.floor(Math.min(...us)))*Math.max(1,Math.ceil(Math.max(...vs))-Math.floor(Math.min(...vs)));}
+  if(cells>CELL_BUDGET){
+    for(const tri of part.tris){
+      if(!tri.v.every(v=>Array.isArray(v.uv))){tris.push({...tri,c:-1});continue;}
+      const u=tri.v.reduce((n,v)=>n+v.uv[0],0)/96,w=tri.v.reduce((n,v)=>n+v.uv[1],0)/96,x=((Math.floor(u)%t.width)+t.width)%t.width,y=((Math.floor(w)%t.height)+t.height)%t.height;
+      tris.push({...tri,c:data.indices[y*t.width+x]});
+    }
+    return {...part,cols,tris,textureMaterial:true};
+  }
   for(const tri of part.tris){
     if(!tri.v.every(v=>Array.isArray(v.uv))){tris.push({...tri,c:-1});continue;}
     const poly=tri.v.map(v=>[v.uv[0]/32,v.uv[1]/32,...v]);
@@ -51,7 +79,7 @@ function bodyGeometry(part,t,bytes){
 }
 // Preserve the verified planar eye-quad mapping for 16x16 strips.
 function texelGeometry(part,t,bytes){
-  descriptor(t,bytes.length);if(t.width===32)return bodyGeometry(part,t,bytes);
+  viewDescriptor(t,bytes.length);if(t.width===32)return bodyGeometry(part,t,bytes);
   const verts=part.groups.flatMap(g=>g.verts).filter(v=>Array.isArray(v.uv));if(verts.length<4)return part;
   const lo=[0,1].map(k=>Math.min(...verts.map(v=>v.uv[k]))),hi=[0,1].map(k=>Math.max(...verts.map(v=>v.uv[k])));if(hi.some((v,k)=>v<=lo[k]))return part;
   const corner=(u,v)=>verts.reduce((best,q)=>{const d=(q.uv[0]-(lo[0]+u*(hi[0]-lo[0])))**2+(q.uv[1]-(lo[1]+v*(hi[1]-lo[1])))**2;return !best||d<best.d?{q,d}:best},null).q;
@@ -73,7 +101,7 @@ function pastePixels(indices,clip,x,y,map=Array.from({length:16},(_,i)=>i),width
 }
 function paletteMap(from,to){return from.map((p,index)=>to[index]?.every((v,k)=>v===p[k])?index:to.reduce((best,q,i)=>{const d=p.reduce((n,c,k)=>n+(c-q[k])**2*(k===3?4:1),0);return d<best.d?{i,d}:best},{i:0,d:Infinity}).i);}
 function writeIndices(bytes,t,indices){descriptor(t,bytes.length);if(indices.length!==t.width*t.height||!indices.every(n=>Number.isInteger(n)&&n>=0&&n<16))throw new Error('Invalid indexed pixels.');for(let i=0;i<t.width*t.height/2;i++)bytes[t.image+i]=(indices[i*2]<<4)|indices[i*2+1];}
-const pure={descriptor,decode,colourWord,patches,texelGeometry,rectangle,contains,floodFill,copyPixels,pastePixels,paletteMap,writeIndices};
+const pure={descriptor,viewDescriptor,decode,decodeRgba16,colourWord,patches,texelGeometry,rectangle,contains,floodFill,copyPixels,pastePixels,paletteMap,writeIndices};
 if(typeof module!=='undefined')module.exports=pure;
 if(!root.document)return;
 let source=null,working=null,active=null,colour=1,painting=false,paletteChanging=false,panel=null,unavailablePanel=null,tool='pencil',selection=null,anchor=null,cursor=[0,0],previous=null,clipboard=null,message='';

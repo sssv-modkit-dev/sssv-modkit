@@ -71,7 +71,7 @@ async function loadROM(ab,filename,restored=false){
       partsTable=normaliseLocalTable(raw,ab.byteLength);
     }
     await window.LoadProgress?.step('Building props',.5);
-    for(const animal of Object.values(partsTable))for(const part of animal.p)if(part.texture)window.ModelTextureTools.descriptor(part.texture,ab.byteLength);
+    for(const animal of Object.values(partsTable))for(const part of animal.p)if(part.texture)window.ModelTextureTools.viewDescriptor(part.texture,ab.byteLength);
     partsTable=namePropModels(partsTable);
     if(window.SSSVAnimalPoses){
       await window.LoadProgress?.step('Reading animal poses',.6);

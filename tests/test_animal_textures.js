@@ -135,3 +135,15 @@ assert.ok(lineResult.tris.every(tri=>area(tri)>0),'triangle winding is preserved
 assert.ok(Math.abs(lineResult.tris.reduce((sum,t)=>sum+area(t),0)-2)<1e-9,'UV clipping neither loses nor overlaps mesh area');
 big.nodes['.texture-cut'].onclick();assert.ok(big.api.buildPatches().length);big.nodes['.texture-paste'].onclick();assert.equal(big.api.buildPatches().length,0,'32x32 select-all cut/paste restores the original');
 console.log('Body UV degeneracy, negative wrapping, area/winding and whole-image clipboard restoration pass.');
+
+// View-only RGBA16 32x32 (cutscene characters): swap exchanges 4-byte words on odd rows; other sizes/formats refused.
+{const b=new Uint8Array(0x1000+2048+8),r={format:'rgba16',width:32,height:32,image:0x1000,swap:true};
+ b[0x1000]=0xF8;b[0x1001]=0x01;                         // row 0, x 0 = red opaque
+ const row1=0x1000+64;b[row1+4]=0x07;b[row1+5]=0xC1;    // row 1 stored word 1 (x 2..3 after swap)
+ const d=T.decodeRgba16(b,r);assert.deepEqual(d.palette[d.indices[0]],[255,0,0,255]);
+ assert.deepEqual(d.palette[d.indices[32+0]],[0,255,0,255],'odd-row swap puts stored x=2 at x=0');
+ assert.deepEqual(T.decodeRgba16(b,{...r,swap:false}).palette[T.decodeRgba16(b,{...r,swap:false}).indices[32+2]],[0,255,0,255]);
+ assert.equal(T.viewDescriptor(r,b.length).format,'rgba16');
+ assert.throws(()=>T.viewDescriptor({...r,width:16,height:16},b.length));assert.throws(()=>T.viewDescriptor(r,0x1000+2047));
+ assert.throws(()=>T.descriptor(r,b.length),/Unsupported/,'RGBA16 is view-only: the editing descriptor still refuses it');}
+console.log('RGBA16 view textures: odd-row swap, bounds and edit refusal pass.');

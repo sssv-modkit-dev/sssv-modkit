@@ -18,7 +18,8 @@ function normaliseLocalTable(raw,romLength=0x2000000){
       if(!q.ended||q.seg===1&&prop===null)continue;   // props may live in segment 1; animal seg-1 parts are shared extras
       if(!safe(q.symbol)||!Number.isInteger(q.rom)||q.rom<0||q.rom>=0x2000000||!Array.isArray(q.sections||[])||!(q.sections||[]).every(safe))throw new Error('Invalid part metadata.');
       const part={s:q.symbol,r:q.rom,j:'local',v:q.sections||[],t:[]};
-      if(q.texture){const t=q.texture;if(t.format!=='ci4'||![16,32].includes(t.width)||t.height!==t.width||![t.image,t.palette].every(n=>Number.isInteger(n)&&n>=0x1000&&n%2===0)||t.image+t.width*t.height/2>romLength||t.palette+32>romLength)throw new Error('Invalid texture metadata.');part.texture={format:'ci4',width:t.width,height:t.height,image:t.image,palette:t.palette};}
+      if(q.texture&&q.texture.format==='rgba16'){const t=q.texture;if(t.width!==32||t.height!==32||!Number.isInteger(t.image)||t.image<0x1000||t.image%2||t.image+2048>romLength)throw new Error('Invalid texture metadata.');part.texture={format:'rgba16',width:32,height:32,image:t.image,swap:!!t.swap};}
+      else if(q.texture){const t=q.texture;if(t.format!=='ci4'||![16,32].includes(t.width)||t.height!==t.width||![t.image,t.palette].every(n=>Number.isInteger(n)&&n>=0x1000&&n%2===0)||t.image+t.width*t.height/2>romLength||t.palette+32>romLength)throw new Error('Invalid texture metadata.');part.texture={format:'ci4',width:t.width,height:t.height,image:t.image,palette:t.palette};}
       p.push(part);
     }
     if(p.length)out[name]=prop===null?{b,p,s:sections,draw_funcs:a.draw_funcs||[]}:{b,p,s:sections,draw_funcs:[],prop};
