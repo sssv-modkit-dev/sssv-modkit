@@ -79,7 +79,15 @@ function muxMp4({w,h,fps,samples,avcC}){
   const ftyp=box('ftyp',str('isom'),u32(0x200),str('isomiso2avc1mp41')),head=ftyp.length+moov(0).length+8;
   return cat([ftyp,moov(head),box('mdat',...samples.map(x=>x.data))]);
 }
-root.AnimExport={encodeGif,buildPalette,lzw,unionBounds,muxMp4};
+// Linear pan/zoom and shortest-arc Euler interpolation; endpoints hold outside the keyed interval.
+function cameraAt(keys,t){
+ if(!keys.length)return null;const K=keys.slice().sort((a,b)=>a.t-b.t);let a=K[0],b=a;
+ for(const k of K){if(k.t<=t)a=k;if(k.t>=t){b=k;break}b=k}
+ const u=a===b||a.t===b.t?0:Math.max(0,Math.min(1,(t-a.t)/(b.t-a.t))),out={};
+ for(const k of ['yaw','pit','roll','dist']){let d=b[k]-a[k];if(k!=='dist')d=((d+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;out[k]=a[k]+d*u}
+ out.ctr=a.ctr.map((v,k)=>v+(b.ctr[k]-v)*u);return out;
+}
+root.AnimExport={cameraAt,encodeGif,buildPalette,lzw,unionBounds,muxMp4};
 if(typeof document==='undefined'||!document.getElementById('anim-gif'))return;
 
 // --- browser half ---
@@ -94,19 +102,20 @@ function save(blob,name){const a=document.createElement('a'),u=URL.createObjectU
 // canvas and returns the canvas; n frames (one pass of the queue, see animSequence), w by h pixels.
 async function withFrames(fn){
   if(!animMode||!animBind||busy)return;busy=true;
-  const saved={mode:animMode,phase:animPhase,paused:animPaused,ground:showGround,grid:showGrid,labels:showLabels,ctr:ctr&&ctr.slice?ctr.slice():ctr,dist},seq=animSequence(),n=seq.length,name=[...new Set(seq.map(f=>f.m))].join('-'),
+  const cameraKeys=typeof motionState==='function'?motionState().keys:[];
+  const saved={camera:typeof yaw==='undefined'?null:{yaw,pit,roll},mode:animMode,phase:animPhase,paused:animPaused,ground:showGround,grid:showGrid,labels:showLabels,ctr:ctr&&ctr.slice?ctr.slice():ctr,dist},seq=animSequence(),n=seq.length,name=[...new Set(seq.map(f=>f.m))].join('-'),
     cw=cv.clientWidth*devicePixelRatio,ch=cv.clientHeight*devicePixelRatio,k=Math.min(1,MAXSIDE/Math.max(cw,ch)),w=Math.max(2,Math.round(cw*k)&~1),h=Math.max(2,Math.round(ch*k)&~1);
   animPaused=true;showGround=false;showGrid=false;showLabels=false;
   try{
-    if(frameMode!=='mine'){
+    if(!cameraKeys.length&&frameMode!=='mine'){
       const list=seq.map(f=>{animMode=f.m;animPhase=f.ph;animShow();return sceneBounds}).filter(Boolean);
       if(frameMode==='all'){const B=unionBounds(list);if(B){const f=cameraFit(B[0],B[1],cameraRotation(),w/h);ctr=f.center;dist=f.distance*1.04}}
       else if(list.length){const fits=list.map(b=>cameraFit(b[0],b[1],cameraRotation(),w/h)),mid=a=>a.slice().sort((x,y)=>x-y)[a.length>>1];
         ctr=[0,1,2].map(k=>mid(fits.map(f=>f.center[k])));dist=mid(fits.map(f=>f.distance))*TIGHT}
     }
   }catch(e){ctr=saved.ctr;dist=saved.dist}
-  try{return await fn({n,w,h,name,frame(i){animMode=seq[i].m;animPhase=seq[i].ph;animShow();draw([w,h]);return cv}})}
-  finally{animBusy='';const live=!!animBind;if(live)animMode=saved.mode;animPhase=saved.phase;animPaused=saved.paused;ctr=saved.ctr;dist=saved.dist;showGround=saved.ground;showGrid=saved.grid;showLabels=saved.labels;busy=false;if(live)animShow();need();animBar()}
+  try{return await fn({n,w,h,name,frame(i){animMode=seq[i].m;animPhase=seq[i].ph;animShow();const c=cameraAt(cameraKeys,i/Math.max(1,n-1));if(c){yaw=c.yaw;pit=c.pit;roll=c.roll;dist=c.dist;ctr=c.ctr}draw([w,h]);return cv}})}
+  finally{if(saved.camera)({yaw,pit,roll}=saved.camera);animBusy='';const live=!!animBind;if(live)animMode=saved.mode;animPhase=saved.phase;animPaused=saved.paused;ctr=saved.ctr;dist=saved.dist;showGround=saved.ground;showGrid=saved.grid;showLabels=saved.labels;busy=false;if(live)animShow();need();animBar()}
 }
 async function exportGif(){
   await withFrames(async({n,w,h,name,frame})=>{

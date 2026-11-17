@@ -241,5 +241,16 @@ function bind(pose){
   const j=anchor[i],a=w.J[j],b=J0[j];if(!a||!b)return pp;const d=vm(a.map((v,k)=>(v-b[k])/8),Rot).map(v=>v*best.s);return {...pp,T:pp.T.map((v,k)=>v+d[k])}});
   out.dust=routine(mode)?dancePuffs(rig,phase,mode).map(q=>({T:vm(q.p.map(v=>v/8),Rot).map((v,k)=>v*best.s+best.t[k]),r:q.r/8*best.s})):[];return out}};
 }
-root.RigPlayer={get DANCE_LEN(){return loopLen('dance')},MOVES,ROUTINES,BEAT,loopLen,evalMove,rigFrames,turnBody,danceModes:()=>Object.keys(ROUTINES),keyAngle,quadJoints,bipedJoints,joints,puppetJoints,setPoseJoints,setPoseWeight,actionJoints,danceJoints,dancePuffs,partMatrix,bind};
+// Accessories use the parent's full affine frame, including animated rotation and scale.
+function accessoryPoint(v,a,parent){
+ let w=v.map((x,k)=>x*a.scale[k]);
+ for(let axis=0;axis<3;axis++){const j=(axis+1)%3,k=(axis+2)%3,c=Math.cos(a.rotation[axis]*RAD),s=Math.sin(a.rotation[axis]*RAD),x=w[j],y=w[k];w[j]=x*c-y*s;w[k]=x*s+y*c}
+ w=w.map((x,k)=>x+a.offset[k]);return vm(w,parent.rows).map((x,k)=>x+parent.T[k]);
+}
+function accessoryMesh(shape){
+ const V=shape==='sphere'?[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]:shape==='cone'?[[0,1,0],[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1]]:[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+ const F=shape==='sphere'?[[0,2,4],[2,1,4],[1,3,4],[3,0,4],[2,0,5],[1,2,5],[3,1,5],[0,3,5]]:shape==='cone'?[[0,2,1],[0,3,2],[0,4,3],[0,1,4],[1,2,3],[1,3,4]]:[[0,2,1],[0,3,2],[4,5,6],[4,6,7],[0,1,5],[0,5,4],[3,7,6],[3,6,2],[0,4,7],[0,7,3],[1,2,6],[1,6,5]];
+ return F.map(f=>f.map(i=>V[i].map((x,k)=>shape==='shades'?x*[1,.22,.12][k]:x)));
+}
+root.RigPlayer={get DANCE_LEN(){return loopLen('dance')},accessoryPoint,accessoryMesh,MOVES,ROUTINES,BEAT,loopLen,evalMove,rigFrames,turnBody,danceModes:()=>Object.keys(ROUTINES),keyAngle,quadJoints,bipedJoints,joints,puppetJoints,setPoseJoints,setPoseWeight,actionJoints,danceJoints,dancePuffs,partMatrix,bind};
 })(typeof window==='undefined'?globalThis:window);

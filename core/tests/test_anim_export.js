@@ -15,3 +15,13 @@ const {muxMp4,unionBounds}=root.AnimExport,mp4=muxMp4({w:16,h:16,fps:25,samples:
  const sz=m.indexOf('stsz');assert.deepEqual([dv.getUint32(sz+12),dv.getUint32(sz+16),dv.getUint32(sz+20)],[2,10,7],'sample sizes');assert.equal(dv.getUint32(m.indexOf('stss')+8),1,'one key frame')}
 assert.deepEqual(unionBounds([null,[[0,0,0],[1,2,3]],[[-1,1,0],[0,5,1]]]),[[-1,0,0],[1,5,3]]);assert.equal(unionBounds([null]),null);
 console.log('Animation export: GIF encoder header, loop, per-frame transparency; MP4 container layout; bounds union passed.');
+const ck=(t,yaw,dist,ctr)=>({t,yaw,pit:0,roll:0,dist,ctr});
+const ca=ck(.2,170*Math.PI/180,10,[0,2,4]),cb=ck(.8,-170*Math.PI/180,30,[10,12,14]);
+assert.equal(root.AnimExport.cameraAt([],0),null);
+assert.deepEqual(root.AnimExport.cameraAt([ca],.9).ctr,ca.ctr);
+assert.equal(root.AnimExport.cameraAt([ca,cb],0).dist,10);
+assert.equal(root.AnimExport.cameraAt([cb,ca],1).dist,30);
+const cm=root.AnimExport.cameraAt([cb,ca],.5);
+assert.ok(Math.abs(cm.yaw-Math.PI)<1e-9);assert.ok(Math.abs(cm.dist-20)<1e-9);
+assert.deepEqual(cm.ctr.map(Math.round),[5,7,9]);
+console.log('Camera path: empty/single/end holds, sorted keys, shortest angular arc, pan and zoom interpolation.');

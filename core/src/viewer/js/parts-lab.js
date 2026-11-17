@@ -85,14 +85,14 @@ $('demo-share').onclick=async()=>{
  }catch(e){status.textContent='Copy the address bar to share, or save your edits. '+e.message}
 };
 const exportGameConfig=$('exp').onclick,importGameConfig=$('impf').onchange;
-function demoProject(){rememberCurrentEdits();const demos=modelEdits.entries().filter(([key,state])=>key.startsWith('demo:')&&configChanged(stateConfig(key.slice(5),state))).map(([key,state])=>validateDemoPreset({format:'sssv-parts-lab-demo-v1',model:key.slice(5),mesh:state.mesh||{},palette:state.map||{},partColors:state.partColors||{},deform:state.deformOn?state.deform:{},exploded:state.exploded??false}));return {format:'model-editor-project-v1',demos,animals:allGameConfigs().animals.filter(e=>e.animal),...(window.ModelTextureTools?.projectExtras?.()||{})}}
+function demoProject(){rememberCurrentEdits();const demos=modelEdits.entries().filter(([key,state])=>key.startsWith('demo:')&&(configChanged(stateConfig(key.slice(5),state))||motionEdits?.[key])).map(([key,state])=>validateDemoPreset({format:'sssv-parts-lab-demo-v1',model:key.slice(5),mesh:state.mesh||{},palette:state.map||{},partColors:state.partColors||{},deform:state.deformOn?state.deform:{},exploded:state.exploded??false}));return {format:'model-editor-project-v1',demos,animals:allGameConfigs().animals.filter(e=>e.animal),...(window.ModelTextureTools?.projectExtras?.()||{}),motion:motionProject()}}
 $('exp').onclick=()=>downloadJSON(demoProject(),'model-edits.json');
 function applyModelProject(value){
       if(!Array.isArray(value.demos)||!Array.isArray(value.animals))throw new Error('Invalid model project.');
-      const demos=value.demos.map(validateDemoPreset);if(demoMode&&(value.animals.length||value.texture_patches?.length)&&window.ModelEditorHost?.availableSource?.())window.ModelEditorHost.restoreSource();window.ModelTextureTools?.validateProjectExtras?.(value);if(value.animals.length&&demoMode)throw new Error('Load your source data before opening a project with animal edits.');
+      const motion=validateMotion(value.motion||{});const demos=value.demos.map(validateDemoPreset);if(demoMode&&(value.animals.length||value.texture_patches?.length)&&window.ModelEditorHost?.availableSource?.())window.ModelEditorHost.restoreSource();window.ModelTextureTools?.validateProjectExtras?.(value);if(value.animals.length&&demoMode)throw new Error('Load your source data before opening a project with animal edits.');
       if(value.animals.length)importGameConfigs({animals:value.animals});
       rememberCurrentEdits();for(const p of demos)modelEdits.put('demo:'+p.model,{mesh:p.mesh,map:p.palette,partColors:p.partColors||{},deform:p.deform,deformOn:Object.keys(p.deform).length>0,exploded:p.exploded});
-      if(demos.length&&!value.animals.length&&!value.texture_patches?.length){cur=null;startDemos(demos[0].model)}window.ModelTextureTools?.loadProjectExtras?.(value);
+      if(demos.length&&!value.animals.length&&!value.texture_patches?.length){cur=null;startDemos(demos[0].model)}window.ModelTextureTools?.loadProjectExtras?.(value);motionEdits=motion;rebuild(false);
 
 }
 $('impf').onchange=async e=>{
@@ -120,10 +120,10 @@ addEventListener('model-source-ready',()=>{if(!pendingSharedProject)return;try{a
 function captureModelHistory(){
   rememberCurrentEdits();
   const entries=modelEdits.entries().filter(([key,state])=>configChanged(stateConfig(key.slice(key.indexOf(':')+1),state))||Object.values(state.partColors||{}).some(v=>Object.entries(v).some(([a,b])=>a!==b))||Object.keys(state.wordEdits||{}).length).sort(([a],[b])=>a.localeCompare(b));
-  return {edits:{entries,names:partNames,offsets:partOffsets,labels:labelOffsets,textures:window.ModelTextureTools?.historyExtras?.()||window.ModelTextureTools?.projectExtras?.()||{}},current:{demo:demoMode,name,variant,sheet,all,assembled,sel,selected:[...selectedParts],selectedSym,camera:{yaw,pit,roll,dist,ctr:ctr.slice()}}};
+  return {edits:{motion:motionProject(),entries,names:partNames,offsets:partOffsets,labels:labelOffsets,textures:window.ModelTextureTools?.historyExtras?.()||window.ModelTextureTools?.projectExtras?.()||{}},current:{demo:demoMode,name,variant,sheet,all,assembled,sel,selected:[...selectedParts],selectedSym,camera:{yaw,pit,roll,dist,ctr:ctr.slice()}}};
 }
 function restoreModelHistory(snapshot){
-  const state=snapshot.edits,current=snapshot.current;
+  const state=snapshot.edits,current=snapshot.current;motionEdits=validateMotion(state.motion||{});
   cur=null;for(const [key] of modelEdits.entries())modelEdits.forget(key);
   for(const [key,value] of state.entries)modelEdits.put(key,value);
   partNames=state.names||{};partOffsets=state.offsets||{};labelOffsets=state.labels||{};
@@ -204,3 +204,48 @@ if($('anim-timeline')){$('anim-play').onclick=animTogglePause;$('anim-back').onc
  $('anim-scrub').oninput=e=>{if(!animMode)return;animPaused=true;animPhase=Math.min(+e.target.value,animLen(animMode)-1);animShow()};
  addEventListener('keydown',e=>{if(!animMode||e.ctrlKey||e.metaKey||e.altKey||/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName||'')&&e.target.id!=='anim-scrub'||e.target?.isContentEditable)return;
   if(e.key==='l'||e.key==='L'){e.preventDefault();animLoop=!animLoop;animBar()}else if(e.key===' '&&e.target?.tagName!=='BUTTON'){e.preventDefault();animTogglePause()}else if(e.key===','){e.preventDefault();animFrameStep(-1)}else if(e.key==='.'){e.preventDefault();animFrameStep(1)}})}
+// Viewer-only shapes and camera paths; project files contain descriptions, never source art.
+var motionEdits=motionEdits||{};
+function motionProject(){return JSON.parse(JSON.stringify(motionEdits||{}))}
+function motionKey(){return (demoMode?'demo:':'src:')+name}
+function motionState(){return (motionEdits||(motionEdits={}))[motionKey()]||{accessories:[],keys:[]}}
+function validateMotion(raw){
+ if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).length>512)throw Error('Invalid motion project');
+ const out={},vec=v=>Array.isArray(v)&&v.length===3&&v.every(x=>Number.isFinite(x)&&Math.abs(x)<=1e6);
+ for(const [id,v] of Object.entries(raw)){
+  if(!/^(demo|src):/.test(id)||!v||!Array.isArray(v.accessories)||v.accessories.length>64||!Array.isArray(v.keys)||v.keys.length>512)throw Error('Invalid motion entry');
+  for(const a of v.accessories)if(!a||!['box','sphere','cone','shades'].includes(a.shape)||typeof a.parent!=='string'||!a.parent||!/^#[0-9a-f]{6}$/i.test(a.colour)||!vec(a.offset)||!vec(a.rotation)||!vec(a.scale)||a.scale.some(x=>x<=0))throw Error('Invalid accessory');
+  for(const k of v.keys)if(!Number.isFinite(k.t)||k.t<0||k.t>1||!vec(k.ctr)||![k.yaw,k.pit,k.roll,k.dist].every(Number.isFinite)||k.dist<=0)throw Error('Invalid camera key');
+  out[id]=JSON.parse(JSON.stringify(v));
+ }return out;
+}
+function accessorySources(){if(!window.RigPlayer)return [];const frames=animParts||pose.parts;
+ return motionState().accessories.flatMap((a,i)=>{const parent=frames.find(p=>p.dl===a.parent);if(!parent)return [];
+ const tris=RigPlayer.accessoryMesh(a.shape).map(v=>({c:0,v})),P={sym:'accessory:'+i,bb:[-1,-1,-1,1,1,1],tris,cols:[{rgba:a.colour.slice(1).toUpperCase()+'FF'}],textureMaterial:true};
+ return [{P,offset:[0,0,0],local:[0,0,0],xf:v=>{const g=RigPlayer.accessoryPoint(v,a,parent);return [g[0],g[2],-g[1]]}}];});
+}
+function motionChange(fn){const run=()=>{const s=motionState();motionEdits[motionKey()]=s;fn(s);rebuild(false);motionRefresh()};if(window.ModelEditorHistory)ModelEditorHistory.transaction(run);else run()}
+function motionTime(){const seq=animSequence(),before=animQueue.slice(0,animQi).reduce((s,m)=>s+animFrames(m),0),L=animLen(animMode),ph=((animPhase-animStartPhase(animMode))%L+L)%L;return Math.min(1,(before+ph/animStep(animMode))/Math.max(1,seq.length-1))}
+if(typeof document!=='undefined'){
+const motionPanel=document.createElement('details');motionPanel.innerHTML='<summary>Accessories & camera path</summary><p>Assemble a model to attach shapes. Offset and size use parent local coordinates. Save edits to keep shapes and camera keys.</p>';
+$('actions').after(motionPanel);
+const motionBody=document.createElement('div');motionPanel.append(motionBody);
+function motionRefresh(){
+ motionBody.replaceChildren();const label=(text,node)=>{const l=document.createElement('label');l.textContent=text+' ';l.append(node);motionBody.append(l,document.createElement('br'));return node},button=(text,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=text;b.onclick=fn;motionBody.append(b);return b};
+ const parent=label('Attach to',document.createElement('select'));for(const p of pose?.parts||[])parent.add(new Option((suggestedPartNames?.[p.dl]||p.dl),p.dl));
+ const shape=label('Shape',document.createElement('select'));for(const v of ['box','sphere','cone','shades'])shape.add(new Option(v,v));
+ button('Add accessory',()=>motionChange(s=>s.accessories.push({shape:shape.value,parent:parent.value,colour:'#202020',offset:[0,0,0],rotation:[0,0,0],scale:[10,10,10]}))).disabled=!assembled||!pose?.parts.length||motionState().accessories.length>=64;
+ motionState().accessories.forEach((a,i)=>{const title=document.createElement('p');title.textContent=a.shape+' on '+a.parent;motionBody.append(title);
+ const colour=label('Colour',Object.assign(document.createElement('input'),{type:'color',value:a.colour}));colour.onchange=()=>motionChange(s=>s.accessories[i].colour=colour.value);
+ for(const field of ['offset','rotation','scale'])for(let k=0;k<3;k++){const input=label(field+' '+'XYZ'[k],Object.assign(document.createElement('input'),{type:'number',value:a[field][k],step:field==='rotation'?5:1}));input.style.width='70px';input.onchange=()=>{const n=Number(input.value);if(!Number.isFinite(n)||Math.abs(n)>1e6||field==='scale'&&n<=0){input.value=a[field][k];return}motionChange(s=>s.accessories[i][field][k]=n)}}
+ button('Remove accessory',()=>motionChange(s=>s.accessories.splice(i,1)));});
+ const keys=motionState().keys,info=document.createElement('p');info.textContent=keys.length+' camera keys across one queue pass. Keys override export framing; clear keys to use Tight / Fit all / My view.';motionBody.append(info);
+ button('Set camera key here',()=>{if(!animMode)return;motionChange(s=>{const t=motionTime();s.keys=s.keys.filter(k=>Math.abs(k.t-t)>1e-6);s.keys.push({t,yaw,pit,roll,dist,ctr:ctr.slice()});s.keys.sort((a,b)=>a.t-b.t)})}).disabled=!animMode||keys.length>=512;
+ keys.forEach((k,i)=>button('Remove key '+Math.round(k.t*100)+'%',()=>motionChange(s=>s.keys.splice(i,1))));
+ button('Clear camera keys',()=>motionChange(s=>s.keys=[]));
+}
+motionPanel.ontoggle=()=>{if(motionPanel.open)motionRefresh()};
+addEventListener('model-edits-changed',()=>{if(motionPanel.open)motionRefresh()});
+const motionOriginalUI=ui;ui=function(){motionOriginalUI();if(motionPanel.open)motionRefresh()};
+
+}

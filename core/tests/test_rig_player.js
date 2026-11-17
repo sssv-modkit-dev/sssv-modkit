@@ -56,3 +56,11 @@ for(const m of Object.keys(R.MOVES))for(let p=0;p<R.loopLen(m);p+=3)for(const v 
 {const pr={body:{kind:'puppet',J:{0:[0,0,2000],1:[0,0,3000],2:[0,0,1000],15:[-300,0,0],18:[300,0,0]},bob:40,lift:200,stride:100},legs:{},parts:[[2,1],[2,15],[2,18]]},a=R.joints(pr,64,'walk'),b=R.joints(pr,192,'walk');
  assert.ok(a[15][2]>150&&a[18][2]===0&&b[18][2]>150&&b[15][2]===0,'puppet: feet lift in turn');assert.equal(R.joints(pr,32,'walk')[1][2],3020,'puppet: body bobs')}
 console.log('Rig player: dance moves, bind, rest frame, leg swing, three-bone legs, bird wings, set poses and actions passed.');
+// An accessory's local offset rotates with a joint frame, rather than being added in world space.
+const accessory={offset:[2,3,4],rotation:[0,0,90],scale:[2,3,4]};
+const af={rows:[[0,2,0],[-3,0,0],[0,0,4]],T:[10,20,30]};
+assert.deepEqual(R.accessoryPoint([1,0,0],accessory,af).map(Math.round),[-5,24,46]);
+const attached=bound.frame(40,'walk')[3],moved=bound.frame(104,'walk')[3];
+assert.notDeepEqual(R.accessoryPoint([1,2,3],accessory,attached),R.accessoryPoint([1,2,3],accessory,moved));
+for(const shape of ['box','sphere','cone','shades'])assert.ok(R.accessoryMesh(shape).every(t=>t.length===3&&t.every(v=>v.length===3&&v.every(Number.isFinite))));
+console.log('Accessory local transforms compose with animated parent frames; all four original shapes are finite.');
