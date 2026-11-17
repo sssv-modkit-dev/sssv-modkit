@@ -20,9 +20,13 @@ with tempfile.TemporaryDirectory() as tmp:
     out = tmp / 'sample'
     result = build(ROOT / 'packs/sample', out)
     assert result.returncode == 0, result.stderr
-    for name in ('index.html', 'level-editor.html', 'model-editor.html', 'dialogue.html', 'terrain.html'):
+    for name in ('index.html', 'level-editor.html', 'model-editor.html', 'dialogue.html', 'terrain.html', 'sound.html'):
         assert (out / name).is_file(), name
     assert not (out / 'play.html').exists()
+    for name in ('sound-core.js', 'sound-player.js', 'sound-clock.js', 'sound.js', 'sound.css'):
+        assert (out / name).is_file(), name
+    for name in ('index.html', 'model-editor.html', 'level-editor.html', 'dialogue.html', 'sound.html'):
+        assert 'href="sound.html"' in (out / name).read_text(encoding='utf-8'), name
     for path, text in pages(out).items():
         assert '<!--slot:' not in text and '__PACK_TITLE__' not in text, path
     assert 'SSSV Editor' in (out / 'model-editor.html').read_text(encoding='utf-8')

@@ -153,7 +153,7 @@ def build(pack_dir, out, no_vendor=False):
     level_editor(pack, out)
     story = out / 'story'
     story.mkdir(exist_ok=True)
-    for name in ('dialogue.html', 'textures.html', 'terrain.html'):
+    for name in ('dialogue.html', 'textures.html', 'terrain.html', 'sound.html', 'sound.css', 'sound-core.js', 'sound-player.js', 'sound-clock.js', 'sound.js'):
         shutil.copyfile(HERE / 'web' / name, out / name)
     shutil.copyfile(HERE / 'viewer/js/history.js', story / 'history.js')
     for name in ('story.js', 'story.css'):
@@ -167,13 +167,13 @@ def build(pack_dir, out, no_vendor=False):
     # One navigation and local ROM session on every available page, including pack Home/Play.
     available = [(name, label) for name, label in (
         ('index', 'Home'), ('model-editor', 'Model'), ('textures', 'Textures & Tilesets'),
-        ('level-editor', 'Level'), ('dialogue', 'Dialogue'), ('play', 'Play'))
+        ('level-editor', 'Level'), ('dialogue', 'Dialogue'), ('sound', 'Sound'), ('play', 'Play'))
         if (out / (name + '.html')).is_file()]
     has_guides = (out / 'guides.html').is_file()
     help_pages = {'index': 'guides.html', 'start': 'guides/getting-started.html',
                   'model-editor': 'guides/model-editor.html', 'textures': 'guides/textures-tilesets.html',
                   'level-editor': 'guides/level-editor.html', 'dialogue': 'guides/dialogue.html',
-                  'play': 'guides/play.html'}
+                  'play': 'guides/play.html', 'sound': 'guides.html'}
     for name, _ in available + ([('start', 'Guided build')] if (out / 'start.html').is_file() else []):
         page = out / (name + '.html')
         html = page.read_text(encoding='utf-8')
