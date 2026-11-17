@@ -1,6 +1,6 @@
 {
- "tag": "github/editor",
- "commit": "cbece3abda9a52d5459b833c911e01a7ed640955",
+ "tag": "HEAD",
+ "commit": "9cab90f50a5650d58f8f1cada0ef3af0a78e437b",
  "files": {
   ".gitignore": "3ad2750af909c18ed688f1571f91a873e942cb61dfc71e72ed8a64ef986e2562",
   ".gitlab-ci.yml": "cd5b67aff57cf27a4ceb555e7f2ca96c957d431775570dd5d4e4eb7b1b891b42",
@@ -48,7 +48,7 @@
   "src/viewer/js/import/segment.js": "dd58c3faa740b5bd4f3221b7ac8819feb7ee2e933affc2af629b27c2cde1fa0d",
   "src/viewer/js/import/texture.js": "f9f47c30e83ff6e3e3c6221beadbff69d04e01f5e60c3d4cb3ca234366f7bbae",
   "src/viewer/js/import/ui.js": "5ab2beb04ef25705bca94fed91b10c0355c03efcf39ff233d71a40d615e1a662",
-  "src/viewer/js/parts-lab.js": "4ea62e54987fe1b143b1e00238fc3bcfc0a4f211844cf8fe347b2d3fb857fa77",
+  "src/viewer/js/parts-lab.js": "84eed60134010f7284e80b4617f91c17b52d9ba6f746b639e359065751eccc07",
   "src/viewer/js/rig-player.js": "6f284b622eea515d06dff06e203c6bd89b8e569a94687cfb79e20af2fc2754f1",
   "src/web/dialogue.html": "10eed17d516e275fcd159360e8b9f5ca5acbf4464f497b7d9b8ce7db06753133",
   "src/web/editor-mobile.css": "557a590d11f003ae24288f18919cf3645379e2ac91bd60b18ac3d1f30e6f26df",
