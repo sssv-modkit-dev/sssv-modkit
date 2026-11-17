@@ -41,6 +41,7 @@ function validateDemoPreset(value){
   return {format:value.format,model:value.model,mesh:meshOut,palette,...(Object.keys(partColours).length?{partColors:partColours}:{}),deform:deformations,exploded:!!value.exploded};
 }
 //#LAB-PURE-END
+var importedModels={};
 const modelEdits=editMemory(),headshots=new Map();
 let modelCategory='';
 function modelGroup(n){if(!BUNDLED_ANIMALS.has(n)&&Object.hasOwn(PARTS_DEMOS,n))return 'Custom';if(window.SSSVAnimalPoses?.extras?.some(([x])=>x===n))return 'Characters';return /^prop[_-]/.test(n)?'Props':'Animals'}
@@ -81,24 +82,25 @@ $('demo-colour').onclick=()=>ModelEditorHistory.transaction(()=>{partColors={};w
 $('demo-share').onclick=async()=>{
  const status=demoMode?$('demo-status'):$('msg');
  try{const hash='#project='+encodeURIComponent(JSON.stringify(demoProject()));if(hash.length>16000)throw new Error('Project is too large for a share link; save the edits file instead.');
-   history.replaceState(null,'',hash);await navigator.clipboard.writeText(location.href);status.textContent='Share link copied. It contains edits only; recipients supply their own source files.';
+   history.replaceState(null,'',hash);await navigator.clipboard.writeText(location.href);status.textContent='Share link copied. It contains edits and any imported meshes; recipients supply matching source files.';
  }catch(e){status.textContent='Copy the address bar to share, or save your edits. '+e.message}
 };
 const exportGameConfig=$('exp').onclick,importGameConfig=$('impf').onchange;
-function demoProject(){rememberCurrentEdits();const demos=modelEdits.entries().filter(([key,state])=>key.startsWith('demo:')&&(configChanged(stateConfig(key.slice(5),state))||motionEdits?.[key])).map(([key,state])=>validateDemoPreset({format:'sssv-parts-lab-demo-v1',model:key.slice(5),mesh:state.mesh||{},palette:state.map||{},partColors:state.partColors||{},deform:state.deformOn?state.deform:{},exploded:state.exploded??false}));return {format:'model-editor-project-v1',demos,animals:allGameConfigs().animals.filter(e=>e.animal),...(window.ModelTextureTools?.projectExtras?.()||{}),motion:motionProject()}}
+function demoProject(){rememberCurrentEdits();const demos=modelEdits.entries().filter(([key,state])=>key.startsWith('demo:')&&(configChanged(stateConfig(key.slice(5),state))||motionEdits?.[key])).map(([key,state])=>validateDemoPreset({format:'sssv-parts-lab-demo-v1',model:key.slice(5),mesh:state.mesh||{},palette:state.map||{},partColors:state.partColors||{},deform:state.deformOn?state.deform:{},exploded:state.exploded??false}));return {format:'model-editor-project-v1',demos,animals:allGameConfigs().animals.filter(e=>e.animal),...(window.ModelTextureTools?.projectExtras?.()||{}),motion:motionProject(),imports:JSON.parse(JSON.stringify(importedModels))}}
 $('exp').onclick=()=>downloadJSON(demoProject(),'model-edits.json');
 function applyModelProject(value){
       if(!Array.isArray(value.demos)||!Array.isArray(value.animals))throw new Error('Invalid model project.');
-      const motion=validateMotion(value.motion||{});const demos=value.demos.map(validateDemoPreset);if(demoMode&&(value.animals.length||value.texture_patches?.length)&&window.ModelEditorHost?.availableSource?.())window.ModelEditorHost.restoreSource();window.ModelTextureTools?.validateProjectExtras?.(value);if(value.animals.length&&demoMode)throw new Error('Load your source data before opening a project with animal edits.');
+      const imports=validateImportedModels(value.imports||{});const motion=validateMotion(value.motion||{});const demos=value.demos.map(validateDemoPreset);if(demoMode&&(value.animals.length||value.texture_patches?.length||Object.keys(imports).some(k=>k.startsWith('src:')))&&window.ModelEditorHost?.availableSource?.())window.ModelEditorHost.restoreSource();window.ModelTextureTools?.validateProjectExtras?.(value);if((value.animals.length||Object.keys(imports).some(k=>k.startsWith('src:')))&&demoMode)throw new Error('Load your source data before opening a project with animal edits.');
+      importedModels=imports;
       if(value.animals.length)importGameConfigs({animals:value.animals});
       rememberCurrentEdits();for(const p of demos)modelEdits.put('demo:'+p.model,{mesh:p.mesh,map:p.palette,partColors:p.partColors||{},deform:p.deform,deformOn:Object.keys(p.deform).length>0,exploded:p.exploded});
-      if(demos.length&&!value.animals.length&&!value.texture_patches?.length){cur=null;startDemos(demos[0].model)}window.ModelTextureTools?.loadProjectExtras?.(value);motionEdits=motion;rebuild(false);
+      const importDemo=Object.keys(imports).find(k=>k.startsWith('demo:'))?.slice(5);if((demos.length||importDemo)&&!value.animals.length&&!value.texture_patches?.length&&!Object.keys(imports).some(k=>k.startsWith('src:'))){cur=null;startDemos(demos[0]?.model||importDemo)}window.ModelTextureTools?.loadProjectExtras?.(value);motionEdits=motion;deformCache.clear();syncImportedParts();SH=sheetLayout(visibleParts());ui();rebuild(false);info();
 
 }
 $('impf').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   window.ModelEditorHistory?.begin();
-  try{if(f.size>1000000)throw new Error('Config is too large.');const value=JSON.parse(await f.text());
+  try{if(f.size>20000000)throw new Error('Config is too large.');const value=JSON.parse(await f.text());
     if(value.format==='model-editor-project-v1')applyModelProject(value);
     else if(value.format==='sssv-parts-lab-demo-v1')applyDemoPreset(value);
     else if(demoMode)throw new Error('This config needs its source data loaded first.');
@@ -109,7 +111,7 @@ if(!Object.keys(EMBEDDED_TABLE).length)startDemos();
 let pendingSharedProject=null;
 function readSharedDemo(){const legacy=location.hash.startsWith('#demo='),project=location.hash.startsWith('#project=');if(!legacy&&!project)return;
  try{if(location.hash.length>16000)throw new Error('Share link is too large.');const value=JSON.parse(decodeURIComponent(location.hash.slice(legacy?6:9)));
-  if(legacy)applyDemoPreset(value);else if((value.animals?.length||value.texture_patches?.length)&&demoMode){pendingSharedProject=value;$('demo-status').textContent='Shared edits are ready. Open your matching source files to apply them.';}
+  if(legacy)applyDemoPreset(value);else if((value.animals?.length||value.texture_patches?.length||Object.keys(value.imports||{}).some(k=>k.startsWith('src:')))&&demoMode){pendingSharedProject=value;$('demo-status').textContent='Shared edits are ready. Open your matching source files to apply them.';}
   else {applyModelProject(value);pendingSharedProject=null;}
  }catch(err){(demoMode?$('demo-status'):$('msg')).textContent='Could not open shared edits: '+err.message}
 }
@@ -120,10 +122,10 @@ addEventListener('model-source-ready',()=>{if(!pendingSharedProject)return;try{a
 function captureModelHistory(){
   rememberCurrentEdits();
   const entries=modelEdits.entries().filter(([key,state])=>configChanged(stateConfig(key.slice(key.indexOf(':')+1),state))||Object.values(state.partColors||{}).some(v=>Object.entries(v).some(([a,b])=>a!==b))||Object.keys(state.wordEdits||{}).length).sort(([a],[b])=>a.localeCompare(b));
-  return {edits:{motion:motionProject(),entries,names:partNames,offsets:partOffsets,labels:labelOffsets,textures:window.ModelTextureTools?.historyExtras?.()||window.ModelTextureTools?.projectExtras?.()||{}},current:{demo:demoMode,name,variant,sheet,all,assembled,sel,selected:[...selectedParts],selectedSym,camera:{yaw,pit,roll,dist,ctr:ctr.slice()}}};
+  return {edits:{imports:importedModels,motion:motionProject(),entries,names:partNames,offsets:partOffsets,labels:labelOffsets,textures:window.ModelTextureTools?.historyExtras?.()||window.ModelTextureTools?.projectExtras?.()||{}},current:{demo:demoMode,name,variant,sheet,all,assembled,sel,selected:[...selectedParts],selectedSym,camera:{yaw,pit,roll,dist,ctr:ctr.slice()}}};
 }
 function restoreModelHistory(snapshot){
-  const state=snapshot.edits,current=snapshot.current;motionEdits=validateMotion(state.motion||{});
+  const state=snapshot.edits,current=snapshot.current;importedModels=validateImportedModels(state.imports||{});motionEdits=validateMotion(state.motion||{});
   cur=null;for(const [key] of modelEdits.entries())modelEdits.forget(key);
   for(const [key,value] of state.entries)modelEdits.put(key,value);
   partNames=state.names||{};partOffsets=state.offsets||{};labelOffsets=state.labels||{};
@@ -249,3 +251,43 @@ addEventListener('model-edits-changed',()=>{if(motionPanel.open)motionRefresh()}
 const motionOriginalUI=ui;ui=function(){motionOriginalUI();if(motionPanel.open)motionRefresh()};
 
 }
+
+// Imported meshes are viewer edits, indexed by animal and captured part instance.
+function validateImportedModels(raw){
+ if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).length>512)throw Error('Invalid imported models.');
+ const out={},vec=(v,n)=>Array.isArray(v)&&v.length===n&&v.every(x=>Number.isFinite(x)&&Math.abs(x)<=1e7);
+ let total=0;
+ for(const [key,parts] of Object.entries(raw)){
+  if(!/^(demo|src):/.test(key)||!Array.isArray(parts)||parts.length>512)throw Error('Invalid imported parts.');
+  out[key]=parts.map(p=>{
+   if(!p||typeof p.symbol!=='string'||!p.symbol||!(p.instance===null||Number.isInteger(p.instance)&&p.instance>=0&&p.instance<512)||!Array.isArray(p.tris)||!p.tris.length||(total+=p.tris.length)>100000)throw Error('Invalid imported mesh.');
+   for(const t of p.tris)if(!Array.isArray(t.v)||t.v.length!==3||!t.v.every(v=>vec(v,3))||!Array.isArray(t.colours)||t.colours.length!==3||!t.colours.every(v=>vec(v,3)&&v.every(c=>c>=0&&c<=1)))throw Error('Invalid imported vertex.');
+   return JSON.parse(JSON.stringify(p));
+  });
+ }return out;
+}
+function importedParts(){return (importedModels||{})[(demoMode?'demo:':'src:')+name]||[]}
+var importedMeshCache=new WeakMap();
+function importedPart(P,index){
+ const original=P.importOriginal||P,parts=importedParts();
+ const entry=index===undefined?parts.find(p=>p.symbol===P.sym):parts.find(p=>p.symbol===P.sym&&p.instance===index)||parts.find(p=>p.symbol===P.sym&&p.instance===null);
+ if(!entry)return original;
+ if(!importedMeshCache)importedMeshCache=new WeakMap();let cached=importedMeshCache.get(entry);if(!cached){cached=new WeakMap();importedMeshCache.set(entry,cached);}if(cached.has(original))return cached.get(original);
+ const tris=entry.tris.map(t=>({c:-1,v:t.v.map((v,i)=>Object.assign(v.slice(),{c:t.colours[i].slice()}))})),bb=[Infinity,Infinity,Infinity,-Infinity,-Infinity,-Infinity];for(const t of tris)for(const v of t.v)for(let k=0;k<3;k++){bb[k]=Math.min(bb[k],v[k]);bb[k+3]=Math.max(bb[k+3],v[k]);}
+ const result={...original,tris,cols:[],groups:undefined,bb,viewBB:bb,importOriginal:original,imported:true,importId:entry.instance};cached.set(original,result);return result;
+}
+function syncImportedParts(){if(typeof parsed!=='undefined'&&parsed.length)parsed=parsed.map(P=>importedPart(P))}
+function installImportedPackage(pkg){
+ if(pkg.targetAnimal!==name)pick(pkg.targetAnimal);
+ // Invert the full captured matrix: captures can include scale and reflection.
+ const local=(v,pp)=>{
+  if(!pp)return v.slice();const [a,b,c]=pp.rows,cross=(u,w)=>[u[1]*w[2]-u[2]*w[1],u[2]*w[0]-u[0]*w[2],u[0]*w[1]-u[1]*w[0]],dot=(u,w)=>u.reduce((n,x,i)=>n+x*w[i],0),det=dot(a,cross(b,c));
+  if(Math.abs(det)<1e-12)throw Error('Target part has a singular pose.');const w=v.map((x,k)=>x-pp.T[k]);return [cross(b,c),cross(c,a),cross(a,b)].map(r=>dot(w,r)/det);
+ };
+ const texture=pkg.textures?.[0],sample=uv=>{if(!texture)return [.91,.45,.18];const x=Math.max(0,Math.min(texture.width-1,Math.floor(uv[0]*texture.width))),y=Math.max(0,Math.min(texture.height-1,Math.floor(uv[1]*texture.height))),w=texture.palette[texture.indices[y*texture.width+x]];return [(w>>11&31)/31,(w>>6&31)/31,(w>>1&31)/31]};
+ const parts=pkg.parts.map(p=>({symbol:p.displayList,instance:p.pose?Number(p.targetPart.split('@').at(-1)):null,tris:p.meshes.flatMap(m=>m.triangles.map(t=>({v:t.map(i=>local(m.positions[i],p.pose)),colours:t.map(i=>sample(m.uvs[i]))})))}));
+ const key=(demoMode?'demo:':'src:')+name,next=validateImportedModels({[key]:parts})[key];
+ const apply=()=>{importedModels[key]=next;deformCache.clear();syncImportedParts();SH=sheetLayout(visibleParts());ui();rebuild(true);info()};
+ if(window.ModelEditorHistory)ModelEditorHistory.transaction(apply);else apply();
+}
+function restoreImportedParts(){const apply=()=>{delete importedModels[(demoMode?'demo:':'src:')+name];deformCache.clear();syncImportedParts();SH=sheetLayout(visibleParts());ui();rebuild(true);info()};if(window.ModelEditorHistory)ModelEditorHistory.transaction(apply);else apply()}
