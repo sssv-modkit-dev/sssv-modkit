@@ -14,7 +14,7 @@ Use [Guided build](https://sssv-modkit-dev.github.io/sssv-modkit/start.html) to 
 
 Edits are remembered in this browser with the source ROM. Download backups before clearing browser storage or choosing **Forget ROM**, which clears the source and saved changes. Conflicting edits, a different source ROM or unsupported changes can stop a build. Browser previews and a successful build do not prove that a stage works in game.
 
-Nothing is uploaded. See [Network](../NETWORK.md) for runtime downloads. Phones have touch controls; build speed and emulation performance depend on the device.
+Nothing is uploaded: your ROM is read on your own device and never sent anywhere. See [Network](../NETWORK.md) for runtime downloads. Phones have touch controls; build speed and emulation performance depend on the device.
 
 ## Advanced
 
