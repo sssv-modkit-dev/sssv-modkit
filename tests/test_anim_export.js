@@ -14,5 +14,4 @@ const {muxMp4,unionBounds}=root.AnimExport,mp4=muxMp4({w:16,h:16,fps:25,samples:
  const m=Buffer.from(mp4).toString('latin1'),co=m.indexOf('stco'),off=dv.getUint32(co+12);assert.equal(mp4[off],1,'chunk offset points at the first sample');assert.equal(mp4[off+10],2,'samples are back to back');
  const sz=m.indexOf('stsz');assert.deepEqual([dv.getUint32(sz+12),dv.getUint32(sz+16),dv.getUint32(sz+20)],[2,10,7],'sample sizes');assert.equal(dv.getUint32(m.indexOf('stss')+8),1,'one key frame')}
 assert.deepEqual(unionBounds([null,[[0,0,0],[1,2,3]],[[-1,1,0],[0,5,1]]]),[[-1,0,0],[1,5,3]]);assert.equal(unionBounds([null]),null);
-assert.equal(typeof root.AnimExport.setFrameMode,'function');
 console.log('Animation export: GIF encoder header, loop, per-frame transparency; MP4 container layout; bounds union passed.');

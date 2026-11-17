@@ -67,6 +67,17 @@ try{
   if(page==='terrain'||page==='dialogue')assert.ok(await js(s,"![...document.querySelectorAll('body *')].some(e=>/bridge/i.test(e.textContent+' '+e.id+' '+e.getAttribute('aria-label')))"));
   await sleep(250);
   const check=async(code,label)=>assert.ok(await js(s,code),`${page} ${width}: ${label}`);
+  if(page==='model-editor'){
+   await js(s,"animMode='walk';animQueue=['walk','run'];animPaused=true;animPhase=45;animBar()");
+   for(const speed of ['0.5','1','2']){
+    await js(s,`document.getElementById('anim-speed').value='${speed}';document.getElementById('anim-speed').dispatchEvent(new Event('change'))`);
+    await check(`animSpeed===${speed}&&animPaused&&animPhase===45&&animQueue.length===2`,'speed control preserves paused animation and queue');
+   }
+   await check("(()=>{const r=document.getElementById('anim-speed').getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth})()",'speed selector fits viewport');
+   await check('document.documentElement.scrollWidth<=innerWidth','animation timeline has no horizontal overflow');
+   await screenshot(s,`timeline-${width}`);
+   await js(s,'animStop()');
+  }
   await check('document.documentElement.scrollWidth<=innerWidth','no page horizontal overflow');
   await screenshot(s,`after-${page}-${width}`);
   if(width<768){
