@@ -120,15 +120,52 @@ async function exportWebm(){
   const type=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t));
   if(!type){status('WebM not supported here');return}
   await withFrames(async({n,w,h,name,frame})=>{
-    const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d'),stream=c.captureStream(0),track=stream.getVideoTracks()[0],
-      rec=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:4e6}),chunks=[],done=new Promise(r=>{rec.onstop=r});
-    rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};rec.start();
-    for(let i=0;i<n;i++){status(`WebM ${i+1}/${n}`);frame(i);x.clearRect(0,0,w,h);x.drawImage(cv,0,0);track.requestFrame?.();await new Promise(r=>setTimeout(r,1000/FPS))}
-    rec.stop();await done;save(new Blob(chunks,{type:'video/webm'}),`${name}.webm`);
+    const canvas=document.createElement('canvas');
+    canvas.width=w;canvas.height=h;
+    const context=canvas.getContext('2d'),stream=canvas.captureStream(0),track=stream.getVideoTracks()[0];
+    let recorder,startTimer,recordingError;
+    try{
+      recorder=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:4e6});
+      const chunks=[];
+      let rejectStart;
+      const started=new Promise((resolve,reject)=>{
+        rejectStart=reject;
+        recorder.onstart=()=>{clearTimeout(startTimer);resolve()};
+      });
+      const done=new Promise(resolve=>{
+        recorder.onstop=()=>{rejectStart(new Error('WebM recorder stopped before starting'));resolve()};
+      });
+      recorder.onerror=event=>{
+        recordingError=event.error||new Error('WebM recorder failed');
+        rejectStart(recordingError);
+      };
+      recorder.ondataavailable=event=>{if(event.data.size)chunks.push(event.data)};
+      // Seed the stream, then wait for the asynchronous encoder startup before advancing the animation.
+      frame(0);context.drawImage(cv,0,0);
+      startTimer=setTimeout(()=>rejectStart(new Error('WebM recorder startup timed out')),15000);
+      try{recorder.start();track.requestFrame?.()}
+      catch(error){rejectStart(error)}
+      await started;
+      for(let i=0;i<n;i++){
+        if(recordingError)throw recordingError;
+        status(`WebM ${i+1}/${n}`);frame(i);
+        context.clearRect(0,0,w,h);context.drawImage(cv,0,0);
+        track.requestFrame?.();
+        await new Promise(resolve=>setTimeout(resolve,1000/FPS));
+      }
+      if(recorder.state!=='inactive')recorder.stop();
+      await done;
+      if(recordingError)throw recordingError;
+      save(new Blob(chunks,{type:'video/webm'}),`${name}.webm`);
+    }finally{
+      clearTimeout(startTimer);
+      try{if(recorder&&recorder.state!=='inactive')recorder.stop()}
+      finally{stream.getTracks().forEach(track=>track.stop())}
+    }
   });
 }
 // MP4 has no transparency: frames are laid over the page's backdrop colour. Every frame gets an exact timestamp, so the file
-// plays at the right speed in any player (the WebM above is recorded live and many players show only its first frame).
+// uses exact frame timing. WebM above is recorded live and its timing includes recorder startup.
 async function exportMp4(){
   if(!window.VideoEncoder){status('MP4 not supported here');return}
   await withFrames(async({n,w,h,name,frame})=>{
