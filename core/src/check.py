@@ -14,7 +14,9 @@ COMMANDS = [
     ['node', 'tests/test_level_palette.js'],
     ['node', 'tests/test_camera.js'],
     ['node', 'tests/test_rig_player.js'],
+    ['node', 'tests/test_anim_speed.js'],
     ['node', 'tests/test_dance_bench.js'],
+    ['node', 'tests/test_anim_export.js'],
     ['node', 'tests/test_deform_parity.js'],
     ['node', 'tests/test_parts_lab.js'],
     ['node', 'tests/test_model_source.js'],
@@ -30,6 +32,7 @@ COMMANDS = [
     [sys.executable, 'tests/test_level_usability.py'],
     [sys.executable, 'tools/guards.py', '.'],
     ['node', 'tests/browser/mobile.mjs'],
+    ['node', 'tests/browser/anim-export.mjs'],
     ['node', 'tests/browser/roundtrip.mjs'],
     ['node', 'tests/browser/tile-tools.mjs'],
 ]

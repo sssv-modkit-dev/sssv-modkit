@@ -83,18 +83,28 @@ root.AnimExport={encodeGif,buildPalette,lzw,unionBounds,muxMp4};
 if(typeof document==='undefined'||!document.getElementById('anim-gif'))return;
 
 // --- browser half ---
-const FPS=25,MAXSIDE=480;
-let busy=false;
+const FPS=25,MAXSIDE=480,TIGHT=.8;
+let busy=false,frameMode='tight';
+// Export framing: tight = the typical frame fills the picture (a raised arm or a hop may be cut off), all = every frame fits,
+// mine = keep the camera exactly as the user left it (pause, orbit/zoom/pan, then export).
+const FRAME_MODES=[['tight','Tight','Zoomed in on the animal; an arm or jump may be cut off.'],['all','Fit all','Zoomed out so every frame fits whole.'],['mine','My view','Exports the camera exactly as you have framed it now: pause, orbit, zoom and pan first.']];
 const status=msg=>{animBusy=msg;const el=document.getElementById('anim-frame');if(el)el.textContent=msg};
 function save(blob,name){const a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)}
 // Runs `fn(draw1)` with the viewer in export state (paused, bare), restoring it afterwards. draw1(i) renders loop frame i into the
 // canvas and returns the canvas; n frames (one pass of the queue, see animSequence), w by h pixels.
 async function withFrames(fn){
   if(!animMode||!animBind||busy)return;busy=true;
-  const saved={mode:animMode,phase:animPhase,paused:animPaused,ground:showGround,grid:showGrid,labels:showLabels,ctr,dist},seq=animSequence(),n=seq.length,name=[...new Set(seq.map(f=>f.m))].join('-'),
+  const saved={mode:animMode,phase:animPhase,paused:animPaused,ground:showGround,grid:showGrid,labels:showLabels,ctr:ctr&&ctr.slice?ctr.slice():ctr,dist},seq=animSequence(),n=seq.length,name=[...new Set(seq.map(f=>f.m))].join('-'),
     cw=cv.clientWidth*devicePixelRatio,ch=cv.clientHeight*devicePixelRatio,k=Math.min(1,MAXSIDE/Math.max(cw,ch)),w=Math.max(2,Math.round(cw*k)&~1),h=Math.max(2,Math.round(ch*k)&~1);
   animPaused=true;showGround=false;showGrid=false;showLabels=false;
-  try{const B=unionBounds(seq.map(f=>{animMode=f.m;animPhase=f.ph;animShow();return sceneBounds}));if(B){const f=cameraFit(B[0],B[1],cameraRotation(),w/h);ctr=f.center;dist=f.distance*1.04}}catch(e){ctr=saved.ctr;dist=saved.dist}
+  try{
+    if(frameMode!=='mine'){
+      const list=seq.map(f=>{animMode=f.m;animPhase=f.ph;animShow();return sceneBounds}).filter(Boolean);
+      if(frameMode==='all'){const B=unionBounds(list);if(B){const f=cameraFit(B[0],B[1],cameraRotation(),w/h);ctr=f.center;dist=f.distance*1.04}}
+      else if(list.length){const fits=list.map(b=>cameraFit(b[0],b[1],cameraRotation(),w/h)),mid=a=>a.slice().sort((x,y)=>x-y)[a.length>>1];
+        ctr=[0,1,2].map(k=>mid(fits.map(f=>f.center[k])));dist=mid(fits.map(f=>f.distance))*TIGHT}
+    }
+  }catch(e){ctr=saved.ctr;dist=saved.dist}
   try{return await fn({n,w,h,name,frame(i){animMode=seq[i].m;animPhase=seq[i].ph;animShow();draw([w,h]);return cv}})}
   finally{animBusy='';const live=!!animBind;if(live)animMode=saved.mode;animPhase=saved.phase;animPaused=saved.paused;ctr=saved.ctr;dist=saved.dist;showGround=saved.ground;showGrid=saved.grid;showLabels=saved.labels;busy=false;if(live)animShow();need();animBar()}
 }
@@ -110,15 +120,52 @@ async function exportWebm(){
   const type=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t));
   if(!type){status('WebM not supported here');return}
   await withFrames(async({n,w,h,name,frame})=>{
-    const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d'),stream=c.captureStream(0),track=stream.getVideoTracks()[0],
-      rec=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:4e6}),chunks=[],done=new Promise(r=>{rec.onstop=r});
-    rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};rec.start();
-    for(let i=0;i<n;i++){status(`WebM ${i+1}/${n}`);frame(i);x.clearRect(0,0,w,h);x.drawImage(cv,0,0);track.requestFrame?.();await new Promise(r=>setTimeout(r,1000/FPS))}
-    rec.stop();await done;save(new Blob(chunks,{type:'video/webm'}),`${name}.webm`);
+    const canvas=document.createElement('canvas');
+    canvas.width=w;canvas.height=h;
+    const context=canvas.getContext('2d'),stream=canvas.captureStream(0),track=stream.getVideoTracks()[0];
+    let recorder,startTimer,recordingError;
+    try{
+      recorder=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:4e6});
+      const chunks=[];
+      let rejectStart;
+      const started=new Promise((resolve,reject)=>{
+        rejectStart=reject;
+        recorder.onstart=()=>{clearTimeout(startTimer);resolve()};
+      });
+      const done=new Promise(resolve=>{
+        recorder.onstop=()=>{rejectStart(new Error('WebM recorder stopped before starting'));resolve()};
+      });
+      recorder.onerror=event=>{
+        recordingError=event.error||new Error('WebM recorder failed');
+        rejectStart(recordingError);
+      };
+      recorder.ondataavailable=event=>{if(event.data.size)chunks.push(event.data)};
+      // Seed the stream, then wait for the asynchronous encoder startup before advancing the animation.
+      frame(0);context.drawImage(cv,0,0);
+      startTimer=setTimeout(()=>rejectStart(new Error('WebM recorder startup timed out')),15000);
+      try{recorder.start();track.requestFrame?.()}
+      catch(error){rejectStart(error)}
+      await started;
+      for(let i=0;i<n;i++){
+        if(recordingError)throw recordingError;
+        status(`WebM ${i+1}/${n}`);frame(i);
+        context.clearRect(0,0,w,h);context.drawImage(cv,0,0);
+        track.requestFrame?.();
+        await new Promise(resolve=>setTimeout(resolve,1000/FPS));
+      }
+      if(recorder.state!=='inactive')recorder.stop();
+      await done;
+      if(recordingError)throw recordingError;
+      save(new Blob(chunks,{type:'video/webm'}),`${name}.webm`);
+    }finally{
+      clearTimeout(startTimer);
+      try{if(recorder&&recorder.state!=='inactive')recorder.stop()}
+      finally{stream.getTracks().forEach(track=>track.stop())}
+    }
   });
 }
 // MP4 has no transparency: frames are laid over the page's backdrop colour. Every frame gets an exact timestamp, so the file
-// plays at the right speed in any player (the WebM above is recorded live and many players show only its first frame).
+// uses exact frame timing. WebM above is recorded live and its timing includes recorder startup.
 async function exportMp4(){
   if(!window.VideoEncoder){status('MP4 not supported here');return}
   await withFrames(async({n,w,h,name,frame})=>{
@@ -135,6 +182,8 @@ async function exportMp4(){
     save(new Blob([muxMp4({w,h,fps:FPS,samples,avcC})],{type:'video/mp4'}),`${name}.mp4`);
   });
 }
+{const b=document.getElementById('anim-frame-mode');if(b){const show=()=>{const m=FRAME_MODES.find(x=>x[0]===frameMode);b.textContent='Frame: '+m[1];b.title=m[2]+' Click to change.'};show();b.onclick=()=>{frameMode=FRAME_MODES[(FRAME_MODES.findIndex(x=>x[0]===frameMode)+1)%FRAME_MODES.length][0];show()}}}
+root.AnimExport.setFrameMode=m=>{if(FRAME_MODES.some(x=>x[0]===m))frameMode=m};
 if(document.getElementById('anim-mp4')){document.getElementById('anim-mp4').onclick=()=>exportMp4().catch(e=>{busy=false;status('MP4 failed: '+e.message)});root.AnimExport.exportMp4=exportMp4}
 document.getElementById('anim-gif').onclick=()=>exportGif().catch(e=>{busy=false;status('GIF failed: '+e.message)});
 document.getElementById('anim-webm').onclick=()=>exportWebm().catch(e=>{busy=false;status('WebM failed: '+e.message)});

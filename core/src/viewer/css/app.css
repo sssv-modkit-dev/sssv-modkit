@@ -201,7 +201,8 @@ a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,selec
 .anim-timeline{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);z-index:3;display:flex;align-items:center;gap:6px;width:min(560px,calc(100% - 24px));padding:6px 10px;background:var(--card);border:1px solid var(--ac);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.35)}
 .anim-timeline[hidden]{display:none}
 .anim-timeline button{min-width:34px;padding:4px 6px;font-size:15px;line-height:1}
+.anim-timeline select{width:auto;min-width:58px;padding:4px;font-size:12px}
 .anim-timeline input[type=range]{flex:1;min-width:60px;accent-color:var(--ac)}
 .anim-timeline{flex-wrap:wrap}.anim-timeline button.on{border-color:var(--ac);color:var(--ac)}.anim-queue{flex-basis:100%;display:flex;flex-wrap:wrap;gap:4px;align-items:center}.anim-queue[hidden]{display:none}.anim-timeline .anim-queue button{font-size:11px;padding:3px 7px;min-width:0}.anim-timeline .anim-queue button.on{background:var(--ac);color:var(--bg,#000)}
-.anim-timeline #anim-gif,.anim-timeline #anim-mp4,.anim-timeline #anim-webm{font-size:11px;padding:4px 7px}
+.anim-timeline #anim-frame-mode,.anim-timeline #anim-gif,.anim-timeline #anim-mp4,.anim-timeline #anim-webm{font-size:11px;padding:4px 7px}
 .anim-timeline #anim-frame{font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
