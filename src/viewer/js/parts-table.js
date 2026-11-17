@@ -1,5 +1,5 @@
 /* SSSV pack: validate a local animal_table.json into the Model Editor's parts table (pure; also used by tests). */
-function normaliseLocalTable(raw){
+function normaliseLocalTable(raw,romLength=0x2000000){
   if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('Expected an animal table object.');
   const out=Object.create(null),safe=s=>typeof s==='string'&&/^[a-zA-Z0-9_ .|()-]{1,150}$/.test(s)&&!['__proto__','constructor','prototype'].includes(s);
   const entries=Object.entries(raw);
@@ -18,7 +18,7 @@ function normaliseLocalTable(raw){
       if(!q.ended||q.seg===1&&prop===null)continue;   // props may live in segment 1; animal seg-1 parts are shared extras
       if(!safe(q.symbol)||!Number.isInteger(q.rom)||q.rom<0||q.rom>=0x2000000||!Array.isArray(q.sections||[])||!(q.sections||[]).every(safe))throw new Error('Invalid part metadata.');
       const part={s:q.symbol,r:q.rom,j:'local',v:q.sections||[],t:[]};
-      if(q.texture){const t=q.texture;if(t.format!=='ci4'||t.width!==16||t.height!==16||![t.image,t.palette].every(n=>Number.isInteger(n)&&n>=0x1000&&n<0x2000000))throw new Error('Invalid texture metadata.');part.texture={format:'ci4',width:16,height:16,image:t.image,palette:t.palette};}
+      if(q.texture){const t=q.texture;if(t.format!=='ci4'||![16,32].includes(t.width)||t.height!==t.width||![t.image,t.palette].every(n=>Number.isInteger(n)&&n>=0x1000&&n%2===0)||t.image+t.width*t.height/2>romLength||t.palette+32>romLength)throw new Error('Invalid texture metadata.');part.texture={format:'ci4',width:t.width,height:t.height,image:t.image,palette:t.palette};}
       p.push(part);
     }
     if(p.length)out[name]=prop===null?{b,p,s:sections,draw_funcs:a.draw_funcs||[]}:{b,p,s:sections,draw_funcs:[],prop};

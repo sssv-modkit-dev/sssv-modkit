@@ -68,9 +68,10 @@ async function loadROM(ab,filename,restored=false){
       if(!window.SSSVBuilder?.deriveTable)throw new Error('Automatic indexing needs this page served over HTTP(S) with its builder files. You can also open an existing animal table.');
       H.message('Reading animals from your ROM...');
       const raw=await window.SSSVBuilder.deriveTable(ab,{onProgress:p=>H.message(p.detail)});
-      partsTable=normaliseLocalTable(raw);
+      partsTable=normaliseLocalTable(raw,ab.byteLength);
     }
     await window.LoadProgress?.step('Building props',.5);
+    for(const animal of Object.values(partsTable))for(const part of animal.p)if(part.texture)window.ModelTextureTools.descriptor(part.texture,ab.byteLength);
     partsTable=namePropModels(partsTable);
     if(window.SSSVAnimalPoses){
       await window.LoadProgress?.step('Reading animal poses',.6);
@@ -109,7 +110,7 @@ $('forget-source').onclick=async()=>{try{await forgetLastROM();$('forget-source'
 $('source-file').disabled=false;
 restoreEdits('demo');
 {H.message(Object.keys(partsTable).length?'Animal table available. Choose your ROM; remembering it is optional.':'Choose your US ROM. Its animal table will be generated locally.');
-  (async()=>{try{const saved=await getLastROM();if(saved&&saved.buffer){H.message('Restoring your last ROM from this browser…');await loadROM(saved.buffer,saved.filename||'last ROM',true)}}catch(err){H.message('Choose your ROM file to begin. Local auto-restore is unavailable in this browser: '+err.message)}})();}
+  (async()=>{try{const saved=await getLastROM();if(saved&&saved.buffer){H.message('Restoring your last ROM from this browserÃ¢â‚¬Â¦');await loadROM(saved.buffer,saved.filename||'last ROM',true)}}catch(err){H.message('Choose your ROM file to begin. Local auto-restore is unavailable in this browser: '+err.message)}})();}
 // Build & Play (public builds only, where handoff.js and play.html ship): hand the game config and the ROM loaded here
 // (in memory, as a Blob) to play.html, which builds the patched ROM in the browser.
 if(window.SSSVHandoff){$('build-play').hidden=false;$('build-play').onclick=()=>{

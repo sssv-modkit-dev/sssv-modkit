@@ -16,6 +16,7 @@ import bisect, struct
 OVA_ROM, OVA_END, OVA_VRAM = 0x6A6500, 0x7D1AD0, 0x80294E50
 PART_DRAW_JAL = 0x0C000000 | ((0x802C78B0 & 0x0FFFFFFF) >> 2)
 EYE_TEXTURE_JAL = 0x0C000000 | ((0x80356BD8 & 0x0FFFFFFF) >> 2)
+BODY_TEXTURE_JAL = 0x0C000000 | ((0x80356410 & 0x0FFFFFFF) >> 2)   # 16-colour palette + 32x32 CI4 image
 SEG1_BASE = 0x398D0
 BANKS4 = [(0xC7A30, 0xDD5C0), (0xDD5C0, 0xE75B0), (0xE75B0, 0xF1060), (0xF1060, 0xFFD50), (0xFFD50, 0x116BD0)]
 SP = 29
@@ -147,6 +148,11 @@ def eye_textures(code, lo, hi):
                 pending = {'format': 'ci4', 'width': 16, 'height': 16,
                            'image': SEG1_BASE + (image & 0xFFFFFF),
                            'palette': SEG1_BASE + (pal & 0xFFFFFF)}
+        elif word == BODY_TEXTURE_JAL:
+            pal, image = code.reg_arg(pos, 4), code.reg_arg(pos, 5)
+            pending = None
+            if pal is not None and image is not None and pal >> 24 in (1, 4) and image >> 24 in (1, 4) and pal - image == 0x200:
+                pending = {'format': 'ci4', 'width': 32, 'height': 32, 'seg_image': image, 'seg_palette': pal}
         elif word == PART_DRAW_JAL:
             dl = code.stack_arg(pos, 0x24)
             if pending and dl is not None:
@@ -155,6 +161,17 @@ def eye_textures(code, lo, hi):
         elif word >> 26 == 3:
             pending = None
     return result
+
+def resolve_textures(textures, bases):
+    """Turn segment-relative body texture addresses into ROM offsets once the segment bases are known."""
+    out = {}
+    for dl, t in textures.items():
+        if 'seg_image' not in t: out[dl] = t; continue
+        img, pal = t['seg_image'], t['seg_palette']
+        if img >> 24 not in bases or pal >> 24 not in bases: continue
+        out[dl] = {'format': t['format'], 'width': t['width'], 'height': t['height'],
+                   'image': bases[img >> 24] + (img & 0xFFFFFF), 'palette': bases[pal >> 24] + (pal & 0xFFFFFF)}
+    return out
 
 def build_from_rom(rom, parse_dl):
     """Same schema as animal_table.build(); parse_dl(rom_addr, segbases) is animal_table.parse_dl."""
@@ -173,6 +190,7 @@ def build_from_rom(rom, parse_dl):
         for lo, hi in BANKS4 if seg4 else []:
             if all(lo + o < hi and parse_dl(lo + o, {1: SEG1_BASE, 4: lo})['ended'] for o in seg4): bases[4] = lo; break
         at = lambda v: bases[v >> 24] + (v & 0xFFFFFF)
+        textures = resolve_textures(textures, bases)
         sym = lambda v: 'D_%08X_%X' % (v, at(v))
         dls = {e[0] for _, _, ev in calls for e in ev if e[0] >> 24 in bases}
         for v in consts:

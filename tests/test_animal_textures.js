@@ -16,11 +16,11 @@ assert.throws(()=>T.descriptor({...t,image:0x1001},bytes.length),/Unsupported/,'
 assert.throws(()=>T.patches(new Uint8Array(3),new Uint8Array(3)),/even byte/);
 // Exercise project/source state through the browser module with a minimal DOM.
 const vm=require('node:vm'),fs=require('node:fs');
-function fixture(){
+function fixture(texture=t){
   const button=()=>({style:{},attributes:{},setAttribute(k,v){this.attributes[k]=v}});
   const input={value:'#FF0000'},opaque={checked:true},select={replaceChildren(){},value:''},status={},swatches={children:[],replaceChildren(){this.children=[]},appendChild(b){this.children.push(b)}},reset={};
   let outlines=0;
-  const canvas={getContext:()=>({createImageData:()=>({data:new Uint8ClampedArray(1024)}),putImageData(){},strokeRect(){outlines++}}),setPointerCapture(){},getBoundingClientRect:()=>({left:0,top:0,width:192,height:192})};
+  const canvas={getContext:()=>({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData(){},strokeRect(){outlines++}}),setPointerCapture(){},getBoundingClientRect:()=>({left:0,top:0,width:192,height:192})};
   const nodes={'.texture-status':status,'select':select,'canvas':canvas,'.texture-swatches':swatches,'input[type=color]':input,'.texture-opaque':opaque,'.texture-reset':reset};
   for(const name of ['pencil','bucket','eraser','select'])nodes['.texture-tool-'+name]=button();
   for(const name of ['copy','cut','paste','clear-selection'])nodes['.texture-'+name]=button();
@@ -29,7 +29,7 @@ function fixture(){
   let resetAll;
   const document={createElement:tag=>tag==='section'?panel:button(),getElementById:id=>id==='rst'?{addEventListener:(event,fn)=>resetAll=fn}:{after(){}}};
   const history={begins:0,ends:0,begin(){this.begins++},end(){this.ends++}};
-  const meta={s:'eye',r:0x1500,texture:t},context={document,Uint8Array,Uint8ClampedArray,DataView,Map,Set,Option:function(text,value){this.text=text;this.value=value},demoMode:false,gallery:false,dv:new DataView(bytes.slice().buffer),cur:{p:[meta]},TABLE:{one:{p:[meta]},two:{p:[{...meta}]}},name:'one',parsed:[{...part}],bases:{},parseDL:()=>({...part}),rebuild(){}};
+  const meta={s:'eye',r:0x1500,texture},context={document,Uint8Array,Uint8ClampedArray,DataView,Map,Set,Option:function(text,value){this.text=text;this.value=value},demoMode:false,gallery:false,dv:new DataView(bytes.slice().buffer),cur:{p:[meta]},TABLE:{one:{p:[meta]},two:{p:[{...meta}]}},name:'one',parsed:[{...part}],bases:{},parseDL:()=>({...part}),rebuild(){}};
   context.ModelEditorHistory=history;
   context.window=context;
   vm.createContext(context);vm.runInContext(fs.readFileSync('src/viewer/js/animal-textures.js','utf8'),context);
@@ -95,3 +95,43 @@ const key=letter=>keyboard.nodes.canvas.onkeydown({key:letter,ctrlKey:true,preve
 key('a');key('c');assert.match(keyboard.nodes['.texture-message'].textContent,/Copied 16 x 16/);key('x');assert.ok(keyboard.api.buildPatches().length);key('v');assert.equal(keyboard.api.buildPatches().length,0);assert.equal(prevented,4);
 keyboard.nodes.canvas.onkeydown({key:'Escape'});assert.equal(keyboard.nodes['.texture-clear-selection'].disabled,true);
 console.log('Image-focused select/copy/cut/paste keyboard shortcuts preserve native controls elsewhere.');
+
+// Body textures use the same linear high-nibble-first ROM layout as eyes.
+const body={...t,width:32,height:32,palette:0x1200};
+const pixels=Array.from({length:1024},(_,i)=>(i*7+(i>>5))%16),encoded=bytes.slice();
+T.writeIndices(encoded,body,pixels);assert.deepEqual(T.decode(encoded,body).indices,pixels);
+assert.equal(encoded[body.image+16],(pixels[32]<<4)|pixels[33],'odd rows are linear, with 16 bytes per row');
+assert.throws(()=>T.descriptor({...body,image:bytes.length-510},bytes.length));
+assert.throws(()=>T.descriptor({...body,width:24,height:24},bytes.length));
+assert.deepEqual(T.rectangle([31,31],[30,29],32),{x:30,y:29,width:2,height:3});
+const full=Array(1024).fill(2);assert.ok(T.floodFill(full,31,31,3).every(v=>v===3));
+const tail=T.copyPixels(pixels,{x:30,y:31,width:2,height:1});
+assert.deepEqual(tail.pixels,pixels.slice(1022));
+assert.equal(T.pastePixels(full,tail,31,31)[1023],pixels[1022]);
+const bodyBytes=bytes.slice();bodyBytes[body.palette+3]=1;
+const bv=[vertex(0,0,0,0),vertex(2,0,64,0),vertex(0,2,0,64)];
+const mesh={...part,tris:[{v:bv,c:-1}]};
+bodyBytes[body.image]=0x11;bodyBytes[body.image+16]=0x11;
+const mapped=T.texelGeometry(mesh,body,bodyBytes);
+assert.ok(mapped.tris.length>1);assert.ok(mapped.tris.every(tri=>tri.v.every(v=>v[0]+v[1]<=2+1e-9)),'UV clipping stays within original triangle');
+assert.equal(mapped.groups,mesh.groups);assert.deepEqual(mapped.bb,mesh.bb);
+const big=fixture(body);big.api.refresh();assert.equal(big.nodes.canvas.width,32);assert.equal(big.nodes.canvas.height,32);
+const bc=big.nodes.canvas;bc.onpointerdown({pointerId:1,currentTarget:bc,clientX:191,clientY:191});bc.onpointerup();
+assert.equal(big.api.buildPatches()[0].offset,body.image+510,'last pixel of 32x32 is writable');
+const saved=JSON.parse(JSON.stringify(big.api.projectExtras()));big.api.loadProjectExtras({});big.api.loadProjectExtras(saved);
+assert.equal(big.api.buildPatches()[0].offset,body.image+510,'size is implied by source table; project patches round-trip');
+const snapshot=big.api.historyExtras();big.reset();big.api.restoreHistoryExtras(snapshot);assert.ok(big.api.buildPatches().length);big.api.restoreHistoryExtras({});assert.equal(big.api.buildPatches().length,0);
+bc.onkeydown({key:'a',ctrlKey:true,preventDefault(){}});big.nodes['.texture-copy'].onclick();assert.match(big.nodes['.texture-message'].textContent,/Copied 32 x 32/);
+console.log('32x32 decode/encode, UV triangle clipping, tools, source-bound project sizes and history restoration pass (legacy 16x16 above).');
+
+const opaque=bodyBytes.slice();for(let i=0;i<16;i++)opaque[body.palette+i*2+1]|=1;
+const uvLine=[vertex(0,0,0,0),vertex(2,0,64,0),vertex(0,2,0,0)];
+const lineResult=T.texelGeometry({...part,tris:[{v:uvLine,c:-1}]},body,opaque);
+assert.ok(lineResult.tris.length>1,'one-dimensional UV domains still interpolate across texels');
+const constant=uvLine.map(v=>Object.assign([...v],{uv:[-32,-32]}));
+assert.equal(T.texelGeometry({...part,tris:[{v:constant,c:-1}]},body,opaque).tris.length,1,'constant/negative UVs retain the original triangle');
+const area=tri=>{const [a,b,c]=tri.v;return ((b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]))/2};
+assert.ok(lineResult.tris.every(tri=>area(tri)>0),'triangle winding is preserved');
+assert.ok(Math.abs(lineResult.tris.reduce((sum,t)=>sum+area(t),0)-2)<1e-9,'UV clipping neither loses nor overlaps mesh area');
+big.nodes['.texture-cut'].onclick();assert.ok(big.api.buildPatches().length);big.nodes['.texture-paste'].onclick();assert.equal(big.api.buildPatches().length,0,'32x32 select-all cut/paste restores the original');
+console.log('Body UV degeneracy, negative wrapping, area/winding and whole-image clipboard restoration pass.');

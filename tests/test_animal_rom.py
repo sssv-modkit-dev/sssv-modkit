@@ -35,6 +35,21 @@ def test_negative_addiu_and_unknown():
     assert c.stack_arg(jal, 0x24) == 0x0400FFF0
     assert c.reg_arg(jal, 4) is None
 
+def test_body_texture_loader():
+    body = [LUI(4, 0x0400), ADDIU(4, 4, 0x1200),
+            LUI(5, 0x0400), ADDIU(5, 5, 0x1000),
+            ar.BODY_TEXTURE_JAL, NOP,
+            LUI(8, 0x0400), ADDIU(8, 8, 0x2000), SW_SP(8, 0x24),
+            ar.PART_DRAW_JAL, NOP]
+    rom, start = fake_rom(body)
+    result = ar.eye_textures(ar.Code(rom), start, start + 4 * len(body))
+    resolved = ar.resolve_textures(result, {4: 0x8000})
+    assert resolved[0x04002000] == dict(format='ci4', width=32, height=32, image=0x9000, palette=0x9200)
+    assert ar.resolve_textures(result, {}) == {}
+    body[1] = ADDIU(4, 4, 0x1220)  # unsupported image/palette relationship
+    rom, start = fake_rom(body)
+    assert ar.eye_textures(ar.Code(rom), start, start + 4 * len(body)) == {}
+
 if __name__ == '__main__':
     for n, f in list(globals().items()):
         if n.startswith('test_'): f(); print('ok', n)

@@ -21,3 +21,12 @@ assert.throws(()=>normalize(new Uint8Array(32)),/8-16 MB/);
 const wrong=rom.slice();wrong[0]=0;assert.throws(()=>normalize(wrong),/byte order/);
 wrong.set(rom);wrong[0x3E]=0;assert.throws(()=>normalize(wrong),/US SSSV/);
 console.log('ROM input: all three byte orders normalize identically without modifying the source; bad sizes/header/region rejected.');
+
+const withTexture=t=>({synthetic:{...synthetic.synthetic,parts:[{...synthetic.synthetic.parts[0],texture:t}]}});
+const tex={format:'ci4',width:32,height:32,image:0x1000,palette:0x1200};
+assert.equal(table(withTexture(tex),0x1220).synthetic.p[0].texture.width,32);
+assert.throws(()=>table(withTexture({...tex,width:24,height:24})),/texture/);
+assert.throws(()=>table(withTexture(tex),0x121f),/texture/);
+assert.throws(()=>table(withTexture({...tex,image:0x1200}),0x13fe),/texture/);
+assert.throws(()=>table(withTexture({...tex,palette:0x1201})),/texture/);
+console.log('32x32 table descriptors enforce image/palette bounds and reject 24x24.');
