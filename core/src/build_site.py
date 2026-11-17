@@ -153,7 +153,7 @@ def build(pack_dir, out, no_vendor=False):
     level_editor(pack, out)
     story = out / 'story'
     story.mkdir(exist_ok=True)
-    for name in ('dialogue.html', 'textures.html', 'terrain.html', 'sound.html', 'sound.css', 'sound-core.js', 'sound-player.js', 'sound-clock.js', 'sound.js'):
+    for name in ('dialogue.html', 'textures.html', 'terrain.html', 'sound.html', 'sound.css', 'sound-encode.js', 'sound-core.js', 'sound-player.js', 'sound-clock.js', 'sound.js'):
         shutil.copyfile(HERE / 'web' / name, out / name)
     shutil.copyfile(HERE / 'viewer/js/history.js', story / 'history.js')
     for name in ('story.js', 'story.css'):
