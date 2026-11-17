@@ -29,8 +29,9 @@ async function fromROM(rom,progress=()=>{}){
  progress('Reading animal geometry from your ROM...');const table=await root.SSSVBuilder.deriveTable(rom,{onProgress:p=>progress(p.detail)}),models={},species={},names={};
  await root.LoadProgress?.step('Reading animal poses',.7);
  const captured=await root.SSSVAnimalPoses.load(root.SSSVAnimalPoses.species.filter(([,name])=>table[name]).map(([,name])=>name));
- for(const [id,name] of root.SSSVAnimalPoses.species){if(!table[name]||!captured.poses[name])continue;
-  await root.LoadProgress?.step('Building animals',.85);
+ const supported=root.SSSVAnimalPoses.species.filter(([,name])=>table[name]&&captured.poses[name]);
+ for(let i=0;i<supported.length;i++){const [id,name]=supported[i];
+  await root.LoadProgress?.step(`Building animal ${i+1} of ${supported.length}`,.72+(i+1)/supported.length*.13);
   try{const model=assembleAnimal(rom,table[name],captured.poses[name]);if(model){models[name]=model;species[id]=name;names[name]=name;}}
   catch(error){captured.errors[name]=error.message;}
  }

@@ -84,7 +84,7 @@
       const result = await window.SSSVBuilder.build({
         rom: state.rom, level: state.level || undefined, parts: state.parts || undefined,
         relocate: $('b-relocate').checked, newAnimals: $('b-new-animals').checked,
-      }, { onProgress: p => { window.LoadProgress?.step('Building your changes',Math.max(0,STAGES.indexOf(p.stage))/STAGES.length);bar.value = STAGES.indexOf(p.stage) + 1; if (p.detail) status(p.detail + '…'); } });
+      }, { onProgress: p => { window.LoadProgress?.step(p.detail||'Building your changes',Math.max(0,STAGES.indexOf(p.stage))/STAGES.length);bar.value = STAGES.indexOf(p.stage) + 1; if (p.detail) status(p.detail + '…'); } });
       bar.value = STAGES.length;
       setResult(result);
       const seconds = result.timings && result.timings.total ? ' in ' + (result.timings.total / 1000).toFixed(1) + ' s' : '';

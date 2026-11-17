@@ -15,9 +15,17 @@
     worker = null;
   }
 
-  function ensureWorker() {
+  async function ensureWorker() {
     if (worker) return worker;
+    if (root.document && !root.SSSVDownloads) throw new Error('Download controls are unavailable. Reload this page before starting Python.');
+    if (root.SSSVDownloads && !await root.SSSVDownloads.request('pyodide', 'Animal models and ROM builds need the Python runtime. Not now keeps the demo tools available; levels can open with placeholder animals.')) {
+      const error = new Error('Python download skipped. You can keep editing and try again when ready.');
+      error.code = 'RUNTIME_DECLINED';throw error;
+    }
+    if (worker) return worker;
+    if (typeof root.Worker !== 'function') throw new Error('This browser cannot start the Python worker. Try a current browser.');
     worker = new root.Worker(workerUrl(), { type: 'module' });
+    worker.onmessageerror = () => fail('The browser could not read a builder response. Reload and try again.');
     worker.onmessage = event => {
       const message = event.data || {};
       const job = pending.get(message.id);
@@ -65,7 +73,7 @@
     if (input.relocate) options.relocate = true;
     if (input.newAnimals) options.new_animals = true;
     const id = nextId++;
-    const target = ensureWorker();
+    const target = await ensureWorker();
     return new Promise((resolve, reject) => {
       pending.set(id, { resolve, reject, onProgress: hooks && hooks.onProgress });
       target.postMessage({ type: 'build', id, rom, level, parts, options }, [rom]);
@@ -73,7 +81,7 @@
   }
 
   async function deriveTable(rom, hooks) {
-    const buffer = await asBuffer(rom), id = nextId++, target = ensureWorker();
+    const buffer = await asBuffer(rom), id = nextId++, target = await ensureWorker();
     return new Promise((resolve, reject) => {
       pending.set(id, { resolve, reject, onProgress: hooks && hooks.onProgress });
       target.postMessage({ type: 'index', id, rom: buffer }, [buffer]);
@@ -82,7 +90,7 @@
 
   // Pictures for Classic+ patches drawn from the user's ROM in the worker: names -> {name: Uint8Array}.
   async function art(rom, names, hooks) {
-    const buffer = await asBuffer(rom), id = nextId++, target = ensureWorker();
+    const buffer = await asBuffer(rom), id = nextId++, target = await ensureWorker();
     return new Promise((resolve, reject) => {
       pending.set(id, { resolve, reject, onProgress: hooks && hooks.onProgress });
       target.postMessage({ type: 'art', id, rom: buffer, names }, [buffer]);

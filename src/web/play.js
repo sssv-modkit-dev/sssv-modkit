@@ -11,7 +11,13 @@ async function startGame(blob, name) {
   if (!isBlobLike(blob) || blob.size < 4096 || blob.size > 64 * 1024 * 1024) throw new Error('Choose an uncompressed N64 ROM between 4 KB and 64 MB.');
   const magic = Array.from(new Uint8Array(await blob.slice(0, 4).arrayBuffer())).map(b => b.toString(16).padStart(2, '0')).join('');
   if (!['80371240', '37804012', '40123780'].includes(magic)) throw new Error('Unrecognized N64 header. Unzip the ROM first; .z64, .v64 and .n64 byte orders are supported.');
-  if (!document.createElement('canvas').getContext('webgl2')) throw new Error('WebGL 2 is unavailable. Try a browser with hardware acceleration enabled.');
+  const probe=document.createElement('canvas'),gl=probe.getContext('webgl2');
+  if (!gl) throw new Error('WebGL 2 is unavailable. Try a browser with hardware acceleration enabled.');
+  gl.getExtension?.('WEBGL_lose_context')?.loseContext();
+  const coreId=document.getElementById('core').value;
+  if(window.document&&!window.SSSVDownloads)throw new Error('Download controls are unavailable. Reload this page before playing.');
+  if(window.SSSVDownloads&&!await window.SSSVDownloads.request(coreId,'Playing needs EmulatorJS and the selected N64 core. Not now keeps your ROM and edits available.'))throw new Error('Emulator download skipped. Press Load ROM when ready.');
+  if(started)throw new Error('A game is already running.');
   // Classic+ widescreen writes lui a3,0x3FAB (aspect 1.336) at ROM 0x6AB0D0; that picture is meant to be stretched to 16:9.
   const wideBytes = blob.size > 0x6AB0D4 ? Array.from(new Uint8Array(await blob.slice(0x6AB0D0, 0x6AB0D4).arrayBuffer())).map(b => b.toString(16).padStart(2, '0')).join('') : '';
   const wide = { '80371240': '3c073fab', '37804012': '073cab3f', '40123780': 'ab3f073c' }[magic] === wideBytes;
@@ -20,7 +26,7 @@ async function startGame(blob, name) {
   window.EJS_player = '#game';
   window.EJS_language = 'en-US';
   window.EJS_disableAutoLang = false; // en-US needs no localization download
-  window.EJS_core = document.getElementById('core').value;
+  window.EJS_core = coreId;
   window.EJS_gameUrl = romUrl;
   window.EJS_gameName = String(name || blob.name || 'game').replace(/\.[^.]+$/, '');
   window.EJS_pathtodata = new URL('vendor/emulatorjs/data/', location.href).href; // same-origin copy from tools/vendor_deps.py
@@ -46,7 +52,7 @@ async function startGame(blob, name) {
   window.EJS_onGameStart = () => { status.textContent = 'Running. Use the player menu for controls and saves.'; };
   const loader = document.createElement('script');
   loader.src = window.EJS_pathtodata + 'loader.js';
-  loader.onerror = () => { status.textContent = 'Emulator files failed to load from this site. Press Start over to reload and retry.'; };
+  loader.onerror = () => { status.textContent = 'Emulator files failed to load from this site. Press Start over to reload and retry.';window.LoadProgress?.fail(status.textContent); };
   document.getElementById('core').disabled = true;
   status.textContent = 'Loading emulator... First load may take a moment.';
   document.body.appendChild(loader);

@@ -95,7 +95,10 @@ async function loadROM(ab,filename,restored=false){
     if(opened)H.message('Restored remembered edits for '+filename+'. '+ok);
     if(restored)$('remember-source').checked=true;
     $('forget-source').disabled=false;window.LoadProgress?.done();return true;
-  }catch(error){window.LoadProgress?.fail(error.message);throw error;}finally{loadingROM=false;}
+  }catch(error){
+    if(error.code==='RUNTIME_DECLINED'){window.LoadProgress?.done();H.message('Python download skipped. The demo models are still available. Choose your ROM again when ready.');return false;}
+    window.LoadProgress?.fail(error.message);throw error;
+  }finally{loadingROM=false;}
 }
 $('local-table').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;

@@ -27,6 +27,8 @@ def main():
         ['node', 'tests/test_scene_edits.js'],
         ['node', '--check', 'src/web/play.js'],
         ['node', 'tests/test_web_play.js'],
+        ['node', 'tests/test_loading_watchdog.js'],
+        [sys.executable, 'tests/test_loading_flow.py'],
         ['node', '--check', 'src/web/play-build.js'],
         ['node', '--check', 'src/web/handoff.js'],
         ['node', 'tests/test_play_build.js'],

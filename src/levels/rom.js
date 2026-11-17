@@ -97,7 +97,7 @@ const LevelRom = (() => {
     for(let id=1;id<=36;id++){await globalThis.LoadProgress?.step(`Reading level ${id} of 36`,.25+id/36*.4);progress(`Decoding level ${id} of 36…`);await new Promise(resolve=>setTimeout(resolve,0));const ch=chunks(rom,id),h=ch[12],m=terrain(ch[10],h),zone=h[0x21],sub=h[0x53],key=`${zone}_${sub}`;
       if(!ATLAS[key])ATLAS[key]=atlas(rom,zone,sub);
       EDITOR_STOCK[id]={props:records(ch[0],22),animals:records(ch[1],16)};
-      const xs=m.pos.filter((_,i)=>i%3===0),ys=m.pos.filter((_,i)=>i%3===1),zs=m.pos.filter((_,i)=>i%3===2),bounds=a=>a.length?[Math.min(...a),Math.max(...a)]:[0,0],xb=bounds(xs),yb=bounds(ys),zb=bounds(zs);
+      const bounds=axis=>{let lo=Infinity,hi=-Infinity;for(let i=axis;i<m.pos.length;i+=3){lo=Math.min(lo,m.pos[i]);hi=Math.max(hi,m.pos[i]);}return lo===Infinity?[0,0]:[lo,hi];},xb=bounds(0),yb=bounds(1),zb=bounds(2);
       const grid=[],tile=[];for(let i=0;i<65*97;i++){grid.push(ch[9][i*8]);tile.push(ch[9][i*8+2]);}
       LEVELS.push({id,...(typeof Scene!=='undefined'&&Scene.LEVEL.name?{name:titles[id-1]?.title?.trim()||'Level '+id}:{}),tex:key,zone,sub,n:m.pos.length/3,bb:[xb[0],yb[0],zb[0],xb[1],yb[1],zb[1]],nsp:EDITOR_STOCK[id].props.length,pos:encoded(m.pos,Int32Array),col:encoded(m.col,Uint8Array),uv:encoded(m.uv,Int16Array),sl:encoded(m.sl,Uint8Array),wat:encoded(m.wat,Uint8Array),grid:encoded(grid,Uint8Array),tile:encoded(tile,Uint8Array),bt:b64(ch[11].subarray(0,3072)),sp:encoded(recordValues(ch[0],22),Int32Array),an:recordValues(ch[1],16)});
     }

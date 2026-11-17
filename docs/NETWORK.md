@@ -6,6 +6,12 @@ Audited by grepping `src/web`, `src/viewer`, `src/levels` for `fetch`, `XMLHttpR
 
 ## Enforcement
 
+Before Python or the emulator starts, a keyboard-accessible dialog asks to download the runtime from this site. Sizes are computed from `tools/vendor-manifest.json` during the site build (`runtime-sizes.js`): Python includes its loader, WebAssembly, standard library and lock file; the player includes EmulatorJS, its extractor and one selected core (the larger of its current/legacy variants). These are file sizes before HTTP compression, not a claim about remaining network traffic. The browser cache normally avoids repeat downloads, but can be cleared or evicted. Consent lasts for this session; **Don't ask again** stores the choice locally. **Not now** starts no runtime worker or emulator. A mobile-data hint appears when the browser reports data saving, cellular service or a slow connection.
+
+The editors do not start Python simply on page open. Opening ROM animal models needs Python indexing unless a matching local table is already available. In the Level Editor, declining that download opens levels with placeholder animals. Choose the ROM again to retry with animal previews. Builds request Python when needed, and Play asks separately for its selected emulator core. Python fetches report received bytes where stream APIs are available; compilation and indexing report stages. The loading dialog shows per-level thumbnail construction and, after 20 seconds without a new step, offers local diagnostics and reload controls. Copied details include stage timings, browser/device hints, ROM size and error categories; they contain no ROM bytes or file names.
+
+All tools also load `runtime-sizes.js`, `runtime-downloads.js`, `rom-compat.js`, `loading.css` and the shared `load-progress.js` from this site. The pack's `runtime-progress-worker.js` starts `builder-worker.js` only after consent.
+
 Each page carries a `Content-Security-Policy` meta tag starting from `default-src 'none'`, so a request not listed below is blocked by the browser, not just absent from the code. Exceptions:
 
 | Page | Directive | Why |
@@ -55,9 +61,9 @@ Links to the other pages and to GitHub are ordinary navigation (only on click).
 | Source | Request | When |
 |---|---|---|
 | `<script src>`, icon | `builder.js`, `play-build.js`, `play.js`, `favicon-build-play.svg` | always |
-| `builder.js:20` | `new Worker('builder-worker.js', {type:'module'})`, which imports `builder-core.js` | first Build & Play |
+| `builder.js` | `new Worker('runtime-progress-worker.js', {type:'module'})`, then `builder-worker.js` and `builder-core.js` | after Python consent, for animal indexing, patch artwork or a build |
 | `builder-worker.js:14` | `fetch('py/<module>.py')` for the 8 modules listed in `builder-core.js` (GET) | first Build & Play |
-| `builder-worker.js:25` | `import('vendor/pyodide/pyodide.mjs')`; Pyodide then fetches `pyodide.asm.mjs`, `pyodide.asm.wasm`, `python_stdlib.zip`, `pyodide-lock.json` from the same folder (about 20 MB) | first Build & Play |
+| `builder-worker.js` | `import('vendor/pyodide/pyodide.mjs')`; Pyodide then fetches `pyodide.asm.mjs`, `pyodide.asm.wasm`, `python_stdlib.zip`, `pyodide-lock.json` from the same folder | first Python operation after consent; exact combined size shown in the dialog |
 | `play.js:35` | `<script src="vendor/emulatorjs/data/loader.js">`; it adds `emulator.min.js` and `emulator.min.css` | Load game |
 | EmulatorJS (`emulator.min.js`) | `cores/reports/<core>.json`, `cores/<core>[-legacy]-wasm.data` (1 to 1.5 MB), `compression/extract7z.js` (all under `vendor/emulatorjs/data/`), then `blob:` URLs for the unpacked core and your ROM | Load game |
 

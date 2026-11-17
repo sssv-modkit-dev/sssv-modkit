@@ -2,11 +2,12 @@
 const vm = require('node:vm');
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
-async function run(bytes, size = 16*1024*1024, opener) {
+async function run(bytes, size = 16*1024*1024, opener, downloads) {
   const listeners = {}, appended = [], winListeners = {};
   const file = {size, name: 'test.z64', slice: () => ({arrayBuffer: async () => Uint8Array.from(bytes).buffer})};
   const elements = Object.fromEntries(['status','reset','core'].map(id => [id, {files:[file], value:'mupen64plus_next', addEventListener: (e,f) => listeners[id+e]=f}]));
   const context = {window:{addEventListener:(e,f)=>winListeners[e]=f, opener}, Blob:class{constructor(parts){this.size=parts[0].byteLength;const u=new Uint8Array(parts[0]);this.slice=()=>({arrayBuffer:async()=>u.slice(0,4).buffer});}}, location:{origin:'https://site.test',href:'https://site.test/play.html',reload(){}}, URL:Object.assign(function(p,b){return new globalThis.URL(p,b)},{createObjectURL:()=> 'blob:local-test',revokeObjectURL(){}}), Uint8Array, document:{getElementById:id=>elements[id],createElement:tag=>tag==='canvas'?{getContext:()=>({})}:{}, body:{appendChild:s=>appended.push(s)}}};
+  if(downloads)context.window.SSSVDownloads=downloads;
   vm.runInNewContext(fs.readFileSync('src/web/play.js','utf8'),context);
   await context.window.SSSVPlay.startGame(file, file.name);
   return {context, elements, appended, winListeners};
@@ -17,6 +18,12 @@ async function run(bytes, size = 16*1024*1024, opener) {
   assert.equal(invalid.appended.length,0);
   const big = await run([0x80,0x37,0x12,0x40],65*1024*1024);
   assert.equal(big.appended.length,0);
+  const asked=[];
+  const denied=await run([0x80,0x37,0x12,0x40],undefined,undefined,{request:async id=>{asked.push(id);return false;}});
+  assert.deepEqual(asked,['mupen64plus_next']);assert.equal(denied.appended.length,0,'no player request before consent');assert.match(denied.elements.status.textContent,/download skipped/);
+  denied.context.window.SSSVDownloads.request=async()=>true;
+  await denied.context.window.SSSVPlay.startGame({size:8192,slice:()=>({arrayBuffer:async()=>Uint8Array.from([0x80,0x37,0x12,0x40]).buffer})},'test.z64');
+  assert.equal(denied.appended.length,1,'accepting after decline starts player');
   for (const magic of [[0x80,0x37,0x12,0x40],[0x37,0x80,0x40,0x12],[0x40,0x12,0x37,0x80]]) {
     const result = await run(magic);
     assert.equal(result.context.window.EJS_gameUrl,'blob:local-test');
