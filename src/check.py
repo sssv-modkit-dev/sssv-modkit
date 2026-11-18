@@ -9,6 +9,7 @@ COMMANDS = [
     ['node', 'tests/test_sound.js'],
     ['node', 'tests/test_load_progress.js'],
     ['node', 'tests/test_story_rom.js'],
+    ['node', 'tests/test_cutscenes.js'],
     ['node', 'tests/test_story_state.js'],
     ['node', 'tests/test_texture_tiles.js'],
     ['node', 'tests/test_scene.js'],
@@ -37,6 +38,7 @@ COMMANDS = [
     ['node', 'tests/browser/anim-export.mjs'],
     ['node', 'tests/browser/roundtrip.mjs'],
     ['node', 'tests/browser/tile-tools.mjs'],
+    ['node', 'tests/browser/cutscenes.mjs'],
     ['node', 'tests/browser/sound.mjs'],
     ['node', 'tests/browser/sound-music.mjs'],
 ]

@@ -52,9 +52,9 @@ async function dialogue() {
   currentData = data; originalData = structuredClone(project?project.original:data);
   terrainEdit = () => undefined;
   contentChanged = () => StoryROM.hasChanges(originalData, data);
-  let bank, line;
+  let bank, line, cutsceneUI;
   const H=window.ModelEditorHistory;
-  if(H)H.configure({capture:()=>({banks:data.banks,levels:data.levels}),restore:value=>{data.banks=value.banks;data.levels=value.levels;showBank();changed();}});
+  if(H)H.configure({capture:()=>({banks:data.banks,levels:data.levels,cutscenes:data.cutscenes}),restore:value=>{data.banks=value.banks;data.levels=value.levels;data.cutscenes=value.cutscenes;showBank();cutsceneUI?.refresh();changed();}});
   window.EditorShortcuts={help:['Ctrl+Z undo · Ctrl+Y / Ctrl+Shift+Z redo','Text fields use normal text editing shortcuts.'],action(key){if(busy)return false;if(key==='undo'||key==='redo'){H?.[key]();return true;}if(key==='escape'){document.activeElement?.blur();return true;}return false;}};
   const bytes = strings => 2 + Object.values(strings).reduce((n, s) => n + 4 + 2 * s.length, 0);
   function budget() {
@@ -75,9 +75,11 @@ async function dialogue() {
   function timingInput(parent, record, field, label) {
     const row = document.createElement('label'), input = document.createElement('input');
     row.textContent = label; input.type = 'number'; input.min = '0'; input.max = '32511'; input.step = '1'; input.value = record[field];
-    input.oninput = () => { record[field] = input.value === '' ? null : Number(input.value); changed(); };
+    input.disabled = Cutscenes.variable(record[field]);
+    if(input.disabled){input.type='text';input.value=Cutscenes.value(record[field]);}
+    input.oninput = () => { record[field] = input.value === '' ? null : Number(input.value); const raw=data.cutscenes?.[Number(bank)+1]?.[record.i];if(raw)raw.args[raw.op===0x44?1:0]=record[field];changed(); };
     row.append(input);
-    if (field === 'frames') { const out = document.createElement('output'); out.className = 'mut'; const show = () => { const f = Number(input.value) || 0; out.textContent = ` ≈ ${(f / 30).toFixed(f < 300 ? 1 : 0)} s`; }; input.addEventListener('input', show); show(); row.append(out); }
+    if (field === 'frames'&&!input.disabled) { const out = document.createElement('output'); out.className = 'mut'; const show = () => { const f = Number(input.value) || 0; out.textContent = ` ≈ ${(f / 30).toFixed(f < 300 ? 1 : 0)} s`; }; input.addEventListener('input', show); show(); row.append(out); }
     parent.append(row); return row;
   }
   const snip = (t, n = 40) => { t = String(t || '').replace(/@[A-Z]{2}/g, '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
@@ -114,6 +116,7 @@ async function dialogue() {
   }
   function listWaits() {
     $('waits').replaceChildren();
+    const query=$('wait-search').value.trim().toLowerCase();
     const all=Number(bank)<31?data.levels[String(Number(bank)+1)]||[]:[],says=r=>r?snip(data.banks[bank].strings[r.text]??r.says):'';
     const ctx=r=>{const m=nearMessages(all,r.i);return {m,text:`${says(m.before)} ${says(m.after)}`.toLowerCase()}};
     const records=all.filter(r=>r.op==='wait'&&`${r.i} ${r.frames} ${ctx(r).text}`.includes(query));
@@ -144,7 +147,7 @@ async function dialogue() {
     budget(); preview(text); changed();
     $('encoding').textContent = /^[\x20-\x7e\n]*$/.test(text) ? '' : 'Unsupported character: use plain ASCII and line breaks.';
   };
-  async function save() { download(JSON.stringify({banks:data.banks,levels:data.levels},null,2), 'story-edits.json', 'application/json'); status('Edits downloaded.'); }
+  async function save() { download(JSON.stringify({banks:data.banks,levels:data.levels,cutscenes:data.cutscenes},null,2), 'story-edits.json', 'application/json'); status('Edits downloaded.'); }
   // Freeze editing while saving/building so a late response cannot mark newer edits saved.
   async function locked(fn) {
     const controls = [...document.querySelectorAll('input,select,textarea')];
@@ -155,6 +158,7 @@ async function dialogue() {
   $('build').onclick = () => action(() => locked(async () => {
     await exportROM();
   }));
+  if(data.cutscenes)cutsceneUI=mountCutscenes({data,scripts:project.scripts,onChange:changed,onDialogue:showBank,onError:status,isBusy:()=>busy});
   showBank(); dirty = contentChanged(); ready = true; enabled(); status('ROM loaded. Edit dialogue or timing, then download.');
 }
 
@@ -338,7 +342,7 @@ $('rom').onchange = () => action(async () => {
   await window.LoadProgress?.step('Reading dialogue and tilesets',.35);
   let next;try{next = new StoryROM.Project(new Uint8Array(await file.arrayBuffer()));}catch{throw Error('This ROM could not be read. Choose your unmodified SSSV US 1.0 ROM and try again.');}
   const saved=source?await ROMSession.read('story'):null,tiles=source?await ROMSession.read('terrain'):null;
-  if(saved&&saved.hash===source?.hash){StoryROM.validate(next.original,saved.data);next.data=saved.data;}
+  if(saved&&saved.hash===source?.hash){StoryROM.validate(next.original,saved.data);next.data=saved.data;if(!next.data.cutscenes){next.data.cutscenes=structuredClone(next.original.cutscenes);for(const [lv,records] of Object.entries(next.data.levels))for(const r of records)next.data.cutscenes[lv][r.i].args[r.op==='message'?1:0]=r.op==='message'?r.hold_seconds:r.frames;}}
   terrainSheets=tiles&&tiles.hash===source?.hash?tiles.sheets:{};
   project = next; localData = next.data; dirty = false; ready = false;
   let filename=$('rom-name');if(!filename){filename=document.createElement('output');filename.id='rom-name';$('rom').parentElement.after(filename);}filename.textContent=file.name;filename.title=file.name;
