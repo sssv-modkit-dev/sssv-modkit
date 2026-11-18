@@ -1,7 +1,7 @@
 /* Keep filters outside regenerating lists, so a redraw never loses the query or focus. */
 (()=>{
 'use strict';
-const names={'demo-picker':'animals','parts':'parts','gallery-list':'gallery','object-tree':'objects','pal-grid':'objects to add','type-picker':'object types','an':'animals','lv':'levels','bank':'banks','terrain-level':'levels','ed-type':'object types','ed-object':'selection'};
+const names={'demo-picker':'animals','parts':'parts','gallery-list':'gallery','object-tree':'objects','pal-grid':'objects to add','type-picker':'object types','an':'animals','lv':'levels','bank':'banks','terrain-level':'levels','cutscene-level':'levels','ed-type':'object types','ed-object':'selection'};
 const attached=new WeakSet(),refreshers=new Set();let queued=false;
 function attach(list){
  if(attached.has(list))return;

@@ -6,6 +6,7 @@
 (function(root){
 'use strict';
 const R=typeof module!=='undefined'?require('./rnc.js'):root.StoryRNC;
+const C=typeof module!=='undefined'?require('./cutscenes.js'):root.Cutscenes;
 const {u16,u32,put16,put32,unpack,packBest}=R, BTAB=0x2fc00,LTAB=0x7b72a8,ENT=0xab8;
 const concat=parts=>{const b=new Uint8Array(parts.reduce((n,p)=>n+p.length,0));let o=0;for(const p of parts){b.set(p,o);o+=p.length;}return b;};
 function readBlock(d){const s=u32(d,8),offsets=Array.from({length:12},(_,i)=>u32(d,4*i)),e=Math.min(d.length,...offsets.filter(o=>o>s));if(s<48||s+2>e)throw Error('Invalid English block');let p=s+2;const strings=[];for(let i=0,n=u16(d,s);i<n;i++){const len=u16(d,p);p+=2;if(len<2||len%2||p+len>e||u16(d,p+len-2)!==0x7530)throw Error('Invalid text record');let t='';for(let q=p;q<p+len-2;q+=2){const c=u16(d,q);t+=c===0x4e20?'\n':String.fromCharCode(c-0x110);}strings.push(t);p+=len;}return {s,e,strings};}
@@ -14,6 +15,7 @@ function chunks(rom,lv){const ent=LTAB+8*(lv-1),s=u32(rom,ent),e=u32(rom,ent+4),
 function timing(c,text){const d=c.out.find(x=>x.id===4)?.data;if(!d)return [];const rs=[];for(let i=0,n=Math.floor(u16(d,0)/10);i<n;i++){const p=2+10*i,op=u16(d,p),a=u16(d,p+2);if(op===0x44)rs.push({i,op:'message',text:a,hold_seconds:u16(d,p+4),says:text[a]||''});else if(op===6&&a<0x7f00)rs.push({i,op:'wait',frames:a});}return rs;}
 function fixCRC(b){let t1=0xf8ca4ddc,t2=t1,t3=t1,t4=t1,t5=t1,t6=t1;for(let p=0x1000;p<0x101000;p+=4){const d=u32(b,p),sum=(t6+d)>>>0;if(sum<t6)t4=(t4+1)>>>0;t6=sum;t3=(t3^d)>>>0;const n=d&31,r=((d<<n)|(d>>>(32-n)))>>>0;t5=(t5+r)>>>0;t2=(t2^(t2>d?r:t6^d))>>>0;t1=(t1+(t5^d>>>0))>>>0;}put32(b,16,t6^t4^t3);put32(b,20,t5^t2^t1);return b;}
 function validate(original,data){
+ if(data.cutscenes){if(!original.cutscenes)throw Error('Unexpected scripts');C.validate(original.cutscenes,data.cutscenes);}
  const keys=(a,b)=>Object.keys(a).sort().join()===Object.keys(b).sort().join();
  if(!keys(original.banks,data.banks)||!keys(original.levels,data.levels))throw Error('Do not add or remove banks or timing levels.');
  for(const [b,bank] of Object.entries(data.banks)){
@@ -23,8 +25,9 @@ function validate(original,data){
  for(const [lv,rs] of Object.entries(data.levels)){
   const old=original.levels[lv];if(rs.length!==old.length)throw Error('Do not add or remove timing records.');
   rs.forEach((r,i)=>{const field=old[i].op==='message'?'hold_seconds':'frames';
-   for(const key of Object.keys(old[i]))if(key!==field&&r[key]!==old[i][key])throw Error('Only timing values are editable.');
-   if(!keys(old[i],r)||!Number.isInteger(r[field])||r[field]<0||r[field]>=0x7f00)throw Error('Timing must be an integer from 0 to 32511.');
+   for(const key of Object.keys(old[i]))if(key!==field&&!(key==='text'&&data.cutscenes?.[lv]?.[r.i]?.args[0]===r.text)&&r[key]!==old[i][key])throw Error('Only timing values are editable.');
+   const max=data.cutscenes?65535:32511;
+   if(!keys(old[i],r)||!Number.isInteger(r[field])||r[field]<0||r[field]>max)throw Error('Timing must be an integer from 0 to '+max+'.');
   });
  }
 }
@@ -40,11 +43,25 @@ const BANK_TITLES={31:'Score formats, one per level slot',32:'Menus and screen l
 class Project{
  constructor(bytes){this.rom=new Uint8Array(bytes);if(this.rom.length<0x800000||u32(this.rom,0)!==0x80371240)throw Error('Load a big-endian US 1.0 .z64 ROM (at least 8 MB).');this.data={banks:{},levels:{},capacities:{},help:'Plain ASCII and line breaks. Keep @Gnn game-number codes. #S brief, ## objective, @N title. Colours: @CY yellow, @CB blue, @CR red, @CW white, @CG green.'};
  for(let b=0;b<36;b++){const d=unpack(this.rom,u32(this.rom,BTAB+8*b)),v=readBlock(d);if(!v.strings.length)continue;this.data.banks[b]={title:v.strings.find(t=>t.startsWith('@N'))?.slice(2)||BANK_TITLES[b]||'',strings:Object.fromEntries(v.strings.map((t,i)=>[i,t]))};this.data.capacities[b]=v.e-v.s;}
- for(let lv=1;lv<=36;lv++){const rs=timing(chunks(this.rom,lv),lv<=31?Object.values(this.data.banks[lv-1]?.strings||{}):[]);if(rs.length)this.data.levels[lv]=rs;}
+ this.data.cutscenes={};this.scripts={};
+ for(let lv=1;lv<=36;lv++){const c=chunks(this.rom,lv),parsed=C.parse(c);this.data.cutscenes[lv]=parsed.records;this.scripts[lv]=parsed.scripts;const rs=timing(c,lv<=31?Object.values(this.data.banks[lv-1]?.strings||{}):[]);if(rs.length)this.data.levels[lv]=rs;}
  this.original=JSON.parse(JSON.stringify(this.data));
  }
  build(data=this.data,terrain){validate(this.original,data);let rom=this.rom.slice();for(const [b,bank] of Object.entries(data.banks)){const old=this.original.banks[b];if(!old||Object.keys(bank.strings).join()!==Object.keys(old.strings).join())throw Error('Do not add or remove strings.');if(JSON.stringify(bank.strings)===JSON.stringify(old.strings))continue;const ent=BTAB+8*Number(b),d=unpack(rom,u32(rom,ent)),v=readBlock(d),block=encodeBlock(Object.values(bank.strings));if(block.length>v.e-v.s)throw Error('Bank '+b+' exceeds its byte budget.');d.fill(0,v.s,v.e);d.set(block,v.s);rom=install(rom,ent,packBest(d,u32(rom,ent+4)-u32(rom,ent)));}
- for(const [lv,rs] of Object.entries(data.levels)){const c=chunks(rom,Number(lv));let hit=false;for(const ch of c.out)if(ch.id===4){for(const r of rs){const message=r.op==='message',v=message?r.hold_seconds:r.frames,p=2+10*r.i,slot=p+(message?4:2);if(!Number.isInteger(v)||v<0||v>=0x7f00)throw Error('Timing must be an integer from 0 to 32511.');if(u16(ch.data,p)!==(message?0x44:6))throw Error('Timing record mismatch');if(u16(ch.data,slot)!==v){put16(ch.data,slot,v);hit=true;}}if(hit)ch.stored=packBest(ch.data);}if(hit){const body=concat([...c.out.map(ch=>concat([Uint8Array.of(ch.id),ch.stored])),Uint8Array.of(3),c.tail]);rom=install(rom,c.ent,packBest(body,c.e-c.s));}}
+ for(let lv=1;lv<=36;lv++){
+  const raw=data.cutscenes?.[lv],oldRaw=this.original.cutscenes[lv],rs=data.levels[lv]||[],oldTiming=this.original.levels[lv]||[];
+  const rawChanged=raw&&hasChanges(oldRaw,raw),timingChanged=hasChanges(oldTiming,rs);if(!rawChanged&&!timingChanged)continue;
+  const c=chunks(rom,lv),ch=c.out.find(x=>x.id===4);if(!ch)throw Error('Missing script pool');
+  if(rawChanged)raw.forEach((r,i)=>r.args.forEach((v,j)=>put16(ch.data,2+10*i+2+2*j,v)));
+  for(let i=0;i<rs.length;i++){
+   const r=rs[i],old=oldTiming[i],message=r.op==='message',field=message?'hold_seconds':'frames',slot=2+10*r.i+(message?4:2);
+   if(r[field]!==old[field])put16(ch.data,slot,r[field]);
+  }
+  ch.stored=packBest(ch.data);
+  const body=concat([...c.out.map(x=>concat([Uint8Array.of(x.id),x.stored])),Uint8Array.of(3),c.tail]);
+  rom=install(rom,c.ent,packBest(body,c.e-c.s));
+ }
+
  fixCRC(rom);const sheets=Array.isArray(terrain)?terrain:terrain?[terrain]:[];let tail=Math.max(0xb00000,(rom.length+15)&~15);if(sheets.length){const padded=new Uint8Array(tail+0x100000).fill(255);padded.set(rom);rom=padded;}for(const edit of sheets){const lv=Number(edit.level),rgba=edit.rgba;if(!Number.isInteger(lv)||lv<1||lv>31||rgba.length!==272*136*4)throw Error('Invalid terrain sheet');let i=0;for(const b of terrainBanks(rom,lv)){let dirty=false;for(let k=0;k<b.n;k++,i++){const old=decodeTile(b.data.subarray(k*ENT,(k+1)*ENT)),next=old.slice();let changed=false;for(let y=0;y<32;y++)for(let x=0;x<32;x++){const p=4*((Math.floor(i/8)*34+y)*272+(i%8)*34+x),q=y*32+x,v=(Math.floor((rgba[p]*31+127)/255)<<11)|(Math.floor((rgba[p+1]*31+127)/255)<<6)|(Math.floor((rgba[p+2]*31+127)/255)<<1)|(old[q]&1);const untouched=edit.original&&[0,1,2].every(c=>rgba[p+c]===edit.original[p+c]);next[q]=untouched?old[q]:v;if(next[q]!==old[q])changed=true;}if(changed){b.data.set(encodeTile(next),k*ENT);dirty=true;}}if(!dirty)continue;const s=u32(rom,b.slot),e=u32(rom,b.slot+4),blob=packBest(b.data,e-s);if(blob.length<=e-s)rom.set(blob,s);else{if(tail+blob.length>rom.length)throw Error('Terrain tail full');rom.set(blob,tail);put32(rom,b.slot,tail);put32(rom,b.slot+4,tail+blob.length);tail=(tail+blob.length+15)&~15;}}fixCRC(rom);}return rom;
  }
  sheet(lv){return sheet(this.rom,Number(lv));}
