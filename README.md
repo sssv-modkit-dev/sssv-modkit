@@ -1,6 +1,6 @@
 # Space Station Silicon Valley Modkit
 
-![SSSV Modkit, “EVO + Heli-Rabbit Teamup” edition, pre-alpha v0.5](docs/images/releases/evo-heli-rabbit-v05.png)
+![Space Station Silicon Valley (SSSV) Modkit, “Bear onward, nearly there” edition, pre-alpha v0.6: a bear dances under a spotlight, changing colour](docs/images/releases/bear-onward-v06.gif)
 
 **Explore and edit *Space Station Silicon Valley* (Nintendo 64).** Try the browser editors, or build ROM patches from your own game files with the local tools.
 

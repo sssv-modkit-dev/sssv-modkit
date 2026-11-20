@@ -1,0 +1,82 @@
+{
+  "format": "version-banner-animated-v1",
+  "seed": 64,
+  "theme": "n64-dark",
+  "quote_style": "english",
+  "frames": 342,
+  "frame_time": 0.04,
+  "spec": {
+    "project": "Space Station Silicon Valley (SSSV) Modkit",
+    "version": "PRE-ALPHA v0.6",
+    "theme": "n64-dark",
+    "quote_style": "english",
+    "seed": 64,
+    "layout": "left",
+    "title": [
+      {
+        "parts": [
+          {
+            "text": "Bear onward,",
+            "tone": "text.accent",
+            "weight": 700
+          },
+          {
+            "text": " nearly there",
+            "tone": "text.muted",
+            "weight": 500
+          }
+        ],
+        "size": 66
+      }
+    ],
+    "spotlights": [
+      {
+        "cx": 1240,
+        "floor_y": 448,
+        "top_width": 60,
+        "floor_width": 380,
+        "strength": 0.32,
+        "colour": "#ffffff"
+      }
+    ],
+    "subjects": [
+      {
+        "image": "bear_dance_transparent_v2.gif",
+        "x": 1240,
+        "floor": 440,
+        "height": 340,
+        "palettes": [
+          [
+            "main",
+            "accent2"
+          ],
+          [
+            "accent1",
+            "accent2"
+          ],
+          [
+            "accent3",
+            "accent2"
+          ]
+        ],
+        "cycle": [
+          0.8,
+          1.2
+        ]
+      }
+    ],
+    "still_time": 8.52,
+    "version_size": 16,
+    "rows": {
+      "bar": 76,
+      "project": 118,
+      "title": [
+        250
+      ],
+      "rule": 300,
+      "version": 336
+    },
+    "project_tone": "text.muted"
+  },
+  "generator": "version-banner-generator tools/make-animated-banner.py"
+}

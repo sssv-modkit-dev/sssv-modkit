@@ -1,8 +1,17 @@
 # Release banners
 
-The README now shows **“EVO + Heli-Rabbit Teamup” edition, pre-alpha v0.5**:
-`docs/images/releases/evo-heli-rabbit-v05.png` (1500 x 500, amber on midnight blue).
-The shared core has its own **“Dan Danger” edition, pre-alpha v0.5** banner.
+The README now shows **“Bear onward, nearly there” edition, pre-alpha v0.6**:
+`docs/images/releases/bear-onward-v06.gif` (1500 x 500 animated, 342 frames at 25 fps, `n64-dark` theme).
+The bear is the Model Editor's Dance export from the owner's US 1.0 ROM (transparent GIF), recoloured in
+N64 blue, red and green every 0.8 to 1.2 seconds under a spotlight. Settings: `bear-onward-v06.json`. Made with
+the generator's animated tool:
+
+```sh
+python tools/make-animated-banner.py bear-onward-v06-spec.json --out bear-onward-v06
+```
+
+Previous: **“EVO + Heli-Rabbit Teamup” edition, pre-alpha v0.5** (`evo-heli-rabbit-v05.png`); the shared core's
+**“Dan Danger” edition, pre-alpha v0.5**.
 These are documentation version labels; no tag or public release is created by generating them.
 
 Made with the separately maintained [Version Banner Generator](https://github.com/sssv-modkit-dev/version-banner-generator)
