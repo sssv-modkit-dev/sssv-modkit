@@ -25,6 +25,16 @@ func openDefault(target string) error {
 	return start("xdg-open", target)
 }
 
+func startProgram(program string, args []string, dir string) error {
+	c := exec.Command(program, args...)
+	c.Dir = dir
+	if err := c.Start(); err != nil {
+		return err
+	}
+	go c.Wait()
+	return nil
+}
+
 func revealInFolder(path string) error {
 	if runtime.GOOS == "darwin" {
 		return start("open", "-R", path)

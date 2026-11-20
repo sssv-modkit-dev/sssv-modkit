@@ -20,7 +20,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -428,14 +427,12 @@ func (s *server) openEmulator(rom string) error {
 	if !hasROM {
 		args = append(args, rom)
 	}
-	c := exec.Command(cmd[0], args...)
-	c.Dir = filepath.Dir(cmd[0])
-	if c.Dir == "." {
-		c.Dir = s.root
+	dir := filepath.Dir(cmd[0])
+	if dir == "." {
+		dir = s.root
 	}
-	if err := c.Start(); err != nil {
+	if err := startProgram(cmd[0], args, dir); err != nil {
 		return fmt.Errorf("could not start %s: %w", filepath.Base(cmd[0]), err)
 	}
-	go c.Wait()
 	return nil
 }

@@ -5,6 +5,8 @@ package main
 import (
 	"fmt"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"unsafe"
 )
@@ -24,6 +26,27 @@ func openDefault(target string) error {
 			return fmt.Errorf("no program is set to open this file type; choose one in Windows (Open with) or set an emulator in settings.json")
 		}
 		return fmt.Errorf("Windows could not open the file (code %d)", r)
+	}
+	return nil
+}
+
+// startProgram launches an emulator the way Explorer would (ShellExecuteW), not as a child
+// of this console: Project64 showed a black screen at 0 FPS when started via CreateProcess.
+func startProgram(program string, args []string, dir string) error {
+	quoted := make([]string, len(args))
+	for i, a := range args {
+		quoted[i] = syscall.EscapeArg(a)
+	}
+	verb, _ := syscall.UTF16PtrFromString("open")
+	file, err := syscall.UTF16PtrFromString(program)
+	if err != nil {
+		return err
+	}
+	params, _ := syscall.UTF16PtrFromString(strings.Join(quoted, " "))
+	wd, _ := syscall.UTF16PtrFromString(dir)
+	r, _, _ := shellExecute.Call(0, uintptr(unsafe.Pointer(verb)), uintptr(unsafe.Pointer(file)), uintptr(unsafe.Pointer(params)), uintptr(unsafe.Pointer(wd)), 1)
+	if r <= 32 {
+		return fmt.Errorf("could not start %s (code %d)", filepath.Base(program), r)
 	}
 	return nil
 }
