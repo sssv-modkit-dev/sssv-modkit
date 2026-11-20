@@ -37,7 +37,8 @@ function patches(original,changed){
     out.push({offset:start,expect:hex(original.slice(start,i+2)),write:hex(changed.slice(start,i+2)),align:false,note:'Texture Workbench'});
   }return out;
 }
-// Clip each original body triangle in UV space to texel cells (s10.5 UVs).
+// Clip each textured body triangle in UV space to texel cells (s10.5 UVs at texture scale 0.5).
+// Triangles drawn under an untextured combiner (tx===false from parseDL, e.g. the bear head) keep their colours.
 // Interpolated positions stay on that triangle; wrapping also handles negative UVs.
 const CELL_BUDGET=30000;
 function bodyGeometry(part,t,bytes){
@@ -60,8 +61,9 @@ function bodyGeometry(part,t,bytes){
     return {...part,cols,tris,textureMaterial:true};
   }
   for(const tri of part.tris){
-    if(!tri.v.every(v=>Array.isArray(v.uv))){tris.push({...tri,c:-1});continue;}
-    const poly=tri.v.map(v=>[v.uv[0]/32,v.uv[1]/32,...v]);
+    if(tri.tx===false||!tri.v.every(v=>Array.isArray(v.uv))){tris.push(tri.tx===false&&tri.c>=0?{...tri,c:cols.length+tri.c}:{...tri,c:-1});continue;}
+    // Animals draw with gSPTexture scale 0x8000 (0.5): s10.5 UV / 32 * 0.5 = texels.
+    const poly=tri.v.map(v=>[v.uv[0]/64,v.uv[1]/64,...v]);
     const min=[0,1].map(k=>Math.floor(Math.min(...poly.map(v=>v[k])))),max=[0,1].map(k=>Math.max(min[k]+1,Math.ceil(Math.max(...poly.map(v=>v[k])))));
     if((max[0]-min[0])*(max[1]-min[1])>65536)return part;
     for(let y=min[1];y<max[1];y++)for(let x=min[0];x<max[0];x++){
@@ -75,7 +77,7 @@ function bodyGeometry(part,t,bytes){
       }
     }
   }
-  return {...part,cols,tris,textureMaterial:true};
+  return {...part,cols:cols.concat(part.cols||[]),tris,textureMaterial:true};
 }
 // Preserve the verified planar eye-quad mapping for 16x16 strips.
 function texelGeometry(part,t,bytes){

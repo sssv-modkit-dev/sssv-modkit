@@ -6,13 +6,20 @@ const HOME_VIEW=[0.5,0]; // front, turned ~29° so the model's left side (-X) fa
 function readPart(p,B){const part=p.demo||parseDL(dv,p.r,B);return window.ModelTextureTools?.decoratePart?.(part,p,dv)||part}
 //#PURE-START
 function vtx(dv,b,off,i){const o=b+off+16*i;if(o<0||o+16>dv.byteLength||dv.getUint16(o+6))return null;const q=[dv.getInt16(o),dv.getInt16(o+2),dv.getInt16(o+4)];q.o=o;q.uv=[dv.getInt16(o+8),dv.getInt16(o+10)];q.c=[dv.getUint8(o+12)/255,dv.getUint8(o+13)/255,dv.getUint8(o+14)/255];return q}
-function parseDL(dv,addr,bases){const vb={},cols=[],tris=[],groups=[],bb=[1e9,1e9,1e9,-1e9,-1e9,-1e9];let c=-1;
+// Does a G_SETCOMBINE (0xFC) word pair sample a texture in cycle 1? (cycle 2 TEXEL1 is the env-map shine)
+function combTex(w0,w1){const a=(w0>>>20)&15,c=(w0>>>15)&31,b=(w1>>>28)&15,d=(w1>>>15)&7,aa=(w0>>>12)&7,ac=(w0>>>9)&7,ab=(w1>>>12)&7,ad=(w1>>>9)&7;
+return [a,b,d,aa,ab,ac,ad].some(x=>x==1||x==2)||[1,2,8,9].includes(c)}
+// Combiner state set by a display list called with G_DL (F3DEX opcode 0x06) (e.g. segment 1 material setups); undefined if it sets none.
+function subComb(dv,o){let r;for(let i=0;i<64&&o+8*i+8<=dv.byteLength;i++){const p=o+8*i,op=dv.getUint8(p);if(op==0xB8)break;if(op==0xFC)r=combTex(dv.getUint32(p),dv.getUint32(p+4))}return r}
+function parseDL(dv,addr,bases){const vb={},cols=[],tris=[],groups=[],bb=[1e9,1e9,1e9,-1e9,-1e9,-1e9];let c=-1,tx=null;
 for(let i=0;i<800;i++){const o=addr+8*i;if(o+8>dv.byteLength)break;const op=dv.getUint8(o),w0=dv.getUint32(o),w1=dv.getUint32(o+4);
 if(op==0xB8)break;
 if(op==4){const seg=w1>>>24,off=w1&0xFFFFFF,n=((w0&0x3FF)+1)>>4,v0=((w0>>>16)&255)>>1,b=bases[seg],gv=[];groups.push({verts:gv});for(let k=0;k<n;k++){const q=vb[v0+k]=b===undefined?null:vtx(dv,b,off,k);if(q)gv.push(q);if(q)for(let a=0;a<3;a++){bb[a]=Math.min(bb[a],q[a]);bb[a+3]=Math.max(bb[a+3],q[a])}}}
+else if(op==0xFC)tx=combTex(w0,w1);
+else if(op==6){const b=bases[w1>>>24];if(b!==undefined){const r=subComb(dv,b+(w1&0xFFFFFF));if(r!==undefined)tx=r}}
 else if(op==0xFA){cols.push({rgba:w1.toString(16).toUpperCase().padStart(8,'0'),at:o+4});c=cols.length-1}
 else if(op==0xBF||op==0xB1){const T=op==0xBF?[[(w1>>>16)&255,(w1>>>8)&255,w1&255]]:[[(w0>>>16)&255,(w0>>>8)&255,w0&255],[(w1>>>16)&255,(w1>>>8)&255,w1&255]];
-for(const t of T){const v=t.map(k=>vb[k>>1]);if(v.every(x=>x)&&new Set(t).size==3)tris.push({v,c})}}}
+for(const t of T){const v=t.map(k=>vb[k>>1]);if(v.every(x=>x)&&new Set(t).size==3)tris.push({v,c,tx})}}}
 // Keep the full vertex bounds for builder-compatible mesh transforms, but
 // frame/layout only the rendered geometry, excluding unused cache entries.
 const viewBB=[1e9,1e9,1e9,-1e9,-1e9,-1e9];

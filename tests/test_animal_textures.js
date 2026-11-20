@@ -109,7 +109,7 @@ const tail=T.copyPixels(pixels,{x:30,y:31,width:2,height:1});
 assert.deepEqual(tail.pixels,pixels.slice(1022));
 assert.equal(T.pastePixels(full,tail,31,31)[1023],pixels[1022]);
 const bodyBytes=bytes.slice();bodyBytes[body.palette+3]=1;
-const bv=[vertex(0,0,0,0),vertex(2,0,64,0),vertex(0,2,0,64)];
+const bv=[vertex(0,0,0,0),vertex(2,0,128,0),vertex(0,2,0,128)];// s10.5 at texture scale 0.5: 128 = 2 texels
 const mesh={...part,tris:[{v:bv,c:-1}]};
 bodyBytes[body.image]=0x11;bodyBytes[body.image+16]=0x11;
 const mapped=T.texelGeometry(mesh,body,bodyBytes);
@@ -122,10 +122,12 @@ const saved=JSON.parse(JSON.stringify(big.api.projectExtras()));big.api.loadProj
 assert.equal(big.api.buildPatches()[0].offset,body.image+510,'size is implied by source table; project patches round-trip');
 const snapshot=big.api.historyExtras();big.reset();big.api.restoreHistoryExtras(snapshot);assert.ok(big.api.buildPatches().length);big.api.restoreHistoryExtras({});assert.equal(big.api.buildPatches().length,0);
 bc.onkeydown({key:'a',ctrlKey:true,preventDefault(){}});big.nodes['.texture-copy'].onclick();assert.match(big.nodes['.texture-message'].textContent,/Copied 32 x 32/);
+const flat=T.texelGeometry({...part,cols:[{rgba:'AD6B52FF'}],tris:[{v:bv,c:0,tx:false},{v:bv,c:-1}]},body,bodyBytes);
+assert.equal(flat.tris[0].tx,false,'untextured-combiner triangles stay whole');assert.equal(flat.cols[flat.tris[0].c].rgba,'AD6B52FF','and keep their own colour');assert.ok(flat.tris.length>2);
 console.log('32x32 decode/encode, UV triangle clipping, tools, source-bound project sizes and history restoration pass (legacy 16x16 above).');
 
 const opaque=bodyBytes.slice();for(let i=0;i<16;i++)opaque[body.palette+i*2+1]|=1;
-const uvLine=[vertex(0,0,0,0),vertex(2,0,64,0),vertex(0,2,0,0)];
+const uvLine=[vertex(0,0,0,0),vertex(2,0,128,0),vertex(0,2,0,0)];
 const lineResult=T.texelGeometry({...part,tris:[{v:uvLine,c:-1}]},body,opaque);
 assert.ok(lineResult.tris.length>1,'one-dimensional UV domains still interpolate across texels');
 const constant=uvLine.map(v=>Object.assign([...v],{uv:[-32,-32]}));
