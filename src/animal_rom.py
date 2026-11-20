@@ -17,6 +17,10 @@ OVA_ROM, OVA_END, OVA_VRAM = 0x6A6500, 0x7D1AD0, 0x80294E50
 PART_DRAW_JAL = 0x0C000000 | ((0x802C78B0 & 0x0FFFFFFF) >> 2)
 EYE_TEXTURE_JAL = 0x0C000000 | ((0x80356BD8 & 0x0FFFFFFF) >> 2)
 BODY_TEXTURE_JAL = 0x0C000000 | ((0x80356410 & 0x0FFFFFFF) >> 2)   # 16-colour palette + 32x32 CI4 image
+# Carry only the two-palette (piranha) body texture to later parts: general carrying needs
+# per-part texture on/off state (gSPTexture), which the editor's part parser doesn't track yet.
+CARRY_BODY = True
+BODY2_TEXTURE_JAL = 0x0C000000 | ((0x803565D4 & 0x0FFFFFFF) >> 2)  # two palettes + 32x64 CI4; render tile = first 32x32 half with palette 1
 SEG1_BASE = 0x398D0
 BANKS4 = [(0xC7A30, 0xDD5C0), (0xDD5C0, 0xE75B0), (0xE75B0, 0xF1060), (0xF1060, 0xFFD50), (0xFFD50, 0x116BD0)]
 SP = 29
@@ -138,12 +142,13 @@ def eye_textures(code, lo, hi):
     left untouched rather than guessed from unrelated calls or stale registers.
     """
     pending = None
+    body = None   # the last body texture stays loaded in TMEM for later parts
     result = {}
     for pos in range(lo, hi, 4):
         word = code.w(pos)
         if word == EYE_TEXTURE_JAL:
             pal, image = code.reg_arg(pos, 4), code.reg_arg(pos, 5)
-            pending = None
+            pending = body = None   # the eye strip replaces TMEM
             if pal in (0x01000CA0, 0x01000CC0, 0x01000D00, 0x01002C20, 0x01002C40) and image in (0x01000620, 0x01002100, 0x010025A0, 0x01000D20):
                 pending = {'format': 'ci4', 'width': 16, 'height': 16,
                            'image': SEG1_BASE + (image & 0xFFFFFF),
@@ -153,10 +158,16 @@ def eye_textures(code, lo, hi):
             pending = None
             if pal is not None and image is not None and pal >> 24 in (1, 4) and image >> 24 in (1, 4) and 0x200 <= pal - image <= 0x240:  # 32x32 CI4 = 0x200 bytes; dog body pads 16 (palette at +0x210)
                 pending = {'format': 'ci4', 'width': 32, 'height': 32, 'seg_image': image, 'seg_palette': pal}
+                body = None
+        elif word == BODY2_TEXTURE_JAL:
+            pal, image = code.reg_arg(pos, 4), code.reg_arg(pos, 6)
+            pending = None
+            if pal is not None and image is not None and pal >> 24 in (1, 4) and image >> 24 in (1, 4):
+                pending = body = {'format': 'ci4', 'width': 32, 'height': 32, 'seg_image': image, 'seg_palette': pal}
         elif word == PART_DRAW_JAL:
             dl = code.stack_arg(pos, 0x24)
-            if pending and dl is not None:
-                result[dl] = pending
+            if dl is not None and (pending or (CARRY_BODY and body)):
+                result.setdefault(dl, pending or body)
             pending = None
         elif word >> 26 == 3:
             pending = None
