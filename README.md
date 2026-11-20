@@ -9,12 +9,6 @@
 > [!IMPORTANT]
 > This is an unofficial fan project, not affiliated with or endorsed by the game's rights holders. **No ROMs or patched ROMs are included.** The tools process files you select locally. Read the [network audit](docs/NETWORK.md) for details about browser requests and third-party runtimes.
 
-## See the Model Editor
-
-![Current Model Editor showing the original wind-up robot sample](docs/images/guides/model-editor.png)
-
-*The public Model Editor uses original sample geometry. Game-specific editing requires your own supported game files. Captured static poses support 23 species, including 18 more animals when you load your ROM; see the [assembled animal list and partial captures](docs/guides/MODEL-EDITOR.md).* See [image notes](docs/images/features/README.md).
-
 [**Start a guided build**](https://sssv-modkit-dev.github.io/sssv-modkit/start.html): load your ROM, choose Patch only or Mod in depth, review your changes, then build and play. See the [guided build guide](docs/guides/GUIDED-BUILD.md).
 
 [**Guides: start here**](docs/README.md) — Getting started, Models, Textures & Tilesets, Levels, Dialogue and Play.
