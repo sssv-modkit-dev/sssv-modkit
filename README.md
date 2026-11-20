@@ -21,6 +21,7 @@
 | Edit a stage | [Level Editor](https://sssv-modkit-dev.github.io/sssv-modkit/level-editor.html) · [Guide](docs/guides/LEVEL-EDITOR.md) | Select your own supported ROM. Edit terrain in Textures & Tilesets; verify edited builds in game. |
 | Play in the browser | [Browser Play](https://sssv-modkit-dev.github.io/sssv-modkit/play.html) | Experimental; compatibility and performance need more testing. Select your own uncompressed ROM or patched build. |
 | Build a patched ROM | [Guided build](https://sssv-modkit-dev.github.io/sssv-modkit/start.html) · [Guide](docs/guides/GUIDED-BUILD.md) | Runs in your browser with your own US 1.0 ROM; combines model, level, texture, dialogue and Classic+ changes. |
+| Use it offline | [Download a bundle](https://github.com/sssv-modkit-dev/sssv-modkit/releases) (Windows, macOS, Linux) | Unzip, put your ROM in `rom/`, run `sssv-modkit`. The same tools in your own browser, served from your computer; builds land in `out/` for any emulator. Not code-signed, so expect a first-run warning. |
 
 ## Command line (optional)
 

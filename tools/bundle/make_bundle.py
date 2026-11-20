@@ -35,6 +35,8 @@ README = """sssv-modkit offline bundle ({target})
 
 Nothing is installed. Everything stays in this folder; delete the folder to remove it.
 The launcher only listens on 127.0.0.1 (this computer). No ROM is included.
+The same tools run online, no download: https://sssv-modkit-dev.github.io/sssv-modkit/
+Source, guides and newer releases: https://github.com/sssv-modkit-dev/sssv-modkit
 
 {warning}
 Unofficial fan project; not affiliated with or endorsed by the game's rights holders.
