@@ -151,7 +151,7 @@ def eye_textures(code, lo, hi):
         elif word == BODY_TEXTURE_JAL:
             pal, image = code.reg_arg(pos, 4), code.reg_arg(pos, 5)
             pending = None
-            if pal is not None and image is not None and pal >> 24 in (1, 4) and image >> 24 in (1, 4) and pal - image == 0x200:
+            if pal is not None and image is not None and pal >> 24 in (1, 4) and image >> 24 in (1, 4) and 0x200 <= pal - image <= 0x240:  # 32x32 CI4 = 0x200 bytes; dog body pads 16 (palette at +0x210)
                 pending = {'format': 'ci4', 'width': 32, 'height': 32, 'seg_image': image, 'seg_palette': pal}
         elif word == PART_DRAW_JAL:
             dl = code.stack_arg(pos, 0x24)
