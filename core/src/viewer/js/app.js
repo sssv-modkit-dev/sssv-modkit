@@ -27,6 +27,17 @@ for(const t of tris)for(const q of t.v)for(let a=0;a<3;a++){viewBB[a]=Math.min(v
 return{cols,tris,bb,viewBB,groups}}
 // --- shared op maths: keep every vertex operation here so the deform preview can be added next to it ---
 function applyMesh(v,E,bb){if(!E)return v;const c0=E.o?[0,0,0]:[0,1,2].map(k=>(bb[k]+bb[k+3])/2);let q=v.map((x,k)=>(x-c0[k])*E.s[k]);for(let a=0;a<3;a++){const u=(a+1)%3,w=(a+2)%3,t=(E.r?.[a]||0)*Math.PI/180,c=Math.cos(t),sn=Math.sin(t),x=q[u],y=q[w];q[u]=x*c-y*sn;q[w]=x*sn+y*c}return q.map((x,k)=>Math.floor(c0[k]+x+E.m[k]+.5))}
+// The game's prim colour is RDP state: a part without its own G_SETPRIMCOLOR
+// draws with the last one set, by an earlier part or by the species draw code.
+// DRAW_PRIMS = colours each species' draw routine sets just before a part (default
+// branch); symbols carry their ROM offset, so they are unique.
+const DRAW_PRIMS={D_040029C0_E9F70:'FF0000FF',D_04005E50_E3410:'5C5CD7FF',D_04004820_F5880:'E687B0FF',D_040038A0_EAE50:'FF0000FF',
+D_04000A00_F1A60:'FFFF00FF',D_04007080_CEAB0:'FF8080FF',D_040072F0_CED20:'141414FF',D_040073B0_CEDE0:'FF0000FF',D_04001F80_DF540:'7D33FFFF',
+D_04000230_E77E0:'7D33FFFF',D_040000A0_E7650:'FFFF00FF',D_04001220_C8C50:'141414FF'};
+// per source index: the inherited prim (hex RGBA) its uncoloured triangles draw with, in draw order
+function inheritedPrims(srcs){let carry=null;const seen=new Set();return srcs.map(S=>{const P=S.P;if(!P||P.textureMaterial)return carry;
+if(DRAW_PRIMS[P.sym]&&!seen.has(P.sym)){carry=DRAW_PRIMS[P.sym];seen.add(P.sym)}const mine=carry;
+if(P.cols.length){const i=P.cols.length-1;carry=paletteColour(P,i,P.cols[i].rgba)}return mine})}
 // true if the part has no G_SETPRIMCOLOR, or has triangles drawn before its first one
 function noOwnColour(P){return P.cols.length==0||P.tris.some(t=>t.c<0)}
 function editableColours(P){return P.textureMaterial?[]:[...P.cols.map(c=>c.rgba),...(noOwnColour(P)?['808080FF']:[])]}
@@ -284,11 +295,11 @@ function variantSheetSources(parts,sections){
 }
 function rebuild(fit){if(typeof syncImportedParts==='function')syncImportedParts();const d=[],anchors=new Map();pickTris=[];worldLabels=[];let mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
 const comparison=!gallery&&sheet&&!variant&&(cur?.s?.length||0)>1;const sources=comparison?variantSheetSources(parsed,cur.s):gallery?galleryData.flatMap((A,ai)=>A.parts.map(P=>({P,animal:A.name,offset:galleryLayout[ai].offset,local:galleryLayout[ai].parts[P.sym],scale:galleryLayout[ai].scale}))):shown().map(P=>({P,offset:[0,0,0],local:sheet?(SH[P.sym]||[0,0,0]).map((v,k)=>v+(partOffsets[name]?.[P.sym]?.[k]||0)):[0,0,0]}));
-for(const S of (assembled&&!gallery&&poseOk()?asmSources():sources)){const P=S.P,E=gallery?null:mesh[P.sym],DF=!gallery&&deformOn?deformFor(P,E):null,of=S.local||[0,0,0],T=v=>{let w=applyMesh(v,E,P.bb);if(DF)w=deformPoint(DF,v,w);return S.xf?S.xf(w):w.map((x,k)=>(x+of[k])*(S.scale||1)+S.offset[k])};
+const ASM=assembled&&!gallery&&poseOk(),SRCS=ASM?asmSources():sources,INH=ASM?inheritedPrims(SRCS):[];for(const [si,S] of SRCS.entries()){const P=S.P,inh=INH[si],E=gallery?null:mesh[P.sym],DF=!gallery&&deformOn?deformFor(P,E):null,of=S.local||[0,0,0],T=v=>{let w=applyMesh(v,E,P.bb);if(DF)w=deformPoint(DF,v,w);return S.xf?S.xf(w):w.map((x,k)=>(x+of[k])*(S.scale||1)+S.offset[k])};
 const key=gallery?S.animal:P.sym;let anchor=anchors.get(key);if(!anchor){anchor={sym:P.sym,animal:S.animal,mn:[Infinity,Infinity,Infinity],mx:[-Infinity,-Infinity,-Infinity]};anchors.set(key,anchor)}
-for(const t0 of P.tris){const ord=S.flip?[0,2,1]:[0,1,2],t={c:t0.c,v:ord.map(i=>T(t0.v[i]))};if(!gallery)pickTris.push({v:t.v,sym:P.sym});const o=t.c<0?'808080FF':P.cols[t.c].rgba,col=t.c<0?[.5,.5,.5]:hex2(gallery||P.textureMaterial?o:paletteColour(P,t.c,o)),[a,b,c]=t.v;
+for(const t0 of P.tris){const ord=S.flip?[0,2,1]:[0,1,2],t={c:t0.c,v:ord.map(i=>T(t0.v[i]))};if(!gallery)pickTris.push({v:t.v,sym:P.sym});const own=t.c<0&&inh&&!partColors[P.sym]?.['808080FF']?inh:null,o=t.c<0?own||'808080FF':P.cols[t.c].rgba,col=own?hex2(own):t.c<0?[.5,.5,.5]:hex2(gallery||P.textureMaterial?o:paletteColour(P,t.c,o)),[a,b,c]=t.v;
 let n=[(b[1]-a[1])*(c[2]-a[2])-(b[2]-a[2])*(c[1]-a[1]),(b[2]-a[2])*(c[0]-a[0])-(b[0]-a[0])*(c[2]-a[2]),(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])];
-const l=Math.hypot(...n)||1;n=n.map(x=>x/l);if(!gallery&&selectedParts.has(P.sym))col.splice(0,3,...col.map((v,k)=>v*.25+[.08,.8,1][k]*.75));else if(!gallery&&hoverSym===P.sym)col.splice(0,3,...col.map(v=>Math.min(1,v*.55+.45)));const vcol=t.c<0&&!partColors[P.sym]?.['808080FF']&&!map['808080FF']&&useVC&&hoverSym!==P.sym&&!selectedParts.has(P.sym)&&selectedSym!==P.sym&&Array.isArray(t0.v[0].c);for(const [i,v] of t.v.entries()){d.push(...v,...(vcol?t0.v[ord[i]].c:col),...n);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],v[k]);mx[k]=Math.max(mx[k],v[k]);anchor.mn[k]=Math.min(anchor.mn[k],v[k]);anchor.mx[k]=Math.max(anchor.mx[k],v[k])}}}}
+const l=Math.hypot(...n)||1;n=n.map(x=>x/l);if(!gallery&&selectedParts.has(P.sym))col.splice(0,3,...col.map((v,k)=>v*.25+[.08,.8,1][k]*.75));else if(!gallery&&hoverSym===P.sym)col.splice(0,3,...col.map(v=>Math.min(1,v*.55+.45)));const vcol=t.c<0&&!own&&!partColors[P.sym]?.['808080FF']&&!map['808080FF']&&useVC&&hoverSym!==P.sym&&!selectedParts.has(P.sym)&&selectedSym!==P.sym&&Array.isArray(t0.v[0].c);for(const [i,v] of t.v.entries()){d.push(...v,...(vcol?t0.v[ord[i]].c:col),...n);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],v[k]);mx[k]=Math.max(mx[k],v[k]);anchor.mn[k]=Math.min(anchor.mn[k],v[k]);anchor.mx[k]=Math.max(anchor.mx[k],v[k])}}}}
 // dance dust (RigPlayer.dancePuffs through animParts.dust): small sand-coloured eight-sided puffs, not part of the model
 if(assembled&&!gallery&&animParts&&animParts.dust)for(const q of animParts.dust){const c=[q.T[0],q.T[2],-q.T[1]],r=q.r,P=[[r,0,0],[-r,0,0],[0,r,0],[0,-r,0],[0,0,r],[0,0,-r]].map(o=>o.map((x,k)=>x+c[k]));
  for(const [i,j,k] of [[0,2,4],[2,1,4],[1,3,4],[3,0,4],[2,0,5],[1,2,5],[3,1,5],[0,3,5],[2,0,4],[1,2,4],[3,1,4],[0,3,4],[0,2,5],[2,1,5],[1,3,5],[3,0,5]]){const m=[0,1,2].map(x=>(P[i][x]+P[j][x]+P[k][x])/3-c[x]),l=Math.hypot(...m)||1;for(const v of [P[i],P[j],P[k]])d.push(...v,.8,.74,.62,...m.map(x=>x/l))}}
