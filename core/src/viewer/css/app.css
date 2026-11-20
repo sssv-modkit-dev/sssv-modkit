@@ -102,9 +102,9 @@ body.right-collapsed .workbench-row{display:flex!important}body.right-collapsed 
 .lab-eyebrow{font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--ac)}
 #demo-panel{order:0;background:linear-gradient(135deg,var(--card),var(--ac-soft));padding:13px}
 #demo-panel p{font-size:12px;line-height:1.55;margin:8px 0}
-#demo-panel #demo-status{font-size:10px}#demo-start{width:100%;font-weight:700}
+#demo-panel #demo-status{font-size:10px}
 #demo-actions{display:none;grid-template-columns:1fr 1fr;gap:4px;margin-top:10px}#demo-actions button{font-size:11px;margin:0;padding:8px 5px}
-.demo-mode #demo-actions{display:grid}.demo-mode #demo-start{display:none}
+.demo-mode #demo-actions{display:grid}
 #local-table{width:100%;font-size:11px;margin:5px 0 10px}#source-panel label{display:block;font-size:11px;margin-top:6px}
 .demo-mode #variant-field{display:none}#parts button.row{width:100%;text-align:left;display:flex;margin:2px 0;min-height:30px}
 a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
@@ -140,7 +140,7 @@ a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,selec
 
 /* T028b: bounded controls and full-width phone workbench. */
 #demo-picker button{min-height:72px;justify-content:center;font-size:12px;gap:5px}
-#demo-start{width:auto;padding:7px 12px;font-weight:500}
+
 #pal{display:flex;flex-wrap:wrap;gap:5px}
 #pal .row{flex:none;padding:4px;gap:4px}
 #mesh .mesh-hint{margin:0;white-space:nowrap;font-size:11px}
@@ -191,7 +191,7 @@ a{color:var(--ac)}button:focus-visible,a:focus-visible,input:focus-visible,selec
  #side,#edit-side{padding:8px}#side .brand strong{font-size:16px}#side .theme-dock{padding:3px;margin-bottom:6px}
  #side #view-settings,#side #model-state-bar,#side #camera-tools{position:static;inset:auto;transform:none;width:100%;max-width:100%;max-height:none;box-shadow:none;margin:6px 0;flex-wrap:wrap}
  #side #model-state-bar{justify-content:flex-start}#side #model-state-bar label{flex-wrap:wrap}#side #model-state-bar select{max-width:175px}#side #camera-tools{padding:4px;justify-content:flex-start}#side #camera-tools button{padding:4px 6px;min-height:30px;font-size:11px}
- #source-panel{padding:4px;margin:4px 0}#demo-panel h3{margin:6px 0}#demo-picker{grid-template-columns:repeat(3,minmax(0,1fr))}#demo-panel #demo-start{font-size:11px;padding:4px}
+ #source-panel{padding:4px;margin:4px 0}#demo-panel h3{margin:6px 0}#demo-picker{grid-template-columns:repeat(3,minmax(0,1fr))}
  #side .global-nav{font-size:12px;gap:0 4px;padding:4px}#side .global-nav>a{min-height:32px;padding:2px}#side #rom-session{font-size:11px;gap:3px}#side #rom-session small{display:none}#side #forget-rom{min-height:30px;padding:3px 5px}
  body.left-collapsed.right-collapsed{grid-template-columns:36px 6px minmax(0,1fr) 6px 36px}
  #mesh .mesh-hint{white-space:normal}

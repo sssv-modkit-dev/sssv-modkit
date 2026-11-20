@@ -56,15 +56,16 @@ function buildDemoPicker(){
   const host=$('demo-picker');host.replaceChildren();
   const models=Object.keys(TABLE),groups=[...new Set(models.map(modelGroup))];
   const button=(text,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=text;b.onclick=fn;host.appendChild(b);return b};
-  const retained=window.ModelEditorHost?.availableSource?.();
-  if(demoMode&&retained){const b=button('Loaded animals ('+Object.keys(retained.table).length+')',()=>{window.ModelEditorHost.restoreSource();modelCategory='Animals';buildDemoPicker()});b.id='return-to-source';b.title='Return to your loaded source without selecting its file again';}
   if(!groups.includes(modelCategory))modelCategory='';
   if(!modelCategory){for(const group of groups){const b=button(group,()=>{modelCategory=group;buildDemoPicker()});const icon=document.createElement('span');icon.className='ph';icon.setAttribute('aria-hidden','true');icon.textContent=({'Custom':'◇','Animals':'🐾','Characters':'👤','Props':'📦'})[group]||'◇';b.prepend(icon);}return}
   button('← Categories',()=>{modelCategory='';buildDemoPicker()});
   for(const n of models.filter(n=>modelGroup(n)===modelCategory)){const b=button(n.replaceAll('_',' '),()=>{$('an').value=n;pick(n);if(demoMode)markDemoPicker()});b.dataset.model=n;b.setAttribute('aria-pressed',String(n===name));if(modelCategory==='Custom'){const img=new Image();img.alt='';img.src=headshot(n);b.prepend(img)}}
 }
 function markDemoPicker(){const real=BUNDLED_ANIMALS.has(name),posed=real&&!!BUNDLED_POSES[name];$('variant-label').textContent=posed?'Game model · drag to orbit':real?'Parts view · drag to orbit':'Original CC0 sample · drag to orbit';$('demo-assemble').hidden=real&&!posed;$('demo-status').textContent=posed?'Real game parts, assembled in a pose captured from the running game. Explode parts shows each part on its own.':real?'Parts view: no assembly pose is bundled for this animal, so its parts are laid out flat.':'Original CC0 sample geometry. No game assets included.';for(const b of $('demo-picker').children)b.setAttribute('aria-pressed',String(b.dataset.model===name))}
+// Samples are the no-ROM experience only: once a source is loaded the editor
+// stays on it (no switching back), so the two never share a session.
 function startDemos(model=DEFAULT_DEMO){
+  if(sourceData)return false;
   rememberCurrentEdits();cur=null;demoMode=true;TABLE=PARTS_DEMOS;dv=new DataView(new ArrayBuffer(0));pose=null;
   document.body.classList.add('demo-mode');
   const A=$('an');A.replaceChildren(...Object.keys(TABLE).map(n=>new Option(n,n)));A.disabled=false;A.onchange=()=>pick(A.value);
@@ -72,10 +73,9 @@ function startDemos(model=DEFAULT_DEMO){
   buildDemoPicker();pick(model);markDemoPicker();markDemoPicker();
 }
 function demoPreset(){return validateDemoPreset({format:'sssv-parts-lab-demo-v1',model:name,mesh,palette:map,partColors:typeof partColors==='undefined'?{}:partColors,deform:deformOn?deform:{},exploded:sheet})}
-function applyDemoPreset(raw){const p=validateDemoPreset(raw);startDemos(p.model);mesh=p.mesh;map=p.palette;partColors=p.partColors||{};deform=p.deform;deformOn=Object.keys(deform).length>0;sheet=p.exploded;assembled=!sheet&&poseOk();all=!sheet&&!assembled;SH=sheetLayout(visibleParts());ui();rebuild(true);info()}
+function applyDemoPreset(raw){const p=validateDemoPreset(raw);if(sourceData)throw new Error('Sample presets open before a ROM is loaded.');startDemos(p.model);mesh=p.mesh;map=p.palette;partColors=p.partColors||{};deform=p.deform;deformOn=Object.keys(deform).length>0;sheet=p.exploded;assembled=!sheet&&poseOk();all=!sheet&&!assembled;SH=sheetLayout(visibleParts());ui();rebuild(true);info()}
 function downloadJSON(value,filename){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 const DEFAULT_DEMO=Object.keys(PARTS_DEMOS).find(n=>!BUNDLED_ANIMALS.has(n));
-$('demo-start').onclick=()=>startDemos();
 $('demo-assemble').onclick=()=>{if(poseOk()){variant='';$('variant').value='';}assembled=poseOk();all=!assembled;sheet=false;ui();rebuild(true);info()};
 $('demo-explode').onclick=()=>{assembled=false;all=false;sheet=true;roll=0;pit=0;yaw=HOME_VIEW[0];SH={};for(const [i,P] of visibleParts().entries()){const c=[0,1,2].map(k=>(P.bb[k]+P.bb[k+3])/2),length=Math.hypot(...c),size=Math.max(40,...P.bb.slice(3).map((v,k)=>v-P.bb[k]));SH[P.sym]=length?c.map(v=>v/length*size*1.4):[Math.cos(i*2.4)*size,Math.sin(i*2.4)*size,0]}ui();rebuild(true);info()};
 $('demo-colour').onclick=()=>ModelEditorHistory.transaction(()=>{partColors={};wordEdits={};for(const c of new Set(parsed.flatMap(editableColours)))map[c]=[0,1,2].map(()=>Math.floor(60+Math.random()*180).toString(16).padStart(2,'0')).join('').toUpperCase()+c.slice(6);ui();rebuild(false)});
@@ -131,7 +131,7 @@ function restoreModelHistory(snapshot){
   partNames=state.names||{};partOffsets=state.offsets||{};labelOffsets=state.labels||{};
   const retained=window.ModelEditorHost?.availableSource?.();
   if(retained){window.ModelEditorHost.restoreSource();const load=window.ModelTextureTools?.restoreHistoryExtras||window.ModelTextureTools?.loadProjectExtras;load?.(state.textures||{});}
-  if(current.demo){cur=null;startDemos(Object.hasOwn(PARTS_DEMOS,current.name)?current.name:DEFAULT_DEMO);}
+  if(current.demo&&!retained){cur=null;startDemos(Object.hasOwn(PARTS_DEMOS,current.name)?current.name:DEFAULT_DEMO);}
   else if(retained&&Object.hasOwn(TABLE,current.name))pick(current.name);
   variant=(cur.s||[]).includes(current.variant)?current.variant:'';$('variant').value=variant;
   sheet=!!current.sheet;all=!!current.all;assembled=!!current.assembled&&poseOk();sel=Math.min(current.sel||0,parsed.length-1);

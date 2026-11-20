@@ -18,7 +18,7 @@ function attach(list){
    if(isSelect)item.hidden=!matches;else item.dataset.filtered=String(!matches);
    if(item.tagName==='DETAILS')for(const child of item.querySelectorAll('button'))child.dataset.filtered=String(!!query&&!child.textContent.toLowerCase().includes(query));
   }
-  // Category buttons and the return-to-source action stay reachable while searching animals.
+  // Category buttons stay reachable while searching animals.
   if(id==='demo-picker')for(const b of list.children)if(!b.dataset.model)b.dataset.filtered='false';
  };
  input.oninput=filter;refreshers.add(filter);filter();
