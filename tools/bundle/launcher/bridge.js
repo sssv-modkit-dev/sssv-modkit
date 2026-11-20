@@ -30,8 +30,8 @@
     toast('Saved to out/' + saved.name, saved.name);
     refresh();
   }
-  async function openOut(name, how) {
-    try { await api('open', { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ name, how }) }); }
+  async function openOut(name, how, dir = 'out') {
+    try { await api('open', { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ name, how, dir }) }); }
     catch (e) { toast(e.message); }
   }
   async function useRom(name) {
@@ -66,14 +66,20 @@
     const roms = status?.roms || [];
     body.append(el('h3', null, 'ROM (rom/ folder)'));
     if (!roms.length) body.append(el('p', 'sb-note', 'Put your US 1.0 .z64 in the rom/ folder, then press Refresh.'));
-    for (const r of roms) { const row = el('div', 'sb-row'); row.append(el('span', 'sb-name', r.name), btn('Use here', () => useRom(r.name), 'Load it into this page\'s ROM picker')); body.append(row); }
+    for (const r of roms) {
+      const row = el('div', 'sb-row');
+      row.append(el('span', 'sb-name', r.name), btn('Use here', () => useRom(r.name), 'Load it into this page\'s ROM picker'));
+      if (status.emulator) row.append(btn('Emulator', () => openOut(r.name, 'emulator', 'rom'), 'Play this unpatched ROM in your emulator (a quick test of your emulator setting)'));
+      row.append(btn('Open', () => openOut(r.name, 'default', 'rom'), 'Open with the program your system uses for .z64 files'));
+      body.append(row);
+    }
 
     body.append(el('h3', null, 'Builds (out/ folder)'));
     const lab = el('label', 'sb-note'); const cb = el('input'); cb.type = 'checkbox'; cb.checked = saveOn();
     cb.addEventListener('change', () => localStorage.setItem('sssvBundleSave', cb.checked ? 'on' : 'off'));
     lab.append(cb, ' Save downloads to out/'); body.append(lab);
     const outs = (status?.out || []).filter((f) => !f.name.startsWith('.'));
-    if (!outs.length) body.append(el('p', 'sb-note', 'Nothing yet. Built ROMs and patches land here.'));
+    if (!outs.length) body.append(el('p', 'sb-note', 'Nothing built yet. When you build, the patched ROM appears here with Emulator / Open / Folder buttons.'));
     for (const f of outs.slice(-12).reverse()) {
       const row = el('div', 'sb-row'); row.append(el('span', 'sb-name', f.name));
       row.append(btn('Open', () => openOut(f.name, 'default'), 'Open with the program your system uses for this file type'));

@@ -339,13 +339,17 @@ func (s *server) api(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "POST only", http.StatusMethodNotAllowed)
 			return
 		}
-		var req struct{ Name, How string }
+		var req struct{ Name, How, Dir string }
 		if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&req); err != nil {
 			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		}
-		p, ok := named(s.outDir, req.Name)
-		if !ok {
+		dir := s.outDir
+		if req.Dir == "rom" {
+			dir = s.romDir
+		}
+		p, ok := named(dir, req.Name)
+		if !ok || (req.Dir == "rom" && !isROM(req.Name)) {
 			http.NotFound(w, r)
 			return
 		}
