@@ -33,7 +33,7 @@ function applyMesh(v,E,bb){if(!E)return v;const c0=E.o?[0,0,0]:[0,1,2].map(k=>(b
 // branch); symbols carry their ROM offset, so they are unique.
 const DRAW_PRIMS={D_040029C0_E9F70:'FF0000FF',D_04005E50_E3410:'5C5CD7FF',D_04004820_F5880:'E687B0FF',D_040038A0_EAE50:'FF0000FF',
 D_04000A00_F1A60:'FFFF00FF',D_04007080_CEAB0:'FF8080FF',D_040072F0_CED20:'141414FF',D_040073B0_CEDE0:'FF0000FF',D_04001F80_DF540:'7D33FFFF',
-D_04000230_E77E0:'7D33FFFF',D_040000A0_E7650:'FFFF00FF',D_04001220_C8C50:'141414FF'};
+D_04000230_E77E0:'7D33FFFF',D_040000A0_E7650:'FFFF00FF',D_04001220_C8C50:'141414FF',D_04005B20_ED0D0:'FF0000FF'};
 // per source index: the inherited prim (hex RGBA) its uncoloured triangles draw with, in draw order
 function inheritedPrims(srcs){let carry=null;const seen=new Set();return srcs.map(S=>{const P=S.P;if(!P)return null;
 if(DRAW_PRIMS[P.sym]&&!seen.has(P.sym)){carry=DRAW_PRIMS[P.sym];seen.add(P.sym)}const mine=P.textureMaterial?null:carry;
