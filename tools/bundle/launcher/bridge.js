@@ -81,7 +81,25 @@
       row.append(btn('Folder', () => openOut(f.name, 'folder'), 'Show in folder'));
       body.append(row);
     }
-    const foot = el('div', 'sb-row'); foot.append(btn('Refresh', refresh)); body.append(foot);
+    body.append(el('h3', null, 'Your emulator'));
+    const cmd = status?.command || [];
+    body.append(el('p', 'sb-note', cmd.length ? 'Emulator button uses: ' + cmd[0].split(/[\\/]/).pop() : 'Not set. "Open" uses the program your system opens .z64 files with.'));
+    const prog = el('input', 'sb-input'); prog.placeholder = 'Paste the emulator program path, e.g. C:\\Emulators\\simple64\\simple64-gui.exe'; prog.value = cmd[0] || ''; prog.setAttribute('aria-label', 'Emulator program path');
+    const args = el('input', 'sb-input'); args.placeholder = 'Extra arguments (optional). {rom} = the ROM'; args.value = cmd.slice(1).map((a) => (/\s/.test(a) ? '"' + a + '"' : a)).join(' '); args.setAttribute('aria-label', 'Emulator arguments');
+    body.append(prog, args);
+    const er = el('div', 'sb-row');
+    er.append(btn('Save emulator', () => saveEmu(prog.value, args.value)), btn('Clear', () => saveEmu('', '')));
+    body.append(er);
+    const foot = el('div', 'sb-row'); foot.append(btn('Refresh', refresh), btn('Hide panel', () => { panel.classList.remove('sb-open'); localStorage.setItem('sssvBundleOpen', 'no'); })); body.append(foot);
+  }
+
+  async function saveEmu(program, args) {
+    try {
+      const r = await api('settings', { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ program, args }) });
+      const { command } = await r.json();
+      toast(command.length ? 'Emulator saved. Use the Emulator button next to a build.' : 'Emulator cleared.');
+      refresh();
+    } catch (e) { toast(e.message); }
   }
 
   async function refresh() {
@@ -92,10 +110,15 @@
   function mount() {
     panel = el('aside', 'sb-panel');
     panel.setAttribute('aria-label', 'Offline bundle');
-    const head = btn('Bundle ▾', () => { panel.classList.toggle('sb-open'); if (panel.classList.contains('sb-open')) refresh(); }, 'ROM folder, saved builds and your emulator');
+    const head = btn('ROM, builds & emulator', () => {
+      const open = panel.classList.toggle('sb-open');
+      localStorage.setItem('sssvBundleOpen', open ? 'yes' : 'no');
+      if (open) refresh();
+    }, 'Your rom/ folder, saved builds in out/, and your emulator');
     head.classList.add('sb-head');
     body = el('div', 'sb-body');
     panel.append(head, body);
+    if (localStorage.getItem('sssvBundleOpen') !== 'no') panel.classList.add('sb-open'); // open until the user hides it
     document.body.append(panel);
     refresh();
   }

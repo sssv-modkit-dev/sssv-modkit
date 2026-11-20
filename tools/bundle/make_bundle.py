@@ -27,10 +27,11 @@ README = """sssv-modkit offline bundle ({target})
 1. Put your own Space Station Silicon Valley (US 1.0) ROM in the rom/ folder.
 2. Start the launcher: {start}
    It opens the modkit in your web browser. Keep its window open while you work.
-3. In any page, open the "Bundle" button (bottom right) and press "Use here"
+3. In the orange "ROM, builds & emulator" panel (bottom right), press "Use here"
    to load your ROM, then build as usual. Builds are saved to out/.
-4. From the Bundle panel: Open (your system's program for .z64 files),
-   Folder (show it), or Emulator (if you set one in settings.json).
+4. From the same panel: Open (your system's program for .z64 files),
+   Folder (show it), or Emulator: paste your emulator's program path under
+   "Your emulator" once and press Save.
    Or just take the file from out/ to the emulator you like.
 
 Nothing is installed. Everything stays in this folder; delete the folder to remove it.

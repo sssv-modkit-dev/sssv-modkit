@@ -23,6 +23,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -275,8 +276,30 @@ func (s *server) api(w http.ResponseWriter, r *http.Request) {
 			"roms":     listDir(s.romDir, isROM),
 			"out":      listDir(s.outDir, func(string) bool { return true }),
 			"emulator": len(s.loadSettings().Emulator) > 0,
+			"command":  s.loadSettings().Emulator,
 			"folder":   s.root,
 		})
+	case "settings":
+		if r.Method != http.MethodPost {
+			http.Error(w, "POST only", http.StatusMethodNotAllowed)
+			return
+		}
+		var req struct{ Program, Args string }
+		if err := json.NewDecoder(io.LimitReader(r.Body, 8192)).Decode(&req); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		cmd, err := emulatorCommand(req.Program, req.Args)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		data, _ := json.MarshalIndent(map[string]any{"_help": "Set from the Bundle panel. {rom} becomes the ROM path. Empty = use your system's program for .z64 files.", "emulator": cmd}, "", "  ")
+		if err := os.WriteFile(filepath.Join(s.root, "settings.json"), append(data, '\n'), 0o644); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, map[string]any{"command": cmd})
 	case "rom":
 		name := r.URL.Query().Get("name")
 		p, ok := named(s.romDir, name)
@@ -359,11 +382,36 @@ func uniquePath(dir, name string) string {
 	}
 }
 
+// emulatorCommand turns the panel's program path and optional arguments into an argv list.
+// An empty program clears the setting. Arguments split on spaces; "quoted parts" stay together.
+func emulatorCommand(program, args string) ([]string, error) {
+	program = strings.Trim(strings.TrimSpace(program), `"'`)
+	if program == "" {
+		return []string{}, nil
+	}
+	fi, err := os.Stat(program)
+	if err != nil {
+		return nil, fmt.Errorf("can't find %s", program)
+	}
+	if fi.IsDir() && !(runtime.GOOS == "darwin" && strings.HasSuffix(strings.ToLower(program), ".app")) {
+		return nil, errors.New("that is a folder; choose the emulator program itself")
+	}
+	cmd := []string{program}
+	for _, m := range regexp.MustCompile(`"[^"]*"|\S+`).FindAllString(args, -1) {
+		cmd = append(cmd, strings.Trim(m, `"`))
+	}
+	return cmd, nil
+}
+
 // openEmulator runs the program from settings.json directly (no shell), with {rom} replaced.
 func (s *server) openEmulator(rom string) error {
 	cmd := s.loadSettings().Emulator
 	if len(cmd) == 0 {
-		return errors.New("no emulator set in settings.json; using your default program instead is the other button")
+		return errors.New("no emulator set yet: add it under Your emulator in the panel")
+	}
+	if runtime.GOOS == "darwin" && strings.HasSuffix(strings.ToLower(cmd[0]), ".app") {
+		// macOS app bundles: let the system start the app with the ROM.
+		cmd = append([]string{"/usr/bin/open", "-a", cmd[0], "{rom}", "--args"}, cmd[1:]...)
 	}
 	args := make([]string, 0, len(cmd))
 	hasROM := false
