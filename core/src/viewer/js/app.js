@@ -3,7 +3,7 @@ let TABLE=/*TABLE*/null;
 const EMBEDDED_TABLE=TABLE||{};let demoMode=false;
 const HOME_VIEW=[0.5,0]; // front, turned ~29° so the model's left side (-X) faces the viewer
 
-function readPart(p,B){const part=p.demo||parseDL(dv,p.r,B);return window.ModelTextureTools?.decoratePart?.(part,p,dv)||part}
+function readPart(p,B){const part=p.demo||parseDL(dv,p.r,B);const d=window.ModelTextureTools?.decoratePart?.(part,p,dv)||part;if(d.lastPrim===undefined)d.lastPrim=part.cols.at(-1)?.rgba||null;return d}
 //#PURE-START
 function vtx(dv,b,off,i){const o=b+off+16*i;if(o<0||o+16>dv.byteLength||dv.getUint16(o+6))return null;const q=[dv.getInt16(o),dv.getInt16(o+2),dv.getInt16(o+4)];q.o=o;q.uv=[dv.getInt16(o+8),dv.getInt16(o+10)];q.c=[dv.getUint8(o+12)/255,dv.getUint8(o+13)/255,dv.getUint8(o+14)/255];return q}
 // Does a G_SETCOMBINE (0xFC) word pair sample a texture in cycle 1? (cycle 2 TEXEL1 is the env-map shine)
@@ -35,9 +35,9 @@ const DRAW_PRIMS={D_040029C0_E9F70:'FF0000FF',D_04005E50_E3410:'5C5CD7FF',D_0400
 D_04000A00_F1A60:'FFFF00FF',D_04007080_CEAB0:'FF8080FF',D_040072F0_CED20:'141414FF',D_040073B0_CEDE0:'FF0000FF',D_04001F80_DF540:'7D33FFFF',
 D_04000230_E77E0:'7D33FFFF',D_040000A0_E7650:'FFFF00FF',D_04001220_C8C50:'141414FF'};
 // per source index: the inherited prim (hex RGBA) its uncoloured triangles draw with, in draw order
-function inheritedPrims(srcs){let carry=null;const seen=new Set();return srcs.map(S=>{const P=S.P;if(!P||P.textureMaterial)return carry;
-if(DRAW_PRIMS[P.sym]&&!seen.has(P.sym)){carry=DRAW_PRIMS[P.sym];seen.add(P.sym)}const mine=carry;
-if(P.cols.length){const i=P.cols.length-1;carry=paletteColour(P,i,P.cols[i].rgba)}return mine})}
+function inheritedPrims(srcs){let carry=null;const seen=new Set();return srcs.map(S=>{const P=S.P;if(!P)return null;
+if(DRAW_PRIMS[P.sym]&&!seen.has(P.sym)){carry=DRAW_PRIMS[P.sym];seen.add(P.sym)}const mine=P.textureMaterial?null:carry;
+if(P.textureMaterial){if(P.lastPrim)carry=P.lastPrim}else if(P.cols.length){const i=P.cols.length-1;carry=paletteColour(P,i,P.cols[i].rgba)}return mine})}
 // true if the part has no G_SETPRIMCOLOR, or has triangles drawn before its first one
 function noOwnColour(P){return P.cols.length==0||P.tris.some(t=>t.c<0)}
 function editableColours(P){return P.textureMaterial?[]:[...P.cols.map(c=>c.rgba),...(noOwnColour(P)?['808080FF']:[])]}
