@@ -19,8 +19,6 @@ def main():
     print('Python syntax: %d active tool/test files.' % len(paths), flush=True)
     commands = [
         [sys.executable, 'core/src/check.py'],
-        [sys.executable, 'tests/test_core_lock.py'],
-        [sys.executable, 'tests/test_sync_core.py'],
         [sys.executable, 'core/tools/guards.py', 'core'],
         [sys.executable, 'tests/test_levels.py'],
         ['node', 'tests/test_scene.js'],

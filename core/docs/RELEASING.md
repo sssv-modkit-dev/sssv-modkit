@@ -1,10 +1,8 @@
 # Releasing
 
-1. `python tools/release.py vX.Y.Z` runs all checks and the history guard, then builds `build/site` for a last look.
-2. Tag the release: `git tag vX.Y.Z`.
-3. Push the branch and the tag: `git push gitlab main vX.Y.Z`. GitLab Pages builds and publishes only on tags like `vX.Y.Z` (`.gitlab-ci.yml`).
-4. Check the published site, or run `node tests/browser/roundtrip.mjs <site URL>` against it.
-5. Back up: `git bundle create <backup folder>/sssv-editor-vX.Y.Z.bundle --all`.
+The core ships inside the sssv-modkit repository (folder `core/`, since 2026-11-20). There is no separate core release:
+`python src/check.py` at the repository root runs the core checks, and a push to `main` deploys the site through GitHub Actions.
+The last core-only release is the `editor-final` tag on the retired `editor` branch; the old GitLab tag flow is kept there.
 
 Pace: push in batches and publish once per release, not per change.
 

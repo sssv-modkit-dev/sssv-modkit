@@ -57,7 +57,7 @@ if args.labels:
             if symbol not in parts or not isinstance(label,str) or not label.strip() or len(label)>120:
                 parser.error('unknown part or invalid label: '+animal+' / '+symbol)
             parts[symbol]['n']=label
-base=here.parent/'core/src/viewer'  # core editor sources (synced by tools/sync_core.py)
+base=here.parent/'core/src/viewer'  # core editor sources (part of this repo since 2026-11-20; edit in place)
 pack_js=here/'viewer'/'js'  # SSSV pack modules
 html=(base/'index.template.html').read_text(encoding='utf-8')
 css=(base/'css'/'app.css').read_text(encoding='utf-8')

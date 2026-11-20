@@ -14,7 +14,6 @@ on:
       - 'src/check.py'
       - 'tools/**'
       - 'core/**'
-      - 'core.lock'
       - 'NOTICE.md'
       - '.github/workflows/parts-lab-pages.yml'
 permissions:

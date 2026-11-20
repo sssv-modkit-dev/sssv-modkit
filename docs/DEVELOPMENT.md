@@ -122,9 +122,8 @@ worktrees or distinct repositories. A plain Git worktree starts from committed f
 also carry local changes. Verify that the guidance and inputs needed for the task
 are present before starting.
 
-### Uncommitted core review snapshots
+### The editor core lives in `core/`
 
-When the reviewer must commit later, use `python tools/sync_core.py --from <core-checkout> --tag <base-ref> --working-tree`.
-The command retains the existing lock overwrite check, overlays working files onto the base archive, includes new files under src/tests/docs,
-and records `working_tree: true` in `core.lock`. The commit is the base, not a claim that these changes are committed.
-Do not publish this as a tagged release. After review and core commit, sync the committed core ref without `--working-tree`.
+Since 2026-11-20 the editor core is an ordinary folder of this repository. Edit `core/` directly and commit it with
+the pack changes that need it; `python src/check.py` runs the core checks and the guards over `core/`.
+The old `editor` branch, `tools/sync_core.py` and `core.lock` are retired (last core-only release: tag `editor-final`).
