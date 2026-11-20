@@ -36,6 +36,10 @@ def run(out, no_vendor):
     session.write_text(text, encoding='utf-8')
     for page in out.glob('*.html'):
         html = page.read_text(encoding='utf-8')
+        # Redirect stubs allow only their own hashed inline script; injecting
+        # shared scripts there only produces CSP errors.
+        if "script-src 'sha256-" in html and "script-src 'self'" not in html:
+            continue
         html = html.replace('</head>', '<link rel="stylesheet" href="loading.css"><script src="runtime-sizes.js" defer></script><script src="runtime-downloads.js" defer></script><script src="rom-compat.js" defer></script></head>', 1)
         page.write_text(html, encoding='utf-8')
     sys.path.insert(0, str(SRC.parent / 'tools'))
