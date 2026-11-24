@@ -15,9 +15,14 @@ ROOT = Path(__file__).resolve().parents[2]
 LAUNCHER = ROOT / 'tools' / 'bundle' / 'launcher'
 TARGETS = {  # name: (GOOS, GOARCH, exe suffix)
     'windows-x64': ('windows', 'amd64', '.exe'),
+    'windows-x86': ('windows', '386', '.exe'),
+    'windows-arm64': ('windows', 'arm64', '.exe'),
     'macos-arm64': ('darwin', 'arm64', ''),
     'macos-x64': ('darwin', 'amd64', ''),
     'linux-x64': ('linux', 'amd64', ''),
+    'linux-x86': ('linux', '386', ''),
+    'linux-arm64': ('linux', 'arm64', ''),
+    'linux-armv7': ('linux', 'arm', ''),
 }
 ROM_EXT = {'.z64', '.n64', '.v64', '.rom'}
 
@@ -80,6 +85,8 @@ def make(target: str, out: Path, version: str):
     shutil.rmtree(stage, ignore_errors=True)
     stage.mkdir(parents=True)
     env = dict(os.environ, GOOS=goos, GOARCH=goarch, CGO_ENABLED='0')
+    if target == 'linux-armv7':
+        env['GOARM'] = '7'
     run(['go', 'build', '-trimpath', '-ldflags=-s -w', '-o', str(stage / ('sssv-modkit' + suffix)), '.'], cwd=LAUNCHER, env=env)
     shutil.copytree(ROOT / 'site' / 'dist', stage / 'app')
     for d in ('rom', 'out'):

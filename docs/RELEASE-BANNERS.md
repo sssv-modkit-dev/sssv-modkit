@@ -1,6 +1,14 @@
 # Release banners
 
-The README now shows **“Bear onward, nearly there” edition, pre-alpha v0.6**:
+The README shows **“100% byte-matched decomp” edition, pre-alpha v0.7**:
+`docs/images/releases/byte-matched-v07.gif` (1500 × 500, 342 frames at 25 fps).
+It reprises the Model Editor Bear Dance and v0.6's blue, red, and green N64
+palettes. Patches spread from the paws through a checker-texture preview,
+depth-tested wireframe, and part highlighting, then return to the shaded model.
+The `n64-dark` background has no spotlight. Render settings are in
+`byte-matched-v07.json`.
+
+The previous **“Bear onward, nearly there” edition, pre-alpha v0.6** uses
 `docs/images/releases/bear-onward-v06.gif` (1500 x 500 animated, 342 frames at 25 fps, `n64-dark` theme).
 The bear is the Model Editor's Dance export from the owner's US 1.0 ROM (transparent GIF), recoloured in
 N64 blue, red and green every 0.8 to 1.2 seconds under a spotlight. Settings: `bear-onward-v06.json`. Made with

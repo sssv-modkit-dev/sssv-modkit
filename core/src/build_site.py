@@ -100,9 +100,8 @@ def model_editor(pack):
     html = (base / 'index.template.html').read_text(encoding='utf-8')
     html = html.replace('<title>SSSV Model Editor</title>', '<title>Model Editor (%s)</title><meta http-equiv="Content-Security-Policy" content="%s">' % (pack['title'], csp), 1)
     html = html.replace('<link rel="icon" href="/*VIEWER_ICON*/">', '<link rel="icon" type="image/svg+xml" href="favicon-model-editor.svg">', 1)
-    html = html.replace('<body>\n', '<body>\n' + pack['slots']['model-noscript'] + '\n', 1)
     html = html.replace('<!--PUBLIC_NAV-->', pack['slots']['model-nav'])
-    html = fill(html, pack['slots'], ('model-source',)).replace('__PACK_TITLE__', escape(pack['title']))
+    html = fill(html, pack['slots'], ('model-noscript', 'model-source')).replace('__PACK_TITLE__', escape(pack['title']))
     link = '<a href="%s" target="_blank" rel="noopener">Source &amp; credits &#8599;</a>' % escape(pack['source_url']) if pack['source_url'] else ''
     html = html.replace('<!--SOURCE_LINK-->', link)
     svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#202638"/><text x="32" y="41" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="bold" fill="#edf1fa">SS</text></svg>'

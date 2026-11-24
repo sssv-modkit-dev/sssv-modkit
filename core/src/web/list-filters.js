@@ -9,7 +9,7 @@ function attach(list){
  if(isSelect&&(list.hidden||list.options.length<16))return;
  if(!isSelect&&!(id in names))return;
  attached.add(list);
- const label=document.createElement('label'),input=document.createElement('input');label.className='list-filter';label.textContent='Find '+(names[id]||list.getAttribute('aria-label')||'items');input.type='search';input.id='find-'+id;input.setAttribute('aria-controls',id);label.append(input);(list.parentElement.tagName==='LABEL'?list.parentElement:list).before(label);
+ const label=document.createElement('label'),input=document.createElement('input');label.className='list-filter';label.textContent='Find '+(names[id]||list.getAttribute('aria-label')||'items');input.type='search';input.id='find-'+id;input.setAttribute('aria-controls',id);if(id==='demo-picker'||id==='parts')input.placeholder='Filter '+names[id]+'…';label.append(input);(list.parentElement.tagName==='LABEL'?list.parentElement:list).before(label);
  const filter=()=>{
   label.hidden=list.hidden||getComputedStyle(list).display==='none';
   const query=input.value.trim().toLowerCase();

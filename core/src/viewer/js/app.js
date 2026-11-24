@@ -257,6 +257,7 @@ const need=()=>{if(!dirty){dirty=true;requestAnimationFrame(draw)}};
 const NAMED_COLOURS={Black:'000000',White:'FFFFFF',Red:'FF0000',Green:'008000',Blue:'0000FF',Yellow:'FFFF00',Orange:'FFA500',Purple:'800080',Pink:'FFC0CB',Brown:'8B4513',Grey:'808080',Cyan:'00FFFF',Magenta:'FF00FF',Beige:'F5F5DC',Gold:'FFD700',Olive:'808000',Teal:'008080',Navy:'000080'};
 function colourName(hex){const rgb=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));let best='Colour',dist=Infinity;for(const [name,val] of Object.entries(NAMED_COLOURS)){const c=[0,2,4].map(i=>parseInt(val.slice(i,i+2),16));const d=c.reduce((sum,x,i)=>sum+(x-rgb[i])**2,0);if(d<dist){dist=d;best=name}}return best}
 const hex2=s=>[0,2,4].map(i=>parseInt(s.substr(i,2),16)/255);
+const capturedRoot=captured=>captured?.parts.find(p=>p.T.every(v=>v===0))?.dl;
 // Embedded reviewed labels are defaults; local user names take precedence.
 // Descriptions are positional suggestions, not anatomical metadata.
 function positionPartNames(parts,captured){
@@ -267,8 +268,9 @@ function positionPartNames(parts,captured){
  });
  if(!centres.length)return {};
  const posed=captured?centres.filter(c=>c.instances):centres,reference=posed.length?posed:centres;
- const lo=[0,1,2].map(k=>Math.min(...reference.map(c=>c.point[k]))),hi=[0,1,2].map(k=>Math.max(...reference.map(c=>c.point[k]))),counts={};
+ const root=capturedRoot(captured),lo=[0,1,2].map(k=>Math.min(...reference.map(c=>c.point[k]))),hi=[0,1,2].map(k=>Math.max(...reference.map(c=>c.point[k]))),counts={};
  return Object.fromEntries(centres.map(({P,point,instances})=>{
+  if(P.sym===root)return [P.sym,'Body / root'];
   const relative=k=>(point[k]-lo[k])/Math.max(1,hi[k]-lo[k]);
   const height=relative(1),depth=relative(2),region=captured?(!instances?'Variant part':instances>1&&height<.55?'Leg / foot':height>.65&&depth>.55?'Head / upper front':depth<.2?'Rear / tail':height<.3?'Lower body':'Body'):(height>.65?'Upper part':height<.3?'Lower part':'Centre part');
   counts[region]=(counts[region]||0)+1;return [P.sym,region+' '+counts[region]];
@@ -280,6 +282,16 @@ function labelHTML(text){return text.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 const visibleParts=()=>parsed.filter(
   P=>!variant||P.sections.includes(variant)
 );
+function selectPrimaryPart(){
+ const parts=visibleParts();
+ const root=capturedRoot(pose);
+ const main=parts.find(P=>P.sym===root)||parts.find(P=>/^(body|torso|root|chassis)(?:\s+\d+)?$/i.test(partLabel(name,P.sym))||
+  /^(body|torso|root|chassis)$/i.test(P.sym));
+ const volume=P=>{const box=P.viewBB||P.bb;return box.slice(0,3).reduce((v,n,i)=>v*Math.max(1,box[i+3]-n),1);};
+ const part=main||parts.reduce((largest,P)=>!largest||volume(P)>volume(largest)?P:largest,null);
+ selectPart(part?.sym);
+ sel=part?parsed.indexOf(part):0;
+}
 const shown=()=>all||sheet
   ?visibleParts()
   :[parsed[sel]].filter(P=>P&&visibleParts().includes(P));
@@ -328,6 +340,7 @@ function paletteUI(){const D=$('pal');D.innerHTML='';let scope=$('palette-scope'
 }
 function numberRow(group,label,min,max,step,value,apply,{log=false}={}){const row=document.createElement('div');row.className='axis-edit';const tag=document.createElement('span');tag.className='axis-tag';tag.textContent=label.split(' ').at(-1);const slider=document.createElement('input'),number=document.createElement('input');slider.type='range';number.type='number';number.className='axis-number';number.min=min;number.max=max;number.step=step;number.value=String(Math.round(value*1000)/1000);number.setAttribute('aria-label',label+' value');number.title='Type a value, or focus and scroll to adjust';slider.min=log?-100:min;slider.max=log?100:max;slider.step=log?1:step;slider.value=log?Math.log10(value)*100:value;slider.setAttribute('aria-label',label);
  let lastValue=value;const set=(v,syncNumber=true)=>{if(!Number.isFinite(v))return;v=Math.max(min,Math.min(max,v));lastValue=v;if(syncNumber)number.value=String(Math.round(v*1000)/1000);slider.value=log?Math.log10(v)*100:v;apply(v)};slider.oninput=()=>set(log?Math.pow(10,+slider.value/100):+slider.value);number.oninput=()=>{if(number.value!=='')set(+number.value,false)};number.onchange=()=>set(number.value===''?lastValue:+number.value);number.onwheel=e=>{if(document.activeElement!==number)return;e.preventDefault();window.ModelEditorHistory?.begin();set(+number.value+(e.deltaY<0?step:-step));window.ModelEditorHistory?.end()};number.addEventListener('wheel',number.onwheel,{passive:false});number.onwheel=null;row.append(tag,slider,number);group.append(row);return {slider,number}}
+let meshSliders=false,deformExpanded=false;
 function meshUI(){const D=$('mesh');D.innerHTML='';if(gallery)return;const P=parsed.find(p=>p.sym===selectedSym)||parsed[sel];if((all||sheet)&&!selectedSym||!P){D.innerHTML='<div class="mut mesh-hint">Select a part to edit its mesh.</div>';return}const sym=P.sym,E=mesh[sym]||{s:[1,1,1],m:[0,0,0],o:false};
  const title=document.createElement('h4');title.innerHTML=(partLabel(name,sym)?'<strong class="custom-part-name">'+labelHTML(partLabel(name,sym))+'</strong><br>':'')+'<span class="raw-part-id">'+labelHTML(sym)+'</span>';D.append(title);
  if(selectedParts.size){const selected=document.createElement('div');selected.className='selection-summary';selected.textContent=selectedParts.size+' selected';for(const id of selectedParts){const chip=document.createElement('span');chip.className='selection-chip';chip.textContent=partLabel(name,id)||id;selected.append(chip)}D.append(selected)}
@@ -335,14 +348,18 @@ function meshUI(){const D=$('mesh');D.innerHTML='';if(gallery)return;const P=par
  const naming=document.createElement('label');naming.className='workbench-name';naming.textContent='Custom part name';const nameInput=document.createElement('input');nameInput.type='text';nameInput.maxLength=120;nameInput.value=partLabel(name,sym);nameInput.placeholder='Name this part';nameInput.setAttribute('aria-label','Custom part name');nameInput.onchange=()=>{(partNames[name]||(partNames[name]={}))[sym]=nameInput.value.trim();saveViewerPrefs();updateFloatingLabels();ui();info()};nameInput.onkeydown=e=>{if(e.key==='Enter')nameInput.blur()};naming.append(nameInput);D.append(naming);
  for(const [lab,key] of [['Scale','s'],['Move','m'],['Rotate','r']]){const group=document.createElement('div');group.className='mesh-group';group.innerHTML='<div class="mesh-group-title">'+lab+'</div>';[0,1,2].forEach(k=>numberRow(group,lab+' '+['X','Y','Z'][k],key==='s'?.1:key==='r'?-180:-500,key==='s'?10:key==='r'?180:500,key==='s'?.01:1,E[key]?.[k]??(key==='s'?1:0),next=>{const prior=mesh[sym]?.[key]?.[k]??(key==='s'?1:0);for(const target of selectionSymbols().length?selectionSymbols():[sym]){const edit=mesh[target]||(mesh[target]={s:[1,1,1],m:[0,0,0],o:false});edit[key]||=[0,0,0];edit[key][k]=key==='s'?Math.max(.1,Math.min(10,edit[key][k]*next/prior)):Math.max(key==='r'?-180:-500,Math.min(key==='r'?180:500,edit[key][k]+next-prior))}deformCache.clear();rebuild(false)},{log:key==='s'}));D.append(group)}
  const origin=document.createElement('label');origin.innerHTML='<input type="checkbox"> Scale about bone origin (0,0,0)';origin.firstChild.checked=!!E.o;origin.firstChild.onchange=()=>{for(const target of selectionSymbols().length?selectionSymbols():[sym])(mesh[target]||(mesh[target]={s:[1,1,1],m:[0,0,0],o:false})).o=origin.firstChild.checked;deformCache.clear();rebuild(false)};D.append(origin);
- const df=document.createElement('section');df.id='deform-controls';df.innerHTML='<h4>Deform selected parts</h4>';
+ const sliders=document.createElement('label'),toggle=document.createElement('input');
+ toggle.type='checkbox';toggle.checked=meshSliders;sliders.append(toggle,' Show transform sliders');D.append(sliders);
+ D.classList.toggle('show-mesh-sliders',meshSliders);
+ toggle.onchange=()=>D.classList.toggle('show-mesh-sliders',meshSliders=toggle.checked);
+ const df=document.createElement('details');df.id='deform-controls';df.innerHTML='<summary>Deform</summary>';
+ df.open=deformExpanded;df.ontoggle=()=>{if(df.isConnected)deformExpanded=df.open;};
  for(const type of ['bend','twist','taper','inflate']){const heading=document.createElement('h5');heading.textContent=type[0].toUpperCase()+type.slice(1);df.append(heading);for(const deformAxis of type==='inflate'?['xyz']:['x','y','z']){const op=(deform[sym]||[]).flatMap(e=>e.ops).find(o=>o.type===type&&(type==='inflate'||o.axis===deformAxis)),angle=type==='bend'||type==='twist',value=op?(angle?op.degrees:type==='taper'?op.to:op.amount):(angle?0:1);numberRow(df,type[0].toUpperCase()+type.slice(1)+(type==='inflate'?'':' '+deformAxis.toUpperCase()),angle?-180:.1,angle?180:3,angle?1:.05,value,next=>{for(const target of selectionSymbols().length?selectionSymbols():[sym]){let entries=deform[target]||[],entry=entries.find(e=>e.ops.some(o=>o.type===type&&(type==='inflate'||o.axis===deformAxis))),operation=entry?.ops.find(o=>o.type===type&&(type==='inflate'||o.axis===deformAxis));if(next===(angle?0:1)){if(entry)entry.ops=entry.ops.filter(o=>o!==operation);entries=entries.filter(e=>e.ops.length)}else{if(!operation){operation=type==='bend'?{type,axis:deformAxis,toward:deformAxis==='x'?'y':'x',degrees:next}:type==='twist'?{type,axis:deformAxis,degrees:next}:type==='taper'?{type,axis:deformAxis,from:1,to:next}:{type,amount:next,axes:'xyz'};entries.push({ops:[operation]})}else{if(angle)operation.degrees=next;else if(type==='taper')operation.to=next;else operation.amount=next}}if(entries.length)deform[target]=entries;else delete deform[target]}deformOn=Object.values(deform).some(v=>v.length);deformCache.clear();rebuild(false)})}}D.append(df)
 }
 function updateModelStates(){if(!cur)return;
  const cycle=(id,options,value,apply)=>{const host=$(id);host.replaceChildren();const index=Math.max(0,options.findIndex(o=>o.value===value));for(const step of [-1,0,1]){const el=document.createElement(step?'button':'span');el.textContent=step?(step<0?'\u25c0':'\u25b6'):options[index].label;if(step){el.type='button';el.disabled=options.length<2;el.setAttribute('aria-label',(step<0?'Previous ':'Next ')+host.dataset.label);el.onclick=()=>apply(options[(index+step+options.length)%options.length].value)}host.append(el)}};
  cycle('model-state',Array.from($('variant').options,o=>({value:o.value,label:o.textContent})),variant,v=>{$('variant').value=v;$('variant').onchange()});
  cycle('model-pose',[{value:poseOk()?'pose':'none',label:poseOk()?'Captured pose':'No captured pose'}],poseOk()?'pose':'none',()=>{});
- cycle('model-animation',[{value:'none',label:'No animation loaded'}],'none',()=>{});
  $('model-state-note').textContent=poseOk()?'Captured static pose; variant filters its original part list.':'Parts view: this animal or variant has no captured pose.';
 }
 function info(){meshUI();$('info').textContent=''}
@@ -378,15 +395,14 @@ V.value='';
 V.onchange=()=>{
   variant=V.value;assembled=poseOk();selectedParts.clear();selectedSym=null;
   $('variant-label').textContent=variant||'All Variants';
-  const i=parsed.findIndex(P=>!variant||P.sections.includes(variant));
-  sel=i<0?0:i;
+  selectPrimaryPart();
   sheet=!assembled;
   all=false;
   SH=sheetLayout(visibleParts());
   ui();
   rebuild(true);
   info();
-};const saved=modelEdits.get((demoMode?'demo:':'src:')+n);map=saved.map||{};partColors=saved.partColors||{};wordEdits=saved.wordEdits||{};mesh=saved.mesh||{};deform=saved.deform||{};deformOn=!!saved.deformOn;deformCache.clear();pose=BUNDLED_POSES[n]||null;if(!demoMode&&pose&&!pose.parts.every(p=>cur.p.some(q=>q.s===p.dl)))pose=null;assembled=poseOk();sel=0;all=demoMode&&!BUNDLED_ANIMALS.has(n);sheet=!all&&!assembled;suggestedPartNames=positionPartNames(parsed,pose);if(typeof syncImportedParts==='function')syncImportedParts();SH=sheetLayout(visibleParts());$('an').value=n;buildDemoPicker();if(!demoMode){$('demo-status').textContent=sheet&&!variant&&sections.length>1?'Your ROM: variant parts shown side by side. Choose a variant to isolate it.':assembled?'Your ROM: assembled with a captured pose.':'Your ROM: parts view; no matching captured pose is available.';$('demo-assemble').hidden=!poseOk();}ui();rebuild(true);info()}
+};const saved=modelEdits.get((demoMode?'demo:':'src:')+n);map=saved.map||{};partColors=saved.partColors||{};wordEdits=saved.wordEdits||{};mesh=saved.mesh||{};deform=saved.deform||{};deformOn=!!saved.deformOn;deformCache.clear();pose=BUNDLED_POSES[n]||null;if(!demoMode&&pose&&!pose.parts.every(p=>cur.p.some(q=>q.s===p.dl)))pose=null;assembled=poseOk();all=demoMode&&!BUNDLED_ANIMALS.has(n);sheet=!all&&!assembled;suggestedPartNames=positionPartNames(parsed,pose);if(typeof syncImportedParts==='function')syncImportedParts();selectPrimaryPart();SH=sheetLayout(visibleParts());$('an').value=n;$('model-chooser-label').textContent=n.replaceAll('_',' ').replace(/^./,c=>c.toUpperCase());buildDemoPicker();if(!demoMode){$('demo-status').textContent=sheet&&!variant&&sections.length>1?'Your ROM: variant parts shown side by side. Choose a variant to isolate it.':assembled?'Your ROM: assembled with a captured pose.':'Your ROM: parts view; no matching captured pose is available.';$('demo-assemble').hidden=!poseOk();}ui();rebuild(true);info()}
 //#HOST-START
 /* A data-source plug-in hands the editor a parts table plus the geometry bytes it indexes. Returns an error message, or null on success. */
 function makeModelEditorHost(env){
@@ -660,7 +676,6 @@ $('floating-labels').addEventListener('pointermove',e=>{if(!labelDrag)return;con
 $('floating-labels').addEventListener('pointerup',()=>{if(labelDrag){labelDrag=null;saveViewerPrefs();updateFloatingLabels()}});
 $('floating-labels').addEventListener('pointercancel',()=>{labelDrag=null;updateFloatingLabels()});
 
-$('view-settings').open=!matchMedia('(max-width:700px) and (orientation:portrait)').matches;
 
 // Projected world-axis handles follow the selected rendered part, including poses.
 

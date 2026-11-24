@@ -81,10 +81,23 @@ try{
   await check('document.documentElement.scrollWidth<=innerWidth','no page horizontal overflow');
   await screenshot(s,`after-${page}-${width}`);
   if(width<768){
-   await check("document.body.classList.contains('editor-phone')",'shared phone workspace');
-   await check("document.querySelector('#mobile-panels').getBoundingClientRect().height>=44",'44 px toggle');
-   await check("[...document.querySelectorAll('button,select,summary,input:not([type=hidden]):not([type=checkbox])')].filter(e=>e.getClientRects().length).every(e=>e.getBoundingClientRect().height>=44)",'44 px visible controls');
+   if(page==='model-editor'){
+    const tabs=await js(s,"({innerWidth,hidden:document.getElementById('model-drawer-tabs').hidden,heights:[...document.querySelectorAll('#model-drawer-tabs button')].map(b=>b.getBoundingClientRect().height)})");
+    assert.ok(!tabs.hidden && tabs.heights.every(height=>height>=44),`44 px drawer tabs: ${JSON.stringify(tabs)}`);
+    await check("document.getElementById('model-drawer-tabs').getBoundingClientRect().top>=document.getElementById('view').getBoundingClientRect().bottom",'drawer below canvas');
+    await check("!document.getElementById('model-camera-pad').open",'camera pad starts collapsed');
+    await js(s,"document.getElementById('model-camera-pad').open=true;document.getElementById('model-fullscreen').click()");
+    await check("document.getElementById('view').getBoundingClientRect().height>innerHeight-100 && dist>=cameraFit(...sceneBounds,cameraRotation(),cv.clientWidth/cv.clientHeight).distance*.99",'whole model framed in full screen');
+    await screenshot(s,`fullscreen-${page}-${width}`);
+    await js(s,"document.getElementById('model-fullscreen').click()");
+    await check("[...document.querySelectorAll('.model-camera-buttons button')].every(b=>b.getBoundingClientRect().height>=44&&b.getBoundingClientRect().width>=44)",'44 px camera buttons');
+   }else{
+    await check("document.body.classList.contains('editor-phone')",'shared phone workspace');
+    await check("document.querySelector('#mobile-panels').getBoundingClientRect().height>=44",'44 px toggle');
+    await check("[...document.querySelectorAll('button,select,summary,input:not([type=hidden]):not([type=checkbox])')].filter(e=>e.getClientRects().length).every(e=>e.getBoundingClientRect().height>=44)",'44 px visible controls');
+   }
    if(page==='model-editor'||page==='level-editor'){
+    if(page==='level-editor'){
     await check("(t=>!!t&&document.elementFromPoint(t.getBoundingClientRect().x+20,t.getBoundingClientRect().y+20)?.closest('#mobile-desktop-tip')===t)(document.getElementById('mobile-desktop-tip'))",'desktop tip visible on phones');
     await js(s,"document.getElementById('mobile-desktop-tip-close').click()");
     await check("!document.getElementById('mobile-desktop-tip')&&localStorage.getItem('editor-desktop-tip-dismissed')==='1'",'desktop tip dismiss remembered');
@@ -93,9 +106,9 @@ try{
     await js(s,"document.getElementById('mobile-panels').click()");await check("getComputedStyle(document.getElementById('mobile-dock')).display==='none'",'hide all panels');
     await js(s,"document.getElementById('mobile-panels').click();document.getElementById('mobile-fullscreen').click()");
     await check("document.getElementById('mobile-viewport').getBoundingClientRect().height>innerHeight-100",'full screen canvas');
-    if(page==='model-editor')await check("dist>=cameraFit(...sceneBounds,cameraRotation(),cv.clientWidth/cv.clientHeight).distance*.99",'whole model framed in full screen');
     await screenshot(s,`fullscreen-${page}-${width}`);
     await js(s,"document.getElementById('mobile-fullscreen').click()");
+    }
     const cameraState=page==='model-editor'?'[yaw,pit,dist,...ctr]':'Object.values(editorSession.camera).flat()';
     for(const id of ['touch-left','touch-panright','touch-in']){
      const before=await js(s,`JSON.stringify(${cameraState})`);await js(s,`document.getElementById('${id}').click()`);
@@ -104,15 +117,17 @@ try{
     await js(s,"document.getElementById('touch-reset').click()");
     const cv=page==='model-editor'?'#cv':'#c',r=await rect(s,cv),x=r.width/2,y=r.y+r.height/2;
     if(page==='model-editor'){
+     await js(s,"document.getElementById('model-camera-pad').open=false");
      for(const m of ['orbit','pan','zoom']){
       await mode(s,m);const before=await js(s,`JSON.stringify(${cameraState})`);await touch(s,x,y,36,20);
       assert.notEqual(await js(s,`JSON.stringify(${cameraState})`),before,`model touch ${m}`);
      }
      await js(s,"document.getElementById('camera-reset').click();document.getElementById('demo-explode').click()");await sleep(120);
      // Find a projected sheet part, then exercise the actual touch pointer path.
-     const p=await js(s,`(()=>{const r=cv.getBoundingClientRect();for(let y=20;y<r.height;y+=12)for(let x=20;x<r.width;x+=12)if(pickPart(r.x+x,r.y+y))return [r.x+x,r.y+y];return null})()`);
+     const pickVisible=`(()=>{const r=cv.getBoundingClientRect();for(let y=20;y<r.height;y+=12)for(let x=20;x<r.width;x+=12){const px=r.x+x,py=r.y+y;if(document.elementFromPoint(px,py)===cv&&pickPart(px,py))return [px,py];}return null})()`;
+     const p=await js(s,pickVisible);
      assert.ok(p,'a part is visible');await mode(s,'part');const before=await js(s,'JSON.stringify(partOffsets)');await touch(s,...p,24,12);assert.notEqual(await js(s,'JSON.stringify(partOffsets)'),before,'touch moves sheet part');
-     const q=await js(s,`(()=>{const r=cv.getBoundingClientRect();for(let y=20;y<r.height;y+=12)for(let x=20;x<r.width;x+=12)if(pickPart(r.x+x,r.y+y))return [r.x+x,r.y+y]})()`);
+     const q=await js(s,pickVisible);
      await mode(s,'rename');await touch(s,...q);await check("!document.getElementById('part-inspector').hidden",'tap rename');
      await js(s,"document.getElementById('part-name').value='Mobile test part';document.getElementById('part-name').dispatchEvent(new Event('input'));document.getElementById('part-name-close').click();scrollTo(0,0)");
      await mode(s,'isolate');await touch(s,...q);await check("!document.getElementById('back-to-sheet').hidden",'tap isolate');
@@ -147,15 +162,17 @@ try{
    }
    const panelSelector=page==='model-editor'?'#side':page==='level-editor'?'#add-panel':page==='terrain'?'.sheet-scroll':'#lines-list';
    await js(s,`document.querySelector(${JSON.stringify(panelSelector)}).scrollIntoView({block:'center'})`);
-   await check("document.getElementById('mobile-toolbar').getBoundingClientRect().top===0",'panel toggle remains reachable while scrolling');
+   if(page==='model-editor')await check("document.getElementById('model-header').getBoundingClientRect().top===0",'header remains reachable while scrolling');
+   else await check("document.getElementById('mobile-toolbar').getBoundingClientRect().top===0",'panel toggle remains reachable while scrolling');
    await screenshot(s,`panels-${page}-${width}`);
    await js(s,'scrollTo(0,0)');
    // Crossing the breakpoint restores desktop anchors, then the same phone layout.
    await c.send('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false},s);
-   await until(c,s,"!document.getElementById('mobile-dock')",3000).catch(()=>{});
-   await check("!document.getElementById('mobile-dock')",'desktop restoration');
+   const desktop=page==='model-editor'?"document.getElementById('model-drawer-tabs').hidden":"!document.getElementById('mobile-dock')";
+   await until(c,s,desktop,3000);
    await c.send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true},s);await sleep(80);
-   await until(c,s,"document.body.classList.contains('editor-phone')",3000).catch(async error=>{throw Error(error.message+' '+JSON.stringify(await js(s,"({width:innerWidth,media:matchMedia('(max-width:767px)').matches,errors:document.body.className})"))+' '+JSON.stringify(c.errors));});
+   const phone=page==='model-editor'?"!document.getElementById('model-drawer-tabs').hidden":"document.body.classList.contains('editor-phone')";
+   await until(c,s,phone,3000).catch(async error=>{throw Error(error.message+' '+JSON.stringify(await js(s,"({width:innerWidth,media:matchMedia('(max-width:767px)').matches,errors:document.body.className})"))+' '+JSON.stringify(c.errors));});
   }else{
    await check("!document.getElementById('mobile-dock')",'desktop unchanged');
    await check("!document.getElementById('mobile-desktop-tip')",'no desktop tip on desktop');

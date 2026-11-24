@@ -13,11 +13,12 @@ assert.strictEqual(labels.partLabel('missing','head'),'');
 assert.strictEqual(labels.labelHTML('<img onerror="bad">'),'&lt;img onerror=&quot;bad&quot;&gt;');
 // Unposed variants and unused vertex-cache padding must not skew positional suggestions.
 const suggestions=vm.createContext({asmXf:p=>v=>v.map((n,k)=>n+p.offset[k])});
-vm.runInContext(source.slice(source.indexOf('function positionPartNames('),source.indexOf('let suggestedPartNames=')),suggestions);
+vm.runInContext(source.slice(source.indexOf('const capturedRoot='),source.indexOf('let suggestedPartNames=')),suggestions);
 const parts=['head','body','rear','leg','unposed'].map(sym=>({sym,bb:[-30000,-30000,-30000,30000,30000,30000],viewBB:[0,0,0,0,0,0]}));
-const captured={parts:[['head',[0,10,10]],['body',[0,5,5]],['rear',[0,5,0]],['leg',[-2,0,5]],['leg',[2,0,5]]].map(([dl,offset])=>({dl,offset}))};
+const captured={parts:[['head',[0,10,10]],['body',[0,5,5]],['rear',[0,5,0]],['leg',[-2,0,5]],['leg',[2,0,5]]].map(([dl,offset])=>({dl,offset,T:dl==='body'?[0,0,0]:offset}))};
 const suggested=suggestions.positionPartNames(parts,captured);
 assert.match(suggested.head,/Head/);assert.match(suggested.leg,/Leg/);assert.match(suggested.rear,/tail/);assert.match(suggested.unposed,/Variant/);
+assert.strictEqual(suggested.body,'Body / root');
 assert.equal(new Set(Object.values(suggested)).size,parts.length);
 vm.runInContext(source.split('//#PURE-START')[1].split('//#PURE-END')[0], live);
 vm.runInContext(source.slice(source.indexOf('const mul='), source.indexOf('const cameraRotation=')), live);

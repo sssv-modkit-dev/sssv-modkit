@@ -9,6 +9,16 @@ python tools/bundle/make_bundle.py --skip-site -t windows-x64
 
 Needs Go 1.22+ (cross-compiles every target from one machine). Output: `build/bundles/` (ignored). The script refuses to zip any ROM-like file.
 
+| OS | Bundle targets |
+| --- | --- |
+| Windows | `windows-x64`, `windows-x86` (32-bit), `windows-arm64` |
+| macOS | `macos-x64` (Intel), `macos-arm64` (Apple silicon) |
+| Linux | `linux-x64`, `linux-x86` (32-bit), `linux-arm64`, `linux-armv7` (32-bit ARMv7) |
+
+Use the archive for your installed OS and its architecture. The editor and
+Browser Play use the browser installed on that machine. Performance depends on
+the browser and device.
+
 ## Launcher (`launcher/`, Go standard library only)
 - Serves `app/` on `127.0.0.1` (random port) and opens the default browser. Uses the user's own browser, not an embedded web view.
 - Guards: requests must name its exact `host:port` (DNS rebinding), a per-run token is exchanged for an `HttpOnly; SameSite=Strict` cookie, and `/bundle/api/*` POSTs need a custom header plus a same-origin `Origin`/`Sec-Fetch-Site`.

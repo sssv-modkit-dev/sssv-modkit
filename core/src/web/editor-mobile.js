@@ -3,6 +3,7 @@
  'use strict';
  const phone=matchMedia('(max-width:767px)'), body=document.body;
  const kind=body.dataset.page || (document.getElementById('view')?'model':'level');
+ if(kind==='model'&&body.classList.contains('model-editor'))return;
  let active=false, moves=[], disclosures=[], bar, dock, viewport, camera, adapter;
  const button=(text,run,id)=>{const b=document.createElement('button');b.type='button';b.textContent=text;if(id)b.id=id;b.onclick=run;return b;};
  function move(el,host){if(!el)return;const anchor=document.createComment('desktop position');el.before(anchor);moves.push([el,anchor]);host.append(el);}

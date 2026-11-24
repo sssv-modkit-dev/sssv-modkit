@@ -165,7 +165,15 @@ function animSync(){const ok=assembled&&!gallery&&poseOk()&&!!pose?.anim;if(anim
  animBar()}
 // (animSync runs from ui() before the vars above are assigned: keep the literal mode list and the ?. on animQueue.)
 // Timeline bar (shown while an animation is loaded): play/pause, one frame back/forward, loop, queue, scrub slider.
-function animBar(){const bar=$('anim-timeline');if(!bar)return;bar.hidden=!animMode;if(!animMode)return;const play=$('anim-play');
+function animBar(){const bar=$('anim-timeline');if(!bar)return;
+ const select=$('model-animation'),modes=(ANIM_MODES||[]).filter(mode=>!$('anim-'+mode).hidden);
+ if(select&&select.dataset.modes!==modes.join(',')){
+  select.dataset.modes=modes.join(',');select.disabled=!modes.length;
+  select.replaceChildren(new Option('No animation loaded',''),...modes.map(mode=>new Option(animLabel(mode),mode)));
+  select.onchange=()=>{if(select.value)animStart(select.value,false);else{animStop();ui();rebuild(false);info();}};
+ }
+ if(select&&select.value!==(animMode||''))select.value=animMode||'';
+ bar.hidden=!animMode;if(!animMode)return;const play=$('anim-play');
  play.textContent=animPaused?'▶':'⏸';play.title=animPaused?'Play (Space)':'Pause (Space)';play.setAttribute('aria-label',animPaused?'Play':'Pause');
  const lp=$('anim-loop'),add=$('anim-add'),q=$('anim-queue');
  if(lp){lp.setAttribute('aria-pressed',String(animLoop));lp.classList.toggle('on',animLoop);lp.title=`Loop: ${animLoop?'on':'off'} (L). Off plays once and stops.`}
