@@ -2,6 +2,7 @@
 """Run focused, ROM-free source checks from any directory: python src/check.py."""
 import ast
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -10,6 +11,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main():
+    readme = (ROOT / 'README.md').read_text(encoding='utf-8')
+    home = (ROOT / 'src/web/index.html').read_text(encoding='utf-8')
+    release = re.search(r'“([^”]+)” edition, pre-alpha v([\d.]+):', readme)
+    if release is None or (
+        f'<span class="eyebrow">Pre-alpha v{release[2]} · {release[1]} edition</span>' not in home
+    ):
+        print('README banner and homepage release edition disagree.', file=sys.stderr)
+        return 1
     if not shutil.which('node'):
         print('Node.js is required for viewer checks; install it and rerun.', file=sys.stderr)
         return 1

@@ -1,6 +1,8 @@
 # Space Station Silicon Valley Modkit
 
-![Space Station Silicon Valley (SSSV) Modkit, “Bear onward, nearly there” edition, pre-alpha v0.6: a bear dances under a spotlight, changing colour](docs/images/releases/bear-onward-v06.gif)
+![Space Station Silicon Valley (SSSV) Modkit, “100% byte-matched decomp” edition, pre-alpha v0.7: patches of checker texture, wireframe, and part highlights spread across a dancing bear](docs/images/releases/byte-matched-v07.gif)
+
+This edition celebrates the US 1.0 matching milestone by [mkst and the SSSV decomp contributors](https://github.com/mkst/sssv/commit/3e4d861eb662f4adeba01e8cebb6d7f8c9df7b35).
 
 **Explore and edit *Space Station Silicon Valley* (Nintendo 64).** Try the browser editors, or build ROM patches from your own game files with the local tools.
 

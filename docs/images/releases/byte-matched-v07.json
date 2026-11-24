@@ -1,0 +1,39 @@
+{
+  "frames": 342,
+  "fps": 25,
+  "dimensions": [
+    1500,
+    500
+  ],
+  "title": "100% byte-matched decomp",
+  "subject": "Model Editor Bear Dance",
+  "theme": "n64-dark",
+  "seed": 64,
+  "palettes": [
+    [
+      "main",
+      "accent2"
+    ],
+    [
+      "accent1",
+      "accent2"
+    ],
+    [
+      "accent3",
+      "accent2"
+    ]
+  ],
+  "palette_interval_seconds": [
+    0.8,
+    1.2
+  ],
+  "stages": [
+    "shaded",
+    "UV checker preview",
+    "depth-tested wireframe",
+    "part highlight",
+    "shaded"
+  ],
+  "transition": "Soft patches grow from the paws and across the body, reversing sides on the second pass.",
+  "spotlights": []
+}
